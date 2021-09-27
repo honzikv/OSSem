@@ -12,4 +12,4 @@ Buildíme popořadě:
  3. Boot
 
 # Linky
-VS Build tools pro "msbuild": https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16
+VS Build tools pro "msbuild": https://visualstudio.microsoft.com/downloads/ -> scroll dolů -> Tools for Visual Studio -> Build Tools for Visual Studio
