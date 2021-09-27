@@ -1,5 +1,5 @@
 # OSSem
-Zabava na celou noc.
+Zábava na celou noc
 
 # Quickstart
 Ve Visual Studio otevřeme jednotlivé solutions:
