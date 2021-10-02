@@ -7,7 +7,7 @@ Pro build je potřeba Windows + Visual Studio (Code?)
 Ve Visual Studio otevřeme jednotlivé solutions:
  - user.sln, kernel.sln, boot.sln
 
-Buildíme popořadě:
+Buildíme popořadě (asi? fungovalo i Kernel -> User -> Boot):
 
  1. User
  2. Kernel
