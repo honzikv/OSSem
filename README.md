@@ -2,6 +2,8 @@
 Zábava na celou noc
 
 # Quickstart
+Pro build je potřeba Windows + Visual Studio (Code?)
+
 Ve Visual Studio otevřeme jednotlivé solutions:
  - user.sln, kernel.sln, boot.sln
 
