@@ -1,0 +1,15 @@
+LIBRARY user.dll
+
+EXPORTS
+	shell
+	type
+	md
+	rd
+	dir
+	echo
+	find
+	sort
+	rgen
+	freq
+	tasklist
+	shutdown
