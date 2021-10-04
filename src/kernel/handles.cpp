@@ -31,8 +31,8 @@ HANDLE Resolve_kiv_os_Handle(const kiv_os::THandle hnd) {
 	if (resolved != Handles.end()) {
 		return resolved->second;
 	}
-	else
-		return INVALID_HANDLE_VALUE;
+
+	return INVALID_HANDLE_VALUE;
 }
 
 bool Remove_Handle(const kiv_os::THandle hnd) {
