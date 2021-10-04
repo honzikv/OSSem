@@ -3,7 +3,7 @@
 ################################################################################
 
 /.vs
-/msvc/boot
+/msvc/boot/x64/Debug
 /msvc/kernel/x64/Debug
 /msvc/user/.vs/user/v16
 /msvc/user/x64/Debug
