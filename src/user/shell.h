@@ -5,13 +5,12 @@
 #include <string>
 
 #include "rtl.h"
-#include "..\api\api.h"
+#include "../api/api.h"
 #include "../../msvc/user/CommandParser.h"
 
 extern "C" size_t __stdcall shell(const kiv_hal::TRegisters& regs);
 
-const std::string EXIT_COMMAND = "exit"; // NOLINT(clang-diagnostic-exit-time-destructors)
-
+constexpr auto NEWLINE_MESSAGE = "\n";
 
 //nasledujici funkce si dejte do vlastnich souboru
 //cd nemuze byt externi program, ale vestavny prikaz shellu!
@@ -27,23 +26,49 @@ extern "C" size_t __stdcall freq(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall tasklist(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall shutdown(const kiv_hal::TRegisters& regs) { return 0; }
 
-class ShellInterpreter
-{
+/**
+ * Trida pro zpracovani prikazu z shellu
+ *
+ * Wrapper pro shell() funkci, aby v byl kod aspon trochu citelny
+ */
+class ShellInterpreter {
+
+	// reference na registry
 	const kiv_hal::TRegisters& registers;
-	const kiv_os::THandle& stdIn, stdOut;
+
+	// reference na stdin
+	const kiv_os::THandle& stdIn;
+
+	// reference na stdout
+	const kiv_os::THandle& stdOut;
+
+	// interni objekt na parsovani dat - alokace na heapu
+	const std::unique_ptr<CommandParser> commandParser = std::make_unique<CommandParser>();
 
 public:
+	// Ctor ziska z funkce shell vsechny registry + handle na stdin a stdout
 	ShellInterpreter(const kiv_hal::TRegisters& registers, const kiv_os::THandle& stdIn, const kiv_os::THandle& stdOut):
-		registers(registers), stdIn(stdIn), stdOut(stdOut)
-	{
+		registers(registers),
+		stdIn(stdIn),
+		stdOut(stdOut) { }
+
+	
+	auto printNewline() {
+		auto whatever = size_t{};
+		kiv_os_rtl::Write_File(stdOut, NEWLINE_MESSAGE, strlen(NEWLINE_MESSAGE), whatever);
 	}
 
-	inline void parseLine(const std::string& line, size_t& counter)
-	{
-		auto commandParser = CommandParser();
-		auto tokens = commandParser.parseCommand(line);
-
-		// kiv_os_rtl::Write_File(stdOut, line.c_str(), line.size(), counter);
-		kiv_os_rtl::Write_File(stdOut, tokens[0].c_str(), line.size(), counter);
+	auto parseLine(const std::string& line) {
+		auto whatever = size_t{};
+		auto tokens = commandParser->parseCommands(line);
+		auto msgStream = std::stringstream();
+		msgStream << "Tokens count: " << tokens.size() << std::endl;
+		auto msg = msgStream.str();
+		kiv_os_rtl::Write_File(stdOut, msg.data(), msg.size(), whatever);
+		for (const auto& token : tokens) {
+			kiv_os_rtl::Write_File(stdOut, token.data(), token.size(), whatever);
+			printNewline();
+		}
 	}
+
 };
