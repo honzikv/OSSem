@@ -22,6 +22,7 @@ Buildíme popořadě (asi? fungovalo i Kernel -> User -> Boot):
 	- https://github.com/vairad/zcu-os
 	- https://github.com/johnny-wolf/kiv-os
 	- https://github.com/danisik/OS
+	- https://github.com/topnax/kiv-os-sp
 
 # Todo:
 - Parsing vstupu z konzole
