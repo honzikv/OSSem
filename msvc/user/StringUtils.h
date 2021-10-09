@@ -2,13 +2,14 @@
 #include <regex>
 #include <string>
 #include <vector>
-#include <sstream>
+#include <locale>
 
 /**
  * Funkce pro praci s retezci
  */
 namespace StringUtils {
-	
+
+
 	/**
 	 * Rozdeli retezec "source" podle regexu "regex"
 	 */
@@ -18,4 +19,21 @@ namespace StringUtils {
 			std::sregex_token_iterator()
 		);
 	}
+
+	inline std::string trimFromLeft(const std::string& str) {
+		return std::regex_replace(str, std::regex("^\\s+"), std::string(""));
+	}
+
+	inline std::string trimFromRight(const std::string& str) {
+		return std::regex_replace(str, std::regex("\\s+$"), std::string(""));
+	}
+
+	/**
+	 * Odstrani mezery z retezce
+	 */
+	inline std::string trimWhitespaces(const std::string& str) {
+		return trimFromLeft(trimFromRight(str));
+	}
+	
+
 }
