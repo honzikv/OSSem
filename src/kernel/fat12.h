@@ -10,10 +10,7 @@
 #include "vfs.h"
 #include "../api/hal.h"
 
-const int FAT_TABLE_SECTOR_COUNT = 9;
-const int SECTOR_SIZE = 512;
-const int DISK_NUM = 129;
-const int ROOT_DIR_SECTOR = 19;
+
 
 struct DirItem {
     std::string fileName;
