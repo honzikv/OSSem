@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <iostream>
 #include <string>
 
 #include "rtl.h"
@@ -9,7 +11,6 @@
 
 extern "C" size_t __stdcall shell(const kiv_hal::TRegisters& regs);
 
-constexpr auto NEWLINE_MESSAGE = "\n";
 
 //nasledujici funkce si dejte do vlastnich souboru
 //cd nemuze byt externi program, ale vestavny prikaz shellu!
@@ -25,6 +26,12 @@ extern "C" size_t __stdcall freq(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall tasklist(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall shutdown(const kiv_hal::TRegisters& regs) { return 0; }
 
+
+constexpr auto NEWLINE_MESSAGE = "\n";
+constexpr size_t BUFFER_SIZE = 256;
+constexpr auto NEWLINE_SYMBOL = "\n";
+constexpr auto EXIT_COMMAND = "exit";
+
 /**
  * Trida pro zpracovani prikazu z shellu
  *
@@ -36,7 +43,10 @@ class ShellInterpreter {
 	 * Vsechny dostupne programy v OS
 	 */
 	std::unordered_set<std::string> possiblePrograms = {
-		"type", "md", "rd", "dir", "echo", "find", "sort", "rgen", "tasklist", "freq", "shutdown", "cd"
+		"type", "md", "rd", "dir", "echo", "find", "sort", "rgen", "tasklist", "freq", "shutdown", "cd",
+
+		// Custom
+		"toggledebug"
 	};
 
 	// reference na registry
@@ -51,6 +61,15 @@ class ShellInterpreter {
 	// interni objekt na parsovani dat - alokace na heapu
 	const std::unique_ptr<CommandParser> commandParser = std::make_unique<CommandParser>();
 
+	// debug mode
+	bool debugOn = false;
+
+	// Pocitadlo pro tisk do konzole
+	size_t counter;
+
+	// IO buffer
+	std::array<char, BUFFER_SIZE> buffer;
+
 public:
 	// Ctor ziska z funkce shell vsechny registry + handle na stdin a stdout
 	ShellInterpreter(const kiv_hal::TRegisters& registers, const kiv_os::THandle& stdIn, const kiv_os::THandle& stdOut):
@@ -59,16 +78,12 @@ public:
 		stdOut(stdOut) { }
 
 
-	auto parseLine(const std::string& line) {
-		const auto commands = commandParser->parseCommands(line);
+	auto parseLine(const std::string& line);
 
-		for (const auto& command : commands) {
-			executeCommand(command);
-		}
-	}
+	auto executeCommand(const Command& command) -> void ;
 
-	auto executeCommand(const Command& command) -> void {
-		// TODO impl
-	}
+	auto toggleDebug() -> void ;
+
+	auto run();
 
 };
