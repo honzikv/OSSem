@@ -1,12 +1,11 @@
 #pragma once
 
-#include <iostream>
-#include <ostream>
 #include <string>
 
 #include "rtl.h"
 #include "../api/api.h"
 #include "../../msvc/user/CommandParser.h"
+#include <unordered_set>
 
 extern "C" size_t __stdcall shell(const kiv_hal::TRegisters& regs);
 
@@ -33,6 +32,13 @@ extern "C" size_t __stdcall shutdown(const kiv_hal::TRegisters& regs) { return 0
  */
 class ShellInterpreter {
 
+	/**
+	 * Vsechny dostupne programy v OS
+	 */
+	std::unordered_set<std::string> possiblePrograms = {
+		"type", "md", "rd", "dir", "echo", "find", "sort", "rgen", "tasklist", "freq", "shutdown", "cd"
+	};
+
 	// reference na registry
 	const kiv_hal::TRegisters& registers;
 
@@ -52,23 +58,17 @@ public:
 		stdIn(stdIn),
 		stdOut(stdOut) { }
 
-	
-	auto printNewline() {
-		auto whatever = size_t{};
-		kiv_os_rtl::Write_File(stdOut, NEWLINE_MESSAGE, strlen(NEWLINE_MESSAGE), whatever);
-	}
 
 	auto parseLine(const std::string& line) {
-		auto whatever = size_t{};
-		auto tokens = commandParser->parseCommands(line);
-		auto msgStream = std::stringstream();
-		msgStream << "Tokens count: " << tokens.size() << std::endl;
-		auto msg = msgStream.str();
-		kiv_os_rtl::Write_File(stdOut, msg.data(), msg.size(), whatever);
-		for (const auto& token : tokens) {
-			kiv_os_rtl::Write_File(stdOut, token.data(), token.size(), whatever);
-			printNewline();
+		const auto commands = commandParser->parseCommands(line);
+
+		for (const auto& command : commands) {
+			executeCommand(command);
 		}
+	}
+
+	auto executeCommand(const Command& command) -> void {
+		// TODO impl
 	}
 
 };

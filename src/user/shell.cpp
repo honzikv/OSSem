@@ -38,10 +38,8 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 
 			// Vypis newline do konzole
 			// kiv_os_rtl::Write_File(std_out, NEWLINE_SYMBOL, strlen(NEWLINE_SYMBOL), counter);
-			shellInterpreter->printNewline();
 			// Parsovani vstupu z konzole
 			shellInterpreter->parseLine(buffer.data());
-			shellInterpreter->printNewline();
 			
 			// Puvodni - pouze echo do konzole
 			// kiv_os_rtl::Write_File(std_out, buffer.data(), strlen(buffer.data()), counter); //a vypiseme ho
