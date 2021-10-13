@@ -37,11 +37,7 @@ struct Command {
 	const std::string file;
 
 	Command(std::string commandName, std::vector<std::string> params,
-	        const RedirectType redirectType = {}, std::string file = {}) :
-		params(std::move(params)),
-		commandName(std::move(commandName)),
-		redirectType(redirectType),
-		file(std::move(file)) { }
+	        const RedirectType redirectType = {}, std::string file = {});
 };
 
 /**
@@ -82,19 +78,20 @@ class CommandParser {
 			}
 
 			// Vratime prikaz - pokud nema parametry, vytvorime pouze prazdny vektor, jinak je zkopirujeme z indexu 1..n
-			return Command(commandWithParams[0],
-			               commandWithParams.size() > 1
-				               ? std::vector(commandWithParams.begin() + 1,
-				                             commandWithParams.end())
-				               : std::vector<std::string>(0), redirectType, trimmedFileUri);
+			return Command(commandWithParams[0], 
+				commandWithParams.size() > 1 
+				? std::vector(commandWithParams.begin() + 1, commandWithParams.end())
+				: std::vector<std::string>(), 
+				redirectType, trimmedFileUri);
 		}
 
 		// Jinak je prikaz bez redirectu -> file pro presmerovani bude prazdny retezec
 		// Opet zkopirujeme z 1..n parametry, pokud existuji
 		return Command(commandWithParams[0],
-		               commandWithParams.size() > 1
-			               ? std::vector(commandWithParams.begin() + 1, commandWithParams.end())
-			               : std::vector<std::string>(0), redirectType, {});
+			commandWithParams.size() > 1 
+			? std::vector(commandWithParams.begin() + 1, commandWithParams.end())
+			: std::vector<std::string>(), 
+			redirectType, {});
 	}
 
 	[[nodiscard]]
@@ -167,7 +164,8 @@ public:
 			// Ziskame fileUri, pokud neni redirect type None
 			auto fileUri = redirectType == RedirectType::None ? "" : splitByRedirectSymbol[1];
 
-			result.push_back(createCommand(commandWithParams, redirectType, fileUri, commandWithParamsAndRedirect));
+			auto command = createCommand(commandWithParams, redirectType, fileUri, commandWithParamsAndRedirect);
+			result.push_back(command);
 		}
 
 		// Vratime vysledek
