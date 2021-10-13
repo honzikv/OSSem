@@ -20,7 +20,7 @@ public:
 
     virtual kiv_os::NOS_Error readDir(const Path &path, std::vector<kiv_os::TDir_Entry> &entries);
 
-    virtual kiv_os::NOS_Error mkDir(const Path &path, uint16_t attributes);
+    virtual kiv_os::NOS_Error mkDir(Path &path, uint16_t attributes);
 
     virtual kiv_os::NOS_Error rmDir(const Path &path);
 

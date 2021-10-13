@@ -96,3 +96,22 @@ std::vector<unsigned char> readFromRegisters(int clusterCount, int sectorSize, i
     }
     return result;
 }
+
+/**
+ * Ziska cislo clusteru z FAT
+ * @param fat FAT
+ * @param pos pozice do FAT
+ * @return cislo clusteru
+ */
+uint16_t getClusterNum(std::vector<unsigned char> fat, int pos) {
+    int index = (int) (pos * INDEX_TO_FAT_CONVERSION);
+    uint16_t clusterNum = 0;
+    if (pos % 2 == 0) { // prvni byte cely + prvni pulka druheho bytu
+        clusterNum |= (uint16_t) fat.at(index) << BITS_IN_BYTES_HALVED;
+        clusterNum |= ((uint16_t) fat.at(index + 1) & 0xF0) >> BITS_IN_BYTES_HALVED;
+    } else { // druha pulka prvniho bytu + cely druhy byte
+        clusterNum |= ((uint16_t) fat.at(index) & 0x0F) << BITS_IN_BYTES;
+        clusterNum |= (uint16_t) fat.at(index + 1);
+    }
+    return clusterNum;
+}

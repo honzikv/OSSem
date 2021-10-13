@@ -30,7 +30,7 @@ class Fat12 : public VFS {
 
     virtual kiv_os::NOS_Error readDir(const Path &path, std::vector<kiv_os::TDir_Entry> &entries) override;
 
-    virtual kiv_os::NOS_Error mkDir(const Path &path, uint16_t attributes) override;
+    virtual kiv_os::NOS_Error mkDir(Path &path, uint16_t attributes) override;
 
     virtual kiv_os::NOS_Error rmDir(const Path &path) override;
 

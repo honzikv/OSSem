@@ -5,13 +5,13 @@
 #include "fat12.h"
 #include "fat_helper.h"
 
-std::vector<unsigned char> fatTable;
-std::vector<unsigned char> secondFatTable;
+std::vector<unsigned char> fat;
+std::vector<unsigned char> secondFat;
 
 
 Fat12::Fat12() {
-    fatTable = loadFatTable(1);
-    secondFatTable = loadFatTable(1 + FAT_TABLE_SECTOR_COUNT);
+    fat = loadFatTable(1);
+    secondFat = loadFatTable(1 + FAT_TABLE_SECTOR_COUNT);
 }
 
 //TODO dodelat vse
@@ -38,6 +38,45 @@ DirItem Fat12::get_cluster(const int startSector, const Path &path) {
     }
 
     return DirItem();
+}
+
+kiv_os::NOS_Error Fat12::mkDir(Path &path, uint16_t attributes) {
+    std::string folderName = path.path.back(); //posledni polozka je jmeno
+
+    path.path.pop_back(); //cesta, tzn. bez posledni polozky
+
+    int startSector;
+
+    std::vector<int> sectorsIndexes;
+
+    if (path.path.empty()) { //root
+        startSector = ROOT_DIR_SECTOR_START;
+        for (int i = ROOT_DIR_SECTOR_START; i < USER_DATA_START; ++i) {
+            sectorsIndexes.push_back(i);
+        }
+    } else {
+        DirItem targetFolder = getDirItemCluster(ROOT_DIR_SECTOR_START, path, fat);
+        sectorsIndexes = getSectorsIndexes(fat, targetFolder.firstCluster);
+        startSector = sectorsIndexes.at(0);
+
+    }
+
+    std::vector<DirItem> directoryItem = getItemsFromDir(fat, startSector);
+
+    // nalezt 1 volny cluster
+
+    int freeIndex = getFreeIndex(fat);
+
+    if (freeIndex == -1) {
+        return kiv_os::NOS_Error::Not_Enough_Disk_Space;
+    } else {
+       //TODO zapsat do tabulky
+    }
+
+    //TODO zapsat data
+
+
+
 }
 
 
