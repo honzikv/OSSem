@@ -12,13 +12,6 @@
 
 
 
-struct DirItem {
-    std::string fileName;
-    std::string fileExtension;
-    size_t fileSize;
-    int firstCluster;
-};
-
 class Fat12 : public VFS {
 
     Fat12();

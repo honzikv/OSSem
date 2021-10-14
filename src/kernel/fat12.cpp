@@ -75,8 +75,6 @@ kiv_os::NOS_Error Fat12::mkDir(Path &path, uint16_t attributes) {
 
     //TODO zapsat data
 
-
-
 }
 
 

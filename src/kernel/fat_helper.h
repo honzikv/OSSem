@@ -17,11 +17,23 @@ const int FAT_ADDRESS_SIZE = 12;
 const int BITS_IN_BYTES = 8;
 const int BITS_IN_BYTES_HALVED = (int) (BITS_IN_BYTES * 0.5);
 const double INDEX_TO_FAT_CONVERSION = (double) FAT_ADDRESS_SIZE / BITS_IN_BYTES; // ration na prepocet pozice do indexu v FAT
+const int MAX_CLUSTER_NUM = 4096;
 
+struct DirItem {
+    std::string fileName;
+    std::string fileExtension;
+    size_t fileSize;
+    int firstCluster;
+    unsigned char attribute;
+};
 
 std::vector<unsigned char> loadFatTable(int startIndex);
 
 std::vector<unsigned char> readFromRegisters(int clusterCount, int sectorSize, int startIndex);
+
+uint16_t getFreeIndex(std::vector<unsigned char> fat);
+
+std::vector<int> getSectorsIndexes(const std::vector<unsigned char>& fat, int start);
 
 
 #endif //OS_FAT_HELPER_H

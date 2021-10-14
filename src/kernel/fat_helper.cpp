@@ -6,6 +6,8 @@
 #include <hal.h>
 #include <string>
 #include "fat_helper.h"
+#include "path.h"
+#include "api.h"
 
 /**
  * Nacte FAT tabulku na specifickem indexu (urcuje 1. / 2. tabulku)
@@ -114,4 +116,147 @@ uint16_t getClusterNum(std::vector<unsigned char> fat, int pos) {
         clusterNum |= (uint16_t) fat.at(index + 1);
     }
     return clusterNum;
+}
+
+/**
+ * Najde a vrati ve FAT index prvniho volneho clusteru
+ * @param fat FAT
+ * @return index prvniho volneho clusteru, -1 pokud nenalezen
+ */
+uint16_t getFreeIndex(std::vector<unsigned char> fat) {
+    for (int i = 0; i < fat.size(); i+=2) {
+        uint16_t clusterNum = 0;
+        clusterNum |= (uint16_t) fat.at(i) << BITS_IN_BYTES_HALVED;
+        clusterNum |= ((uint16_t) fat.at(i + 1) & 0xF0) >> BITS_IN_BYTES_HALVED;
+        if (clusterNum == 0) {
+            return i;
+        }
+        clusterNum |= ((uint16_t) fat.at(i + 1) & 0x0F) << BITS_IN_BYTES;
+        clusterNum |= (uint16_t) fat.at(i + 2);
+        if (clusterNum == 0) {
+            return i + 1;
+        }
+    }
+    return -1;
+}
+
+
+/**
+ * Ziska a vrati seznam sektoru obsahujici dany soubor
+ * @param fat FAT
+ * @param start prvni sektor souboru
+ * @return seznam sektoru daneho souboru
+ */
+std::vector<int> getSectorsIndexes(const std::vector<unsigned char>& fat, int start) {
+    std::vector<int> sectors;
+
+    sectors.push_back(start);
+    start = getClusterNum(fat, start);
+
+    while (start < MAX_CLUSTER_NUM) { //TODO mozna 4088 a to push prvni taky mozna check
+        sectors.push_back(start);
+        start = getClusterNum(fat, start);
+    }
+    return sectors;
+}
+
+/**
+ * Ziska a vrati obsah dane slozky
+ * @param fat FAT
+ * @param sectorNum cislo prvniho sektoru dane slozky
+ * @return vektor polozek adresare v dane slozce
+ */
+std::vector<DirItem> getFoldersFromDir (const std::vector<unsigned char>& fat, int sectorNum) {
+    if (sectorNum == ROOT_DIR_SECTOR_START) {
+        std::vector<unsigned char> dataClusters = readDataFromCluster(ROOT_DIR_SECTOR_START - DATA_SECTOR_CONVERSION,
+                                                                      ROOT_DIR_SIZE);
+
+        std::vector<DirItem> content = getDirectoryItems(); //TODO udelat
+
+        content.erase(content.begin());
+
+        return content;
+
+    } else {
+        std::vector<int> dataSectors = getSectorsIndexes(fat, sectorNum);
+
+        std::vector<unsigned char> dataClusters;
+
+        std::vector<DirItem> dirItems;
+
+        for (int i = 0; i < dataSectors.size(); ++i) {
+            dataClusters = readDataFromCluster(dataSectors[i], 1); // obsah jednoho clusteru
+            std::vector<DirItem> content = getDirectoryItems();
+
+            int j = i == 0 ? 2 :0; // prvni cluster slozky - obsahuje i '.' a '..' - preskocit
+
+            for (; j < content.size(); j++) {
+                dirItems.push_back(content.at(j));
+            }
+
+        }
+        return dirItems;
+    }
+}
+
+/**
+ * Vrati polozku adresare, na kterem zacina hledany soubor/slozka
+ * @param startCluster pocatecni cluster, kde se hleda soubor/slozka
+ * @param path cesta k souboru/slozce
+ * @param fat FAT
+ * @return polozka adresare
+ */
+DirItem getDirItemCluster(int startCluster, const Path& path, const std::vector<unsigned char >& fat) {
+    if (path.path.empty()) { // root
+        DirItem dirItem;
+        dirItem.firstCluster = ROOT_DIR_SECTOR_START;
+        dirItem.fileName = "/";
+        dirItem.fileExtension = "";
+        dirItem.fileSize = 0;
+        dirItem.attribute = static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID);
+    }
+
+    std::vector<DirItem> curFolderItems; // polozky v prave prochazene slozce
+    int directoryItemNum;
+    for (auto & i : path.path) {
+        curFolderItems = getFoldersFromDir(fat, startCluster);
+
+        directoryItemNum = -1;
+
+        for (int j = 0; j < curFolderItems.size(); ++j) {
+            DirItem dirItem = curFolderItems.at(j);
+            std::string dirItemFullName = dirItem.fileName;
+            if (!dirItem.fileExtension.empty()) {
+                dirItemFullName += "." + dirItem.fileExtension; //TODO mozna konstanta '.'
+            }
+            if (i == dirItemFullName) {
+                directoryItemNum = j;
+                break;
+            }
+        }
+        if (directoryItemNum == -1) {
+            break;
+        }
+
+        DirItem dirItem = curFolderItems.at(directoryItemNum);
+
+        startCluster = dirItem.firstCluster;
+
+        if (dirItem.firstCluster == 0) {
+            dirItem.firstCluster = ROOT_DIR_SECTOR_START;
+        }
+
+    }
+
+    DirItem dirItem = {};
+    if (directoryItemNum == -1) {
+        dirItem.firstCluster = -1;
+        dirItem.fileSize = -1;
+    } else {
+        dirItem = curFolderItems.at(directoryItemNum);
+        if (dirItem.firstCluster == 0) {
+            dirItem.firstCluster = ROOT_DIR_SECTOR_START;
+        }
+    }
+    return dirItem; //TODO neco s adresou
 }
