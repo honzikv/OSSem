@@ -23,14 +23,17 @@
     <ClInclude Include="..\..\src\api\hal.h" />
     <ClInclude Include="..\..\src\user\rtl.h" />
     <ClInclude Include="..\..\src\user\shell.h" />
-    <ClInclude Include="CommandParser.h" />
-    <ClInclude Include="StringUtils.h" />
+    <ClInclude Include="..\..\src\user\Shell\CommandParser.h" />
+    <ClInclude Include="..\..\src\user\Shell\ShellInterpreter.h" />
+    <ClInclude Include="..\..\src\user\Tests\UnitTests.h" />
+    <ClInclude Include="..\..\src\user\Utils\StringUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
     <ClCompile Include="..\..\src\user\rtl.cpp" />
     <ClCompile Include="..\..\src\user\shell.cpp" />
-    <ClCompile Include="CommandParser.cpp" />
+    <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp" />
+    <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A5F63FF3-DE9A-4B0B-BBF9-AD27200CE81F}</ProjectGuid>
@@ -89,6 +92,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>..\..\compiled\</OutDir>
+    <IncludePath>$(SolutionDir)..\..\src\user\;$(IncludePath)</IncludePath>
+    <SourcePath>$(SolutionDir)..\..\src\user\;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -120,6 +125,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;USER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

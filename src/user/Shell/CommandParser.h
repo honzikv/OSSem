@@ -1,15 +1,17 @@
 #pragma once
 #include <optional>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
-#include "StringUtils.h"
+#include "Utils/StringUtils.h"
 
-enum class RedirectType : uint8_t {
+enum RedirectType : uint8_t {
 	FromFile,
 	ToFile,
 	None
+
 };
 
 /**
@@ -38,6 +40,18 @@ struct Command {
 
 	Command(std::string commandName, std::vector<std::string> params,
 	        const RedirectType redirectType = {}, std::string file = {});
+
+	// metoda pro debug
+	[[nodiscard]] std::string toString() const;
+
+	friend bool operator==(const Command& lhs, const Command& rhs) {
+		return lhs.params == rhs.params // == pro vector udela == pro kazdy element
+			&& lhs.commandName == rhs.commandName
+			&& lhs.redirectType == rhs.redirectType
+			&& lhs.file == rhs.file;
+	}
+
+	friend bool operator!=(const Command& lhs, const Command& rhs) { return !(lhs == rhs); }
 };
 
 /**
@@ -158,8 +172,12 @@ public:
 			// Dale rozdelime kazdy prikaz s parametry podle redirect symbolu (">" nebo "<")
 			auto [redirectType, splitByRedirectSymbol] = splitByFileRedirect(commandWithParamsAndRedirect);
 
+			// Odstranime vsechny whitespaces na zacatku a konci - tzn. z " test " dostaneme "test"
+			auto trimmed = StringUtils::trimFromLeft(splitByRedirectSymbol[0]);
+			trimmed = StringUtils::trimFromRight(trimmed);
+
 			// Levou stranu od redirect symbolu rozdelime uz jenom podle mezer
-			auto commandWithParams = StringUtils::splitByRegex(splitByRedirectSymbol[0], whitespaceRegex);
+			auto commandWithParams = StringUtils::splitByRegex(trimmed, whitespaceRegex);
 
 			// Ziskame fileUri, pokud neni redirect type None
 			auto fileUri = redirectType == RedirectType::None ? "" : splitByRedirectSymbol[1];
