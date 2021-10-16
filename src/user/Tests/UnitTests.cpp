@@ -30,7 +30,7 @@ auto shellTest_SimpleCommand(ShellInterpreter& shellInterpreter) {
 		return;
 	}
 
-	std::cout << "Test succeeded" << std::endl;
+	std::cout << "shellTest_SimpleCommand Test succeeded" << std::endl;
 
 }
 
@@ -42,7 +42,7 @@ auto shellTest_NoCommand(ShellInterpreter& shellInterpreter) {
 		std::cerr << "Error commands are not empty" << std::endl;
 	}
 
-	std::cout << "shellTest_NoCommand test success" << std::endl;
+	std::cout << "shellTest_NoCommand Test succeeded" << std::endl;
 }
 
 auto shellTest_FileRedirect(ShellInterpreter& shellInterpreter) {
@@ -66,11 +66,11 @@ auto shellTest_FileRedirect(ShellInterpreter& shellInterpreter) {
 		return;
 	}
 
-	std::cout << "Test succeeded." << std::endl;
+	std::cout << "shellTest_FileRedirect Test succeeded." << std::endl;
 }
 
 auto shellTest_MultipleCommandsWithFileRedirects(ShellInterpreter& shellInterpreter) {
-	auto input = "command1 -a -b | command2 > out.json|command3|command4|command5 -a -b -c < from.json";
+	auto input = "command1 -a -b | command2 > out.json|command3|command4 |command5 -a -b -c < from.json";
 
 	auto expectedCommands = std::vector<Command>({
 		{"command1", {"-a", "-b"}, None, {}},
@@ -97,6 +97,8 @@ auto shellTest_MultipleCommandsWithFileRedirects(ShellInterpreter& shellInterpre
 	catch (std::exception& ex) {
 		std::cerr << "Error while performing shellTest_MultipleCommandsWithFileRedirects test. Cause: " << ex.what() << std::endl;
 	}
+
+	std::cout << "shellTest_MultipleCommandsWithFileRedirects Test succeeded." << std::endl;
 }
 
 

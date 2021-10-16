@@ -172,8 +172,12 @@ public:
 			// Dale rozdelime kazdy prikaz s parametry podle redirect symbolu (">" nebo "<")
 			auto [redirectType, splitByRedirectSymbol] = splitByFileRedirect(commandWithParamsAndRedirect);
 
+			// Odstranime vsechny whitespaces na zacatku a konci - tzn. z " test " dostaneme "test"
+			auto trimmed = StringUtils::trimFromLeft(splitByRedirectSymbol[0]);
+			trimmed = StringUtils::trimFromRight(trimmed);
+
 			// Levou stranu od redirect symbolu rozdelime uz jenom podle mezer
-			auto commandWithParams = StringUtils::splitByRegex(splitByRedirectSymbol[0], whitespaceRegex);
+			auto commandWithParams = StringUtils::splitByRegex(trimmed, whitespaceRegex);
 
 			// Ziskame fileUri, pokud neni redirect type None
 			auto fileUri = redirectType == RedirectType::None ? "" : splitByRedirectSymbol[1];
