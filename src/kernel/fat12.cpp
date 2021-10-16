@@ -40,6 +40,12 @@ DirItem Fat12::get_cluster(const int startSector, const Path &path) {
     return DirItem();
 }
 
+/**
+ * Vytvori novou slozku
+ * @param path cesta k slozce
+ * @param attributes atributy slozky
+ * @return zpravu o uspechu / neuspechu
+ */
 kiv_os::NOS_Error Fat12::mkDir(Path &path, uint16_t attributes) {
     std::string folderName = path.path.back(); //posledni polozka je jmeno
 
@@ -61,19 +67,115 @@ kiv_os::NOS_Error Fat12::mkDir(Path &path, uint16_t attributes) {
 
     }
 
-    std::vector<DirItem> directoryItem = getItemsFromDir(fat, startSector);
+    std::vector<DirItem> directoryItems = getFoldersFromDir(fat, startSector);
 
     // nalezt 1 volny cluster
-
     int freeIndex = getFreeIndex(fat);
 
     if (freeIndex == -1) {
         return kiv_os::NOS_Error::Not_Enough_Disk_Space;
     } else {
-       //TODO zapsat do tabulky
+        writeValueToFat(fat, freeIndex, END_CLUSTER_INT); // zapise do FAT konec clusteru
+        saveFat(fat);
     }
 
-    //TODO zapsat data
+    std::vector<unsigned char> bufferToWrite;
+    std::vector<char> bufferToSave;
+
+    // jmeno souboru
+    int i = 0;
+
+    while(i < folderName.size()) {
+        bufferToWrite.push_back(folderName.at(i));
+        i++;
+    }
+
+    while (i < FILE_NAME_SIZE) { //doplnit na 8 bytu
+        bufferToWrite.push_back(' '); //TODO constanta
+        i++;
+    }
+
+    // pripona - slozka nema zadnou
+    for (int j = 0; j < FILE_EXTENSION_SIZE; ++j) {
+        bufferToWrite.push_back(' '); //TODO const
+    }
+
+    bufferToWrite.push_back(attributes);
+
+    // nedulezite (cas vytvoreni atd.)
+    for (int j = 0; j < DIR_ITEM_ATTR_TO_CLUSTER; ++j) {
+        bufferToWrite.push_back(' '); //TODO const
+    }
+
+    // cislo clusteru
+    std::vector<unsigned char> bytesFromClusterNum = getBytesFromInt(freeIndex);
+
+    for (unsigned char & j : bytesFromClusterNum) {
+        bufferToWrite.push_back(j);
+    }
+
+    // velikost souboru - pro slozku 0
+    for (int j = 0; j < DIR_ITEM_FILE_SIZE_BYTES; ++j) {
+        bufferToWrite.push_back(0);
+    }
+
+    if (path.path.empty()) { // slozka v rootu
+        if ((directoryItems.size() + 2) <= (sectorsIndexes.size() * MAX_ITEMS_CLUSTER)) { // + 2 je . a ..
+            size_t clusterPos = (directoryItems.size() + 1) / MAX_ITEMS_CLUSTER; // poradi clusteru - jeden pojme 16 polozek
+            size_t itemPos = (directoryItems.size() + 1) % MAX_ITEMS_CLUSTER; // poradi v ramci clusteru
+
+            std::vector<unsigned char> clusterData = readFromRegisters(1, SECTOR_SIZE, sectorsIndexes.at(clusterPos) -
+                                                                                       DATA_SECTOR_CONVERSION);
+
+            for (int j = 0; j < bufferToWrite.size(); ++j) {
+                clusterData.at(itemPos * 32 + j) = bufferToWrite.at(j);
+            }
+
+            for (unsigned char & j : clusterData) {
+                bufferToSave.push_back(j);
+            }
+
+            writeToRegisters(bufferToSave, sectorsIndexes.at(clusterPos) - DATA_SECTOR_CONVERSION);
+        } else { // nevejde se do root - uvolnit a konec
+            writeValueToFat(fat, freeIndex, 0); // uvolni misto
+            saveFat(fat);
+            return kiv_os::NOS_Error::Not_Enough_Disk_Space;
+        }
+    } else {
+        bool canAdd = true;
+
+        if ((directoryItems.size() + 2 + 1) > (sectorsIndexes.size() * MAX_ITEMS_CLUSTER)) {
+            int newClusterPos = allocateNewCluster(startSector, fat);
+            if (newClusterPos == -1) {
+                canAdd = false;
+            } else {
+                sectorsIndexes.push_back(newClusterPos);
+            }
+        }
+
+        if (canAdd) { //TODO 2 const prozkoumat
+            size_t clusterPos = (directoryItems.size() + 2) / MAX_ITEMS_CLUSTER; // poradi clusteru - jeden pojme 16 polozek
+            size_t itemPos = (directoryItems.size() + 2) % MAX_ITEMS_CLUSTER; // poradi v ramci clusteru
+
+            std::vector<unsigned char> clusterData = readFromRegisters(1, SECTOR_SIZE, sectorsIndexes.at(clusterPos) -
+                                                                                       DATA_SECTOR_CONVERSION);
+
+            for (int j = 0; j < bufferToWrite.size(); ++j) {
+                clusterData.at(itemPos * 32 + j) = bufferToWrite.at(j);
+            }
+
+            for (unsigned char & j : clusterData) {
+                bufferToSave.push_back(j);
+            }
+
+            writeToRegisters(bufferToSave, sectorsIndexes.at(clusterPos) - DATA_SECTOR_CONVERSION);
+        } else {
+            writeValueToFat(fat, freeIndex, 0); // uvolni misto
+            saveFat(fat);
+            return kiv_os::NOS_Error::Not_Enough_Disk_Space;
+        }
+    }
+    return kiv_os::NOS_Error::Success;
 
 }
 
