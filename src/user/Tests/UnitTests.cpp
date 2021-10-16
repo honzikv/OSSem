@@ -1,4 +1,4 @@
-#include "UnitTests.h"
+﻿#include "UnitTests.h"
 
 #include <iostream>
 #include "Shell/ShellInterpreter.h"
@@ -62,7 +62,7 @@ auto shellTest_FileRedirect(ShellInterpreter& shellInterpreter) {
 		compareCommands(expectedCommand, actualCommand);
 	}
 	catch (...) {
-		std::cerr << "Test failed." << std::endl;
+		std::cerr << "shellTest_FileRedirect: Test failed during comparison." << std::endl;
 		return;
 	}
 
@@ -95,18 +95,104 @@ auto shellTest_MultipleCommandsWithFileRedirects(ShellInterpreter& shellInterpre
 		}
 	}
 	catch (std::exception& ex) {
-		std::cerr << "Error while performing shellTest_MultipleCommandsWithFileRedirects test. Cause: " << ex.what() << std::endl;
+		std::cerr << "Error while performing shellTest_MultipleCommandsWithFileRedirects test. Cause: " << ex.what() <<
+			std::endl;
 	}
 
 	std::cout << "shellTest_MultipleCommandsWithFileRedirects Test succeeded." << std::endl;
 }
 
+auto shellTest_InvalidInput1(ShellInterpreter& shellInterpreter) {
+	const auto input = "command <| command";
+	try {
+		shellInterpreter.parseCommands(input);
+	}
+	catch (ParseException&) {
+		std::cout << "shellTest_InvalidInput1 Test succeeded." << std::endl;
+		return;
+	}
+	catch (std::exception& ex) {
+		std::cerr << "shellTest_InvalidInput1: Error, exception ParseException was not caught. Instead got: " << ex.
+			what() << std::endl;
+		return;
+	}
+
+	std::cerr << "shellTest_InvalidInput1: Error, no exception was thrown" << std::endl;
+}
+
+auto shellTest_InvalidInput2(ShellInterpreter& shellInterpreter) {
+	const auto input = "| | | <> <<<.././/.sdf./sd";
+	try {
+		shellInterpreter.parseCommands(input);
+	}
+	catch (ParseException&) {
+		std::cout << "shellTest_InvalidInput2 Test succeeded." << std::endl;
+		return;
+	}
+	catch (std::exception& ex) {
+		std::cerr << "shellTest_InvalidInput2: Error, exception ParseException was not caught. Instead got: " << ex.
+			what() << std::endl;
+		return;
+	}
+
+	std::cerr << "shellTest_InvalidInput2: Error, no exception was thrown" << std::endl;
+}
+
+auto shellTest_InvalidInput3(ShellInterpreter& shellInterpreter) {
+	const auto input = "||||||:))):L(:)<::}🙌🙌🙌";
+	auto commands = shellInterpreter.parseCommands(input);
+	if (commands.size() != 1) {
+		std::cerr << "shellTest_InvalidInput3: Error, incorrect number of commands parsed. Expected 1, got: " <<
+			commands.size() << std::endl;
+		return;
+	}
+
+	auto expectedCommand = Command(":))):L(:)", {}, RedirectType::FromFile, "::}🙌🙌🙌");
+	try {
+		compareCommands(expectedCommand, commands[0]);
+	}
+	catch (...) {
+		std::cerr << "shellTest_InvalidInput3: Test failed during comparison." << std::endl;
+		return;
+	}
+	std::cout << "shellTest_InvalidInput3 Test succeeded." << std::endl;
+}
+
+auto shellTest_InvalidInput4(ShellInterpreter& shellInterpreter) {
+	const auto input =
+		"She travelling acceptance men unpleasant her especially entreaties law. Law forth but end any arise chief arose.";
+	auto commands = shellInterpreter.parseCommands(input);
+
+	if (commands.size() != 1) {
+		std::cerr << "shellTest_InvalidInput4: Test failed, expected 1 command, instead got: " << commands.size() << std::endl;
+	}
+
+	auto expectedCommand = Command("She", {
+		"travelling", "acceptance", "men", "unpleasant", "her", "especially", "entreaties", "law.", "Law", "forth",
+		"but", "end", "any", "arise", "chief", "arose."
+		}, RedirectType::None, "");
+	
+	try {
+		compareCommands(expectedCommand, commands[0]);
+	}
+	catch (...) {
+		std::cerr << "shellTest_InvalidInput4: Test failed during comparison." << std::endl;
+		return;
+	}
+	std::cout << "shellTest_InvalidInput4 Test succeeded." << std::endl;
+
+}
+
 
 void TestRunner::runTests() {
 	auto shellInterpreter = ShellInterpreter({}, {}, {});
-
+	
 	shellTest_SimpleCommand(shellInterpreter);
 	shellTest_NoCommand(shellInterpreter);
 	shellTest_FileRedirect(shellInterpreter);
 	shellTest_MultipleCommandsWithFileRedirects(shellInterpreter);
+	shellTest_InvalidInput1(shellInterpreter);
+	shellTest_InvalidInput2(shellInterpreter);
+	shellTest_InvalidInput3(shellInterpreter);
+	shellTest_InvalidInput4(shellInterpreter);
 }

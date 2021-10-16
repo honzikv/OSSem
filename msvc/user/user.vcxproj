@@ -27,6 +27,8 @@
     <ClInclude Include="..\..\src\user\Shell\ShellInterpreter.h" />
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h" />
     <ClInclude Include="..\..\src\user\Utils\StringUtils.h" />
+    <ClInclude Include="IProcess.h" />
+    <ClInclude Include="Rgen.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
@@ -34,6 +36,8 @@
     <ClCompile Include="..\..\src\user\shell.cpp" />
     <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp" />
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp" />
+    <ClCompile Include="IProcess.cpp" />
+    <ClCompile Include="Rgen.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A5F63FF3-DE9A-4B0B-BBF9-AD27200CE81F}</ProjectGuid>

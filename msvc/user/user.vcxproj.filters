@@ -22,6 +22,12 @@
     <Filter Include="Source Files\Shell">
       <UniqueIdentifier>{8008f6b2-dfbd-4b81-b049-f74a63ef6956}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Processes">
+      <UniqueIdentifier>{18db3f21-d628-4252-88cb-0f917dcd1c37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Processes">
+      <UniqueIdentifier>{9d36ea4c-0c08-466a-b790-bfac1f169dae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h">
@@ -48,6 +54,12 @@
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Rgen.h">
+      <Filter>Header Files\Processes</Filter>
+    </ClInclude>
+    <ClInclude Include="IProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\user\rtl.cpp">
@@ -64,6 +76,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp">
       <Filter>Source Files\Shell</Filter>
+    </ClCompile>
+    <ClCompile Include="Rgen.cpp">
+      <Filter>Source Files\Processes</Filter>
+    </ClCompile>
+    <ClCompile Include="IProcess.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

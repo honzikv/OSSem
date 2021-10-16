@@ -27,6 +27,7 @@ namespace StringUtils {
 	inline std::string trimFromRight(const std::string& str) {
 		return std::regex_replace(str, std::regex("\\s+$"), std::string(""));
 	}
+	
 
 	/**
 	 * Odstrani mezery z retezce

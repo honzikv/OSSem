@@ -9,12 +9,8 @@
 #include "rtl.h"
 #include "Shell/ShellInterpreter.h"
 
+// Debug pro run testu
 #define IS_DEBUG true
-
-#if IS_DEBUG
-
-
-#endif
 
 
 size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
@@ -88,13 +84,4 @@ auto ShellInterpreter::executeCommand(const Command& command) -> void {
 
 auto ShellInterpreter::toggleDebug() -> void {
 	debugOn = !debugOn;
-}
-
-auto ShellInterpreter::parseLine(const std::string& line) {
-	const auto commands = commandParser->parseCommands(line);
-
-	for (const auto& command : commands) {
-		executeCommand(command);
-		std::cout << command.commandName << std::endl;
-	}
 }
