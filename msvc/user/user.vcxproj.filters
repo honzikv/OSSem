@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{2351bf44-0969-4836-9a13-09f36d6bf21a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Shell">
+      <UniqueIdentifier>{e6f2d4d0-149e-4f85-bcab-6904a5d72542}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shell">
+      <UniqueIdentifier>{8008f6b2-dfbd-4b81-b049-f74a63ef6956}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h">
@@ -27,10 +36,16 @@
     <ClInclude Include="..\..\src\user\shell.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CommandParser.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\..\src\user\Utils\StringUtils.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="StringUtils.h">
+    <ClInclude Include="..\..\src\user\Shell\CommandParser.h">
+      <Filter>Header Files\Shell</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\user\Shell\ShellInterpreter.h">
+      <Filter>Header Files\Shell</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\user\Tests\UnitTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,14 +53,17 @@
     <ClCompile Include="..\..\src\user\rtl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\user\shell.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\api\api.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CommandParser.cpp">
+    <ClCompile Include="..\..\src\user\shell.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp">
+      <Filter>Source Files\Shell</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp">
+      <Filter>Source Files\Shell</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
