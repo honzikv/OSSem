@@ -36,6 +36,7 @@
     <ClCompile Include="..\..\src\user\shell.cpp" />
     <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp" />
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp" />
+    <ClCompile Include="Freq.cpp" />
     <ClCompile Include="IProcess.cpp" />
     <ClCompile Include="Rgen.cpp" />
   </ItemGroup>

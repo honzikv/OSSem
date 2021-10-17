@@ -1,6 +1,7 @@
-#include "io.h"
+ #include "io.h"
 #include "kernel.h"
 #include "handles.h"
+#include <iostream>
 
 size_t Read_Line_From_Console(char *buffer, const size_t buffer_size) {
 	kiv_hal::TRegisters registers;
