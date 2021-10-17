@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h" />
     <ClInclude Include="..\..\src\api\hal.h" />
+    <ClInclude Include="..\..\src\user\Freq.h" />
     <ClInclude Include="..\..\src\user\rtl.h" />
     <ClInclude Include="..\..\src\user\shell.h" />
     <ClInclude Include="..\..\src\user\Shell\CommandParser.h" />
@@ -28,7 +29,6 @@
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h" />
     <ClInclude Include="..\..\src\user\Utils\StringUtils.h" />
     <ClInclude Include="IProcess.h" />
-    <ClInclude Include="Rgen.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
@@ -38,7 +38,6 @@
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp" />
     <ClCompile Include="Freq.cpp" />
     <ClCompile Include="IProcess.cpp" />
-    <ClCompile Include="Rgen.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A5F63FF3-DE9A-4B0B-BBF9-AD27200CE81F}</ProjectGuid>

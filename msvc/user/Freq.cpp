@@ -1,10 +1,9 @@
-#include "../api/hal.h"
 #include "rtl.h"
 #include <array>
 #include <iomanip>
 #include <sstream>
 #include <string_view>
-#include "shell.h"
+#include "Freq.h"
 
 constexpr auto BUFFER_SIZE = 256;
 constexpr auto FREQ_TABLE_SIZE = 256; // cteme byty a muzeme mit az 2^8 variant cisel - tzn 256
