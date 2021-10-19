@@ -57,8 +57,7 @@ public:
 		stdOut(stdOut) {}
 
 	std::vector<Command> parseCommands(const std::string& line);
-
-	auto parseLine(const std::string& line);
+	
 
 	auto executeCommand(const Command& command) -> void;
 
