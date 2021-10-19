@@ -125,7 +125,7 @@ void writeToRegisters(std::vector<char> buffer, int startIndex) {
         bytesAdded++;
     }
 
-    addressPacket.sectors = static_cast<void*>(buffer.data());
+    addressPacket.sectors = static_cast<void *>(buffer.data());
 
     kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Disk_IO, registers); //TODO error
 }
@@ -167,7 +167,7 @@ int getIntFromCharVector(std::vector<unsigned char> bytes) {
  * @param value hodnota
  * @return vektor bytu
  */
-std::vector<unsigned char > getBytesFromInt(int value) {
+std::vector<unsigned char> getBytesFromInt(int value) {
     std::vector<unsigned char> res;
     res.push_back(value >> 8);
     res.push_back(value & 0xFF);
@@ -220,9 +220,9 @@ void writeValueToFat(std::vector<unsigned char> &fat, int pos, int newValue) {
  * Ulozi FAT
  * @param fat FAT
  */
-void saveFat(const std::vector<unsigned char >& fat) {
+void saveFat(const std::vector<unsigned char> &fat) {
     std::vector<char> fatChar;
-    for (unsigned char i : fat) {
+    for (unsigned char i: fat) {
         fatChar.push_back(i);
     }
     writeToRegisters(fatChar, 1 - DATA_SECTOR_CONVERSION);
@@ -423,11 +423,11 @@ DirItem getDirItemCluster(int startCluster, const Path &path, const std::vector<
  * @param fat FAT
  * @return cislo clusteru / -1, pokud se nepodarilo
  */
-int allocateNewCluster(int startCluster, std::vector<unsigned char > &fat) {
+int allocateNewCluster(int startCluster, std::vector<unsigned char> &fat) {
     int freeIndex = getFreeIndex(fat);
     if (freeIndex == -1) {
         return -1;
-    } else{
+    } else {
         std::vector<int> sectorsIndexes = getSectorsIndexes(fat, startCluster);
 
         writeValueToFat(fat, freeIndex, END_CLUSTER_INT); // zapise do FAT konec clusteru
@@ -438,4 +438,64 @@ int allocateNewCluster(int startCluster, std::vector<unsigned char > &fat) {
 
         return freeIndex;
     }
+}
+
+/**
+ * Zjisti, jestli je nazev souboru validni (neni prazdny, neprekracuje meze nazev ani pripona, pripona neni prazdna po '.')
+ * @param fileName nazev souboru
+ * @return true pokud je nazev souboru validni, jinak false
+ */
+bool validateFileName(std::string fileName) {
+    std::vector<char> fileNameChar;
+    std::vector<char> fileExtensionChar;
+
+    bool isExtension = false;
+    for (int i = 0; i < fileName.size(); ++i) {
+        if (fileName.at(i) == '.') { //TODO const
+            isExtension = true;
+            continue;
+        }
+
+        if (isExtension) {
+            fileExtensionChar.push_back(fileName.at(i));
+        } else {
+            fileNameChar.push_back(fileName.at(i));
+        }
+    }
+
+    if (fileNameChar.empty() || fileNameChar.size() > FILE_NAME_SIZE ||
+        fileExtensionChar.size() > FILE_EXTENSION_SIZE ||
+        (isExtension && fileExtensionChar.empty())) {
+        return false;
+    }
+
+    return true;
+}
+
+std::vector<kiv_os::TDir_Entry> readDirectory(Path path, const std::vector<unsigned char>& fat) {
+    if (path.path.back() == ".") { //TODO const
+        path.path.pop_back();
+    }
+
+    if (path.path.empty()) { // root
+        std::vector<unsigned char> rootContent = readFromRegisters(ROOT_DIR_SIZE, SECTOR_SIZE,
+                                                                   ROOT_DIR_SECTOR_START - DATA_SECTOR_CONVERSION);
+        return getDirectoryItems();
+    }
+
+    DirItem dirItem = getDirItemCluster(ROOT_DIR_SECTOR_START, path, fat);
+
+    int startCluster = dirItem.firstCluster;
+
+    std::vector<int> clusterIndexes = getSectorsIndexes(fat, startCluster);
+
+    std::vector<unsigned char> clusterData;
+    std::vector<unsigned char> allClustersData;
+
+    for (int clusterIndex : clusterIndexes) {
+        clusterData = readFromRegisters(1, SECTOR_SIZE, clusterIndex);
+        allClustersData.insert(allClustersData.end(), clusterData.begin(), clusterData.end()); //zkopirovat prvky na konec
+    }
+
+    return getDirectoryItems();
 }

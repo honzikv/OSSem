@@ -5,6 +5,7 @@
 #ifndef OS_FAT_HELPER_H
 #define OS_FAT_HELPER_H
 
+#include <api.h>
 #include "path.h"
 
 const int FAT_TABLE_SECTOR_COUNT = 9;
@@ -57,6 +58,10 @@ void saveFat(const std::vector<unsigned char >& fat);
 std::vector<unsigned char > getBytesFromInt(int value);
 
 int allocateNewCluster(int startCluster, std::vector<unsigned char > &fat);
+
+bool validateFileName(std::string fileName);
+
+std::vector<kiv_os::TDir_Entry> readDirectory(Path path, const std::vector<unsigned char>& fat);
 
 
 
