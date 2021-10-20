@@ -8,62 +8,67 @@
 #include <api.h>
 #include "path.h"
 
-const int FAT_TABLE_SECTOR_COUNT = 9;
-const int SECTOR_SIZE = 512;
-const int DISK_NUM = 129;
-const int ROOT_DIR_SECTOR_START = 19;
-const int USER_DATA_START = 33;
-const int ROOT_DIR_SIZE = 14;
-const int RESERVED_ENTRIES = 2; // pozice 0 a 1 jsou rezervovane
-const int DATA_SECTOR_CONVERSION = USER_DATA_START - RESERVED_ENTRIES; //data sector zacina na pozici 33, ale prvni cluster je vzdy 2 (33 - 2 = 31)
-const int FAT_ADDRESS_SIZE = 12;
-const int BITS_IN_BYTES = 8;
-const int BITS_IN_BYTES_HALVED = (int) (BITS_IN_BYTES * 0.5);
-const double INDEX_TO_FAT_CONVERSION = (double) FAT_ADDRESS_SIZE / BITS_IN_BYTES; // ration na prepocet pozice do indexu v FAT
-const int MAX_CLUSTER_NUM = 4096;
-const int FILE_NAME_SIZE = 8; // maximalni delka nazvu slozky/souboru
-const int FILE_EXTENSION_SIZE = 3; // maximalni delka pripony slozky/souboru
-const int DIR_ITEM_ATTR_TO_CLUSTER = 14; // pocet bytu mezi atributy a cislem prvniho clusteru v zaznamu
-const int DIR_ITEM_CLUSTER_BYTES = 2; // pocet bytu udavajici cislo clusteru
-const int DIR_ITEM_FILE_SIZE_BYTES = 4; // pocet bytu udavajici velikost souboru
-const int END_CLUSTER_INT = 4095; // oznacuje konec v clusteru
-const int MAX_ITEMS_CLUSTER = 16;
+const int kFatTableSectorCount = 9;
+const int kSectorSize = 512;
+const int kDiskNum = 129;
+const int kRootDirSectorStart = 19;
+const int kUserDataStart = 33;
+const int kRootDirSize = 14;
+const int kReservedEntries = 2; // pozice 0 a 1 jsou rezervovane
+const int kDataSectorConversion =
+        kUserDataStart - kReservedEntries; //data sector zacina na pozici 33, ale prvni cluster je vzdy 2 (33 - 2 = 31)
+const int kFatAddressSize = 12;
+const int kBitsInBytes = 8;
+const int kBitsInBytesHalved = (int) (kBitsInBytes * 0.5);
+const double kIndexToFatConversion =
+        (double) kFatAddressSize / kBitsInBytes; // ration na prepocet pozice do indexu v FAT
+const int kMaxClusterNum = 4096;
+const int kFileNameSize = 8; // maximalni delka nazvu slozky/souboru
+const int kFileExtensionSize = 3; // maximalni delka pripony slozky/souboru
+const int kDirItemUnusedBytes = 14; // pocet bytu mezi atributy a cislem prvniho clusteru v zaznamu
+const int kDirItemClusterBytes = 2; // pocet bytu udavajici cislo clusteru
+const int kDirItemFileSizeBytes = 4; // pocet bytu udavajici velikost souboru
+const int kEndClusterInt = 4095; // oznacuje konec v clusteru
+const int kMaxItemsPerCluster = 16; // maximalni pocet polozek v clusteru
+const int kDirItemSize = 32; // veliksot v bytech polozky
 
 struct DirItem {
-    std::string fileName;
-    std::string fileExtension;
-    size_t fileSize;
-    int firstCluster;
+    std::string file_name;
+    std::string file_extension;
+    size_t file_size;
+    int first_cluster;
     unsigned char attribute;
 };
 
-std::vector<unsigned char> loadFatTable(int startIndex);
+std::vector<unsigned char> LoadFatTable(int start_index);
 
-std::vector<unsigned char> readFromRegisters(int clusterCount, int sectorSize, int startIndex);
+std::vector<unsigned char> ReadFromRegisters(int cluster_count, int sector_size, int start_index);
 
-uint16_t getFreeIndex(std::vector<unsigned char> fat);
+uint16_t GetFreeIndex(std::vector<unsigned char> fat);
 
-std::vector<int> getSectorsIndexes(const std::vector<unsigned char>& fat, int start);
+std::vector<int> GetSectorsIndexes(const std::vector<unsigned char> &fat, int start);
 
-DirItem getDirItemCluster(int startCluster, const Path& path, const std::vector<unsigned char >& fat);
+DirItem GetDirItemCluster(int start_cluster, const Path &path, const std::vector<unsigned char> &fat);
 
-std::vector<DirItem> getFoldersFromDir (const std::vector<unsigned char>& fat, int sectorNum);
+std::vector<DirItem> GetFoldersFromDir(const std::vector<unsigned char> &fat, int sector_num);
 
-void writeValueToFat(std::vector<unsigned char> &fat, int pos, int newValue);
+void WriteValueToFat(std::vector<unsigned char> &fat, int pos, int new_value);
 
-void writeToRegisters(std::vector<char> buffer, int startIndex);
+void WriteToRegisters(std::vector<char> buffer, int start_index);
 
-void saveFat(const std::vector<unsigned char >& fat);
+void SaveFat(const std::vector<unsigned char> &fat);
 
-std::vector<unsigned char > getBytesFromInt(int value);
+std::vector<unsigned char> GetBytesFromInt(int value);
 
-int allocateNewCluster(int startCluster, std::vector<unsigned char > &fat);
+int AllocateNewCluster(int start_cluster, std::vector<unsigned char> &fat);
 
-bool validateFileName(std::string fileName);
+bool ValidateFileName(const std::string &file_name);
 
-std::vector<kiv_os::TDir_Entry> readDirectory(Path path, const std::vector<unsigned char>& fat);
+std::vector<kiv_os::TDir_Entry> ReadDirectory(Path path, const std::vector<unsigned char> &fat);
 
+std::vector<kiv_os::TDir_Entry>
+GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, bool is_root);
 
-
+kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir);
 
 #endif //OS_FAT_HELPER_H

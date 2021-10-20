@@ -1,3 +1,7 @@
+//
+// Created by Kuba on 09.10.2021.
+//
+
 #pragma once
 
 #include "../api/api.h"
@@ -14,18 +18,20 @@ struct File {
 
 class VFS {
 public:
-    virtual kiv_os::NOS_Error open(Path &path, kiv_os::NOpen_File flags, File &file, uint8_t attributes) = 0;
+    virtual kiv_os::NOS_Error Open(Path &path, kiv_os::NOpen_File flags, File &file, uint8_t attributes) = 0;
 
-    virtual kiv_os::NOS_Error close(File file) = 0;
+    virtual kiv_os::NOS_Error Close(File file) = 0;
 
-    virtual kiv_os::NOS_Error readDir(const Path &path, std::vector<kiv_os::TDir_Entry> &entries) = 0;
+    virtual kiv_os::NOS_Error ReadDir(const Path &path, std::vector<kiv_os::TDir_Entry> &entries) = 0;
 
-    virtual kiv_os::NOS_Error mkDir(Path &path, uint16_t attributes) = 0;
+    virtual kiv_os::NOS_Error MkDir(Path &path, uint8_t attributes) = 0;
 
-    virtual kiv_os::NOS_Error rmDir(const Path &path) = 0;
+    virtual kiv_os::NOS_Error RmDir(const Path &path) = 0;
 
-    virtual kiv_os::NOS_Error read(File file, size_t size, size_t offset, std::vector<char> &out) = 0;
+    virtual kiv_os::NOS_Error CreateFile(Path &path, uint8_t attributes) = 0;
 
-    virtual kiv_os::NOS_Error write(File file, size_t size, size_t offset, std::vector<char> buffer, size_t &written) = 0;
+    virtual kiv_os::NOS_Error Read(File file, size_t size, size_t offset, std::vector<char> &out) = 0;
+
+    virtual kiv_os::NOS_Error Write(File file, size_t size, size_t offset, std::vector<char> buffer, size_t &written) = 0;
 
 };
