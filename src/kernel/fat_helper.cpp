@@ -7,7 +7,7 @@
 #include <string>
 #include "fat_helper.h"
 #include "path.h"
-#include "api.h"
+#include "api.h" //TODO cesta
 
 /**
  * Nacte FAT tabulku na specifickem indexu (urcuje 1. / 2. tabulku)
@@ -79,7 +79,7 @@ std::vector<unsigned char> ReadFromRegisters(int cluster_count, int sector_size,
 
     int size = cluster_count * sector_size;
 
-    auto sector = new std::string[size]; //TODO size
+    unsigned char sector[size]; //TODO size a typ
     addressPacket.count = cluster_count;
     addressPacket.sectors = (void *) sector;
     addressPacket.lba_index = start_index;
@@ -131,7 +131,7 @@ void WriteToRegisters(std::vector<char> buffer, int start_index) {
 }
 
 /**
- * Ziska cislo clusteru z FAT
+ * Ziska cislo clusteru z FAT (12 bit cislo, little endian)
  * @param fat FAT
  * @param pos pozice do FAT
  * @return cislo clusteru
@@ -139,12 +139,12 @@ void WriteToRegisters(std::vector<char> buffer, int start_index) {
 uint16_t GetClusterNum(std::vector<unsigned char> fat, int pos) {
     int index = (int) (pos * kIndexToFatConversion);
     uint16_t cluster_num = 0;
-    if (pos % 2 == 0) { // prvni byte cely + prvni pulka druheho bytu
-        cluster_num |= (uint16_t) fat.at(index) << kBitsInBytesHalved;
-        cluster_num |= ((uint16_t) fat.at(index + 1) & 0xF0) >> kBitsInBytesHalved;
-    } else { // druha pulka prvniho bytu + cely druhy byte
-        cluster_num |= ((uint16_t) fat.at(index) & 0x0F) << kBitsInBytes;
-        cluster_num |= (uint16_t) fat.at(index + 1);
+    if (pos % 2 == 0) { // druha pulka druheho bytu + prvni byte cely
+        cluster_num |= ((uint16_t) fat.at(index + 1) & 0x0F) << kBitsInBytes;
+        cluster_num |= (uint16_t) fat.at(index);
+    } else { // cely druhy byte + prvni pulka prvniho bytu
+        cluster_num |= (uint16_t) fat.at(index + 1) << kBitsInBytesHalved;
+        cluster_num |= ((uint16_t) fat.at(index) & 0xF0) >> kBitsInBytesHalved;
     }
     return cluster_num;
 }
@@ -156,8 +156,8 @@ uint16_t GetClusterNum(std::vector<unsigned char> fat, int pos) {
  */
 int GetIntFromCharVector(std::vector<unsigned char> bytes) {
     int res = 0;
-    for (int i = 0; i < bytes.size(); i++) {
-        res |= (int) bytes.at(i) << ((bytes.size() - 1 - i) * kBitsInBytes);
+    for (int i = (int)bytes.size() - 1; i >=0; i--) {
+        res |= (int) bytes.at(i) << (i * kBitsInBytes);
     }
     return res;
 }
@@ -169,8 +169,8 @@ int GetIntFromCharVector(std::vector<unsigned char> bytes) {
  */
 std::vector<unsigned char> GetBytesFromInt(int value) {
     std::vector<unsigned char> res;
+    res.push_back(value & 0xFF); // obracene - little endian
     res.push_back(value >> 8);
-    res.push_back(value & 0xFF);
     return res;
 }
 
@@ -183,13 +183,14 @@ std::vector<unsigned char> GetBytesFromInt(int value) {
 uint16_t GetFreeIndex(std::vector<unsigned char> fat) {
     for (int i = 0; i < fat.size(); i += 2) {
         uint16_t cluster_num = 0;
-        cluster_num |= (uint16_t) fat.at(i) << kBitsInBytesHalved;
-        cluster_num |= ((uint16_t) fat.at(i + 1) & 0xF0) >> kBitsInBytesHalved;
+        cluster_num |= ((uint16_t) fat.at(i + 1) & 0x0F) << kBitsInBytes;
+        cluster_num |= (uint16_t) fat.at(i);
         if (cluster_num == 0) {
             return i;
         }
-        cluster_num |= ((uint16_t) fat.at(i + 1) & 0x0F) << kBitsInBytes;
-        cluster_num |= (uint16_t) fat.at(i + 2);
+        cluster_num = 0;
+        cluster_num |= (uint16_t) fat.at(i + 2) << kBitsInBytesHalved;
+        cluster_num |= ((uint16_t) fat.at(i + 1) & 0xF0) >> kBitsInBytesHalved;
         if (cluster_num == 0) {
             return i + 1;
         }
@@ -206,13 +207,11 @@ uint16_t GetFreeIndex(std::vector<unsigned char> fat) {
 void WriteValueToFat(std::vector<unsigned char> &fat, int pos, int new_value) {
     int index = (int) (pos * kIndexToFatConversion);
     if (pos % 2 == 0) {
-        fat.at(index) = new_value >> kBitsInBytesHalved;
-        int pom = (uint16_t) fat.at(index + 1) & 0x0F | (new_value & 0x0F) << kBitsInBytesHalved;
-        fat.at(index + 1) = pom;
+        fat.at(index) = new_value & 0xFF;
+        fat.at(index + 1) = (uint16_t) fat.at(index + 1) & 0xF0 | (new_value & 0xF00) >> kBitsInBytes;
     } else {
-        int pom = (uint16_t) fat.at(index) & 0xF0 | (new_value & 0xF00) >> kBitsInBytes;
-        fat.at(index) = pom;
-        fat.at(index + 1) = new_value & 0xFF;
+        fat.at(index) = (uint16_t) fat.at(index) & 0x0F | (new_value & 0x0F) << kBitsInBytesHalved;
+        fat.at(index + 1) = (new_value & 0xFF0) >> kBitsInBytesHalved;
     }
 }
 
@@ -290,7 +289,7 @@ std::vector<DirItem> GetDirectoryItems(std::vector<unsigned char> content, int s
             }
         }
 
-        dir_item.attribute = content[i++];
+        dir_item.attribute = content.at(i++);
 
         i += kDirItemUnusedBytes;
 
@@ -303,7 +302,6 @@ std::vector<DirItem> GetDirectoryItems(std::vector<unsigned char> content, int s
 
         dir_item.first_cluster = GetIntFromCharVector(cluster_bytes);
 
-
         std::vector<unsigned char> file_size_bytes;
 
         for (int j = 0; j < kDirItemFileSizeBytes; ++j) {
@@ -311,8 +309,7 @@ std::vector<DirItem> GetDirectoryItems(std::vector<unsigned char> content, int s
             i++;
         }
 
-        dir_item.first_cluster = GetIntFromCharVector(file_size_bytes);
-
+        dir_item.file_size = GetIntFromCharVector(file_size_bytes);
 
         dir_content.push_back(dir_item);
 
@@ -511,6 +508,7 @@ std::vector<kiv_os::TDir_Entry> ReadDirectory(Path path, const std::vector<unsig
     return GetDirectoryEntries(all_clusters_data, clusters_indexes.size(), false);
 }
 
+//TODO check co ma vsechno root
 /**
  * Zapise pro slozku aktualni '.' a nadrazenou slozku '..'
  * @param cur_index index aktualni slozky
@@ -648,7 +646,7 @@ GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, b
         dir_content.push_back(dir_entry);
     }
 
-    if (is_root) { // je root - odstranit odkaz na aktualni polozku
+    if (is_root) { // je root - odstranit odkaz na aktualni polozku // TODO check co ma vsechno root
         dir_content.erase(dir_content.begin());
     } else { // neni root - odstranit odkaz na aktualni a nadrazenou polozku
         dir_content.erase(dir_content.begin());
