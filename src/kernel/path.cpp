@@ -34,6 +34,9 @@ void Path::CreatePath(const char *file_path) {
     //TODO osetrit mozna prazdnou cestu nebo neco takovyho
 }
 
+/**
+ * Vytvori jmeno slozky/souboru a priponu
+ */
 void Path::CreateName() {
     full_name = path_vector.back();
     bool isExtension = false;
@@ -48,5 +51,12 @@ void Path::CreateName() {
             name.push_back(c);
         }
     }
+}
+
+/**
+ * Odstani nazev souboru/slozky z cesty
+ */
+void Path::DeleteNameFromPath() {
+    path_vector.pop_back();
 }
 

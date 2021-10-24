@@ -25,7 +25,7 @@ class Fat12 : public VFS {
 
     kiv_os::NOS_Error MkDir(Path &path, uint8_t attributes) override;
 
-    kiv_os::NOS_Error RmDir(const Path &path) override;
+    kiv_os::NOS_Error RmDir(Path &path) override;
 
     kiv_os::NOS_Error CreateFile(Path &path, uint8_t attributes) override;
 

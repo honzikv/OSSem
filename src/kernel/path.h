@@ -15,4 +15,5 @@ public:
     std::string name;
     std::string extension;
     Path(const char *file_path);
+    void DeleteNameFromPath();
 };

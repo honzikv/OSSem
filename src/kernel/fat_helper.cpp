@@ -2,6 +2,7 @@
 // Created by Kuba on 10.10.2021.
 //
 
+#include <utility>
 #include <vector>
 #include <hal.h>
 #include <string>
@@ -17,7 +18,7 @@
 std::vector<unsigned char> LoadFatTable(int start_index) {
     std::vector<unsigned char> table;
 
-    table = ReadFromRegisters(kFatTableSectorCount, kSectorSize, start_index);
+    table = ReadFromRegisters(kFatTableSectorCount, start_index);
     return table;
 }
 
@@ -43,22 +44,24 @@ bool CheckFatConsistency(std::vector<unsigned char> first_table, std::vector<uns
 std::vector<unsigned char> LoadRootDirectory() {
     std::vector<unsigned char> root_dir;
 
-    root_dir = ReadFromRegisters(kRootDirSize, kSectorSize, kRootDirSectorStart);
+    root_dir = ReadFromRegisters(kRootDirSize, kRootDirSectorStart);
 
     return root_dir;
 }
 
 /**
  * Precte data zacinajici a koncici na danych clusterech (tzn. sektorech)
- * @param start_cluster cislo prvniho clusteru
  * @param cluster_count pocet clusteru k precteni
+ * @param start_cluster cislo prvniho clusteru
+ * @param is_root je root slozka
  * @return data z clusteru
  */
-std::vector<unsigned char> ReadDataFromCluster(int start_cluster, int cluster_count) {
+std::vector<unsigned char> ReadDataFromCluster(int cluster_count, int start_cluster, bool is_root) {
     std::vector<unsigned char> bytes;
-    int startIndex = start_cluster + kDataSectorConversion;
+    // cluster 2 je prvni a je vlastne na pozici 33 (krome root)
+    int start_index = start_cluster + (is_root ? 0 : kDataSectorConversion);
 
-    bytes = ReadFromRegisters(cluster_count, kSectorSize, startIndex);
+    bytes = ReadFromRegisters(cluster_count, start_index);
 
     return bytes;
 }
@@ -71,13 +74,13 @@ std::vector<unsigned char> ReadDataFromCluster(int start_cluster, int cluster_co
  * @param start_index
  * @return
  */
-std::vector<unsigned char> ReadFromRegisters(int cluster_count, int sector_size, int start_index) {
+std::vector<unsigned char> ReadFromRegisters(int cluster_count, int start_index) {
     std::vector<unsigned char> result;
 
     kiv_hal::TRegisters registers;
     kiv_hal::TDisk_Address_Packet addressPacket;
 
-    int size = cluster_count * sector_size;
+    int size = cluster_count * kSectorSize;
 
     unsigned char sector[size]; //TODO size a typ
     addressPacket.count = cluster_count;
@@ -98,13 +101,19 @@ std::vector<unsigned char> ReadFromRegisters(int cluster_count, int sector_size,
     return result;
 }
 
+//TOD koment
+void WriteDataToCluster(std::vector<char> buffer, int start_cluster, bool is_root) {
+    int start_index = start_cluster + (is_root ? 0 : kDataSectorConversion);
+    WriteToRegisters(std::move(buffer), start_index);
+}
+
 // TODO koment
 void WriteToRegisters(std::vector<char> buffer, int start_index) {
     kiv_hal::TRegisters registers;
     kiv_hal::TDisk_Address_Packet address_packet;
 
     address_packet.count = buffer.size() / kSectorSize + (buffer.size() % kSectorSize);
-    address_packet.lba_index = start_index + kDataSectorConversion;
+    address_packet.lba_index = start_index;
 
     registers.rdx.l = kDiskNum;
     registers.rax.h = static_cast<decltype(registers.rax.h)>(kiv_hal::NDisk_IO::Write_Sectors);
@@ -113,7 +122,7 @@ void WriteToRegisters(std::vector<char> buffer, int start_index) {
 
     // cast posledniho sektoru nemusi byt vzdy prepsana - mohou tam byt jina data - nechat
     int last_sector = static_cast<int>(address_packet.count) + start_index - 1;
-    std::vector<unsigned char> lastSectorData = ReadFromRegisters(1, kSectorSize, last_sector);
+    std::vector<unsigned char> lastSectorData = ReadFromRegisters(1, last_sector);
     int keep = static_cast<int>(address_packet.count) * kSectorSize;
 
     int last_taken = (int) buffer.size() % kSectorSize;
@@ -156,7 +165,7 @@ uint16_t GetClusterNum(std::vector<unsigned char> fat, int pos) {
  */
 int GetIntFromCharVector(std::vector<unsigned char> bytes) {
     int res = 0;
-    for (int i = (int)bytes.size() - 1; i >=0; i--) {
+    for (int i = (int) bytes.size() - 1; i >= 0; i--) {
         res |= (int) bytes.at(i) << (i * kBitsInBytes);
     }
     return res;
@@ -170,7 +179,24 @@ int GetIntFromCharVector(std::vector<unsigned char> bytes) {
 std::vector<unsigned char> GetBytesFromInt(int value) {
     std::vector<unsigned char> res;
     res.push_back(value & 0xFF); // obracene - little endian
-    res.push_back(value >> 8);
+    res.push_back((value >> kBitsInBytes) & 0xFF);
+    return res;
+}
+
+/**
+ * Vrati vektor bytu z celociselne hodnoty (4 byty)
+ * @param value hodnota
+ * @return vektor bytu
+ */
+std::vector<unsigned char> GetBytesFromInt4(int value) {
+    std::vector<unsigned char> res;
+    for (int i = 0; i < 4; ++i) { // obracene - little endian
+        res.push_back((value >> i * kBitsInBytes) & 0xFF);
+    }
+//    res.push_back(value & 0xFF); // obracene - little endian
+//    res.push_back((value >> 8) & 0xFF);
+//    res.push_back((value >> 16) & 0xFF);
+//    res.push_back((value >> 24) & 0xFF);
     return res;
 }
 
@@ -224,8 +250,8 @@ void SaveFat(const std::vector<unsigned char> &fat) {
     for (unsigned char i: fat) {
         fat_char.push_back((char) i);
     }
-    WriteToRegisters(fat_char, 1 - kDataSectorConversion);
-    WriteToRegisters(fat_char, 1 + kFatTableSectorCount - kDataSectorConversion);
+    WriteToRegisters(fat_char, 1); // 1.
+    WriteToRegisters(fat_char, 1 + kFatTableSectorCount); // 2.
 }
 
 
@@ -324,9 +350,10 @@ std::vector<DirItem> GetDirectoryItems(std::vector<unsigned char> content, int s
  * @return vektor polozek adresare v dane slozce
  */
 std::vector<DirItem> GetFoldersFromDir(const std::vector<unsigned char> &fat, int sector_num) {
-    if (sector_num == kRootDirSectorStart) {
-        std::vector<unsigned char> data_clusters = ReadDataFromCluster(kRootDirSectorStart - kDataSectorConversion,
-                                                                       kRootDirSize);
+    if (sector_num == kRootDirSectorStart) { // root
+        std::vector<unsigned char> data_clusters = ReadDataFromCluster(kRootDirSize,
+                                                                       kRootDirSectorStart - kDataSectorConversion,
+                                                                       true);
 
         std::vector<DirItem> content = GetDirectoryItems(data_clusters, kRootDirSize); //TODO udelat
 
@@ -342,7 +369,7 @@ std::vector<DirItem> GetFoldersFromDir(const std::vector<unsigned char> &fat, in
         std::vector<DirItem> dir_items;
 
         for (int i = 0; i < sectors_indexes.size(); ++i) {
-            data_clusters = ReadDataFromCluster(sectors_indexes[i], 1); // obsah jednoho clusteru
+            data_clusters = ReadDataFromCluster(1, sectors_indexes.at(i), false); // obsah jednoho clusteru
             std::vector<DirItem> content = GetDirectoryItems(data_clusters, 1);
 
             int j = i == 0 ? 2 : 0; // prvni cluster slozky - obsahuje i '.' a '..' - preskocit
@@ -481,12 +508,11 @@ bool ValidateFileName(const std::string &file_name) {
  */
 std::vector<kiv_os::TDir_Entry> ReadDirectory(Path path, const std::vector<unsigned char> &fat) {
     if (path.full_name == ".") { //odstrani '.' //TODO const
-        path.path_vector.pop_back();
+        path.DeleteNameFromPath();
     }
 
     if (path.path_vector.empty()) { // root
-        std::vector<unsigned char> rootContent = ReadFromRegisters(kRootDirSize, kSectorSize,
-                                                                   kRootDirSectorStart - kDataSectorConversion);
+        std::vector<unsigned char> rootContent = ReadDataFromCluster(kRootDirSize, kRootDirSectorStart, true);
         return GetDirectoryEntries(rootContent, kRootDirSize, true);
     }
 
@@ -500,7 +526,7 @@ std::vector<kiv_os::TDir_Entry> ReadDirectory(Path path, const std::vector<unsig
     std::vector<unsigned char> all_clusters_data;
 
     for (int cluster_index: clusters_indexes) {
-        cluster_data = ReadFromRegisters(1, kSectorSize, cluster_index);
+        cluster_data = ReadDataFromCluster(1, cluster_index, false);
         all_clusters_data.insert(all_clusters_data.end(), cluster_data.begin(),
                                  cluster_data.end()); //zkopirovat prvky na konec
     }
@@ -583,7 +609,7 @@ void WriteCurrentAndParentFolder(int cur_index, int parent_index, bool is_root) 
         }
     }
 
-    WriteToRegisters(buffer_to_write, cur_index);
+    WriteDataToCluster(buffer_to_write, cur_index, false);
 }
 
 /**
@@ -666,18 +692,22 @@ GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, b
 kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir) {
     std::string folder_name = path.full_name;
 
-    path.path_vector.pop_back(); // cesta, tzn. bez posledni polozky (jmena)
+    path.DeleteNameFromPath(); // cesta, tzn. bez posledni polozky (jmena)
 
     int start_sector;
 
     std::vector<int> sectors_indexes;
 
+    bool isRoot;
+
     if (path.path_vector.empty()) { //root
+        isRoot = true;
         start_sector = kRootDirSectorStart;
         for (int i = kRootDirSectorStart; i < kUserDataStart; ++i) {
             sectors_indexes.push_back(i);
         }
     } else {
+        isRoot = false;
         DirItem target_folder = GetDirItemCluster(kRootDirSectorStart, path, fat);
         sectors_indexes = GetSectorsIndexes(fat, target_folder.first_cluster);
         start_sector = sectors_indexes.at(0);
@@ -736,7 +766,8 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
 
     bool can_add = true; // zda je misto a lze pridat
 
-    if (path.path_vector.empty()) { // slozka v rootu
+
+    if (isRoot) { // slozka v rootu
         if (is_dir) {
             extra_dir_item += 1; // navic '.'
         }
@@ -748,11 +779,11 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
             extra_dir_item += 2; // navic '.' a '..'
         }
         if ((directory_items.size() + extra_dir_item) > (sectors_indexes.size() * kMaxItemsPerCluster)) {
-            int newClusterPos = AllocateNewCluster(start_sector, fat);
-            if (newClusterPos == -1) { // nepovedlo se alokovat novy cluster - nelze pridat
+            int new_cluster_pos = AllocateNewCluster(start_sector, fat);
+            if (new_cluster_pos == -1) { // nepovedlo se alokovat novy cluster - nelze pridat
                 can_add = false;
             } else {
-                sectors_indexes.push_back(newClusterPos);
+                sectors_indexes.push_back(new_cluster_pos);
             }
         }
     }
@@ -760,10 +791,10 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
     if (can_add) { // muzu pridat tak pridam
         size_t cluster_pos = (directory_items.size() + extra_dir_item - 1) /
                              kMaxItemsPerCluster; // poradi clusteru - jeden pojme 16 polozek
-        size_t item_pos = (directory_items.size() + extra_dir_item - 1) % kMaxItemsPerCluster; // poradi v ramci clusteru
+        size_t item_pos =
+                (directory_items.size() + extra_dir_item - 1) % kMaxItemsPerCluster; // poradi v ramci clusteru
 
-        std::vector<unsigned char> cluster_data = ReadFromRegisters(1, kSectorSize, sectors_indexes.at(cluster_pos) -
-                                                                                    kDataSectorConversion);
+        std::vector<unsigned char> cluster_data = ReadDataFromCluster(1, sectors_indexes.at(cluster_pos), isRoot);
 
         for (int j = 0; j < buffer_to_write.size(); ++j) {
             cluster_data.at(item_pos * kDirItemSize + j) = buffer_to_write.at(j);
@@ -772,8 +803,7 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
         for (unsigned char &data: cluster_data) {
             buffer_to_save.push_back((char) data);
         }
-
-        WriteToRegisters(buffer_to_save, sectors_indexes.at(cluster_pos) - kDataSectorConversion);
+        WriteDataToCluster(buffer_to_save, sectors_indexes.at(cluster_pos), isRoot);
     } else { // nelze alokovat cluster
         WriteValueToFat(fat, free_index, 0); // uvolni misto
         SaveFat(fat);
@@ -786,4 +816,64 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
     }
 
     return kiv_os::NOS_Error::Success;
+}
+
+/**
+ * Zmeni veliksot souboru v polozce adresare
+ * @param file_name cesta k souboru - neparsovana
+ * @param new_size nova velikost
+ * @param fat FAT
+ */
+void ChangeFileSize(const char *file_name, size_t new_size, const std::vector<unsigned char> &fat) {
+    Path path(file_name);
+    path.DeleteNameFromPath();
+
+    int start_sector = -1;
+    std::vector<int> sectors_indexes;
+    if (path.path_vector.empty()) { // root
+        start_sector = kRootDirSectorStart;
+        for (int i = kRootDirSectorStart; i < kUserDataStart; ++i) {
+            sectors_indexes.push_back(i);
+        }
+    } else { // ne root
+        DirItem dir_item = GetDirItemCluster(kRootDirSectorStart, path, fat);
+        sectors_indexes = GetSectorsIndexes(fat, dir_item.first_cluster);
+        start_sector = sectors_indexes.at(0);
+    }
+
+    std::vector<DirItem> directory_items = GetFoldersFromDir(fat, start_sector);
+
+    int item_index;
+
+    for (int i = 0; i < directory_items.size(); ++i) {
+        DirItem cur_dir_item = directory_items.at(i);
+        if (cur_dir_item.file_extension == path.extension && cur_dir_item.file_name == path.name) {
+            item_index = i;
+            break;
+        }
+    }
+
+    if (path.path_vector.empty()) {
+        item_index += 1; // pridat '.' //TODO check jestli tam je
+    } else {
+        item_index += 2; // pridat '.' a '..'
+    }
+
+    std::vector<unsigned char> file_size_bytes = GetBytesFromInt4(new_size);
+
+    size_t cluster_pos = item_index / kMaxItemsPerCluster; // poradi slozky
+    size_t item_pos = item_index % kMaxItemsPerCluster; // poradi v ramci clusteru
+
+    std::vector<unsigned char> data_folder;
+
+    data_folder = ReadDataFromCluster(1, sectors_indexes.at(cluster_pos), path.path_vector.empty());
+    // vlozit novou velikost
+    for (int i = kDirItemFileSizePos; i < kDirItemFileSizePos + kDirItemFileSizeBytes; ++i) {
+        data_folder.at(item_pos * kDirItemSize + i) = file_size_bytes.at(i - kDirItemFileSizePos);
+    }
+    std::vector<char> buffer_to_write;
+    buffer_to_write.insert(buffer_to_write.end(), data_folder.begin(), data_folder.end());
+
+    //TODO konverze
+    WriteDataToCluster(buffer_to_write, sectors_indexes.at(cluster_pos), path.path_vector.empty());
 }

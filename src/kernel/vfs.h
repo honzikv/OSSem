@@ -26,7 +26,7 @@ public:
 
     virtual kiv_os::NOS_Error MkDir(Path &path, uint8_t attributes) = 0;
 
-    virtual kiv_os::NOS_Error RmDir(const Path &path) = 0;
+    virtual kiv_os::NOS_Error RmDir(Path &path) = 0;
 
     virtual kiv_os::NOS_Error CreateFile(Path &path, uint8_t attributes) = 0;
 

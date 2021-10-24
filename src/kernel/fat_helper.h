@@ -28,6 +28,7 @@ const int kFileExtensionSize = 3; // maximalni delka pripony slozky/souboru
 const int kDirItemUnusedBytes = 14; // pocet bytu mezi atributy a cislem prvniho clusteru v zaznamu
 const int kDirItemClusterBytes = 2; // pocet bytu udavajici cislo clusteru
 const int kDirItemFileSizeBytes = 4; // pocet bytu udavajici velikost souboru
+const int kDirItemFileSizePos = 28; // pocatecni pozice bytu udavajici velikost souboru
 const int kEndClusterInt = 4095; // oznacuje konec v clusteru
 const int kMaxItemsPerCluster = 16; // maximalni pocet polozek v clusteru
 const int kDirItemSize = 32; // veliksot v bytech polozky
@@ -42,7 +43,9 @@ struct DirItem {
 
 std::vector<unsigned char> LoadFatTable(int start_index);
 
-std::vector<unsigned char> ReadFromRegisters(int cluster_count, int sector_size, int start_index);
+std::vector<unsigned char> ReadFromRegisters(int cluster_count, int start_index);
+
+std::vector<unsigned char> ReadDataFromCluster(int cluster_count, int start_index, bool is_root);
 
 uint16_t GetFreeIndex(std::vector<unsigned char> fat);
 
@@ -55,6 +58,8 @@ std::vector<DirItem> GetFoldersFromDir(const std::vector<unsigned char> &fat, in
 void WriteValueToFat(std::vector<unsigned char> &fat, int pos, int new_value);
 
 void WriteToRegisters(std::vector<char> buffer, int start_index);
+
+void WriteDataToCluster(std::vector<char> buffer, int start_cluster, bool is_root);
 
 void SaveFat(const std::vector<unsigned char> &fat);
 
@@ -70,5 +75,7 @@ std::vector<kiv_os::TDir_Entry>
 GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, bool is_root);
 
 kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir);
+
+void ChangeFileSize(const char* file_name, size_t new_size, const std::vector<unsigned char>& fat);
 
 #endif //OS_FAT_HELPER_H
