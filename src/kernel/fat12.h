@@ -21,7 +21,7 @@ class Fat12 : public VFS {
 
     kiv_os::NOS_Error Close(File file) override;
 
-    kiv_os::NOS_Error ReadDir(const Path &path, std::vector<kiv_os::TDir_Entry> &entries) override;
+    kiv_os::NOS_Error ReadDir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) override;
 
     kiv_os::NOS_Error MkDir(Path &path, uint8_t attributes) override;
 
@@ -29,12 +29,9 @@ class Fat12 : public VFS {
 
     kiv_os::NOS_Error CreateFile(Path &path, uint8_t attributes) override;
 
-    kiv_os::NOS_Error Read(File file, size_t size, size_t offset, std::vector<char> &out) override;
+    kiv_os::NOS_Error Read(File file, size_t bytes_to_read, size_t offset, std::vector<char> &buffer) override;
 
-    kiv_os::NOS_Error
-    Write(File file, size_t size, size_t offset, std::vector<char> buffer, size_t &written) override;
-
-    static DirItem get_cluster(const int startSector, const Path &path);
+    kiv_os::NOS_Error Write(File file, size_t offset, std::vector<char> buffer, size_t &written) override;
 };
 
 

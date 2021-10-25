@@ -22,7 +22,7 @@ public:
 
     virtual kiv_os::NOS_Error Close(File file) = 0;
 
-    virtual kiv_os::NOS_Error ReadDir(const Path &path, std::vector<kiv_os::TDir_Entry> &entries) = 0;
+    virtual kiv_os::NOS_Error ReadDir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) = 0;
 
     virtual kiv_os::NOS_Error MkDir(Path &path, uint8_t attributes) = 0;
 
@@ -32,6 +32,6 @@ public:
 
     virtual kiv_os::NOS_Error Read(File file, size_t size, size_t offset, std::vector<char> &out) = 0;
 
-    virtual kiv_os::NOS_Error Write(File file, size_t size, size_t offset, std::vector<char> buffer, size_t &written) = 0;
+    virtual kiv_os::NOS_Error Write(File file, size_t offset, std::vector<char> buffer, size_t &written) = 0;
 
 };

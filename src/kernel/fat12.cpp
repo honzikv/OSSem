@@ -13,7 +13,7 @@ Fat12::Fat12() {
     second_fat = LoadFatTable(1 + kFatTableSectorCount);
 }
 
-//TODO dodelat vse
+//TODO check na parametry, jestli opravdu vyuzivane
 
 kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, uint8_t attributes) {
     file = File{};
@@ -188,7 +188,117 @@ kiv_os::NOS_Error Fat12::RmDir(Path &path) {
     return kiv_os::NOS_Error::Success;
 }
 
-kiv_os::NOS_Error Fat12::Write(File file, size_t size, size_t offset, std::vector<char> buffer, size_t &written) {
+/**
+ * Precte obsah dane slozky
+ * @param path cesta k slozce
+ * @param entries vektor TDir_Entry - bude zmenen(naplnen obsahem adresare)
+ * @return informace o uspechu
+ */
+kiv_os::NOS_Error Fat12::ReadDir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) {
+    if (path.path_vector.back() == ".") { //TODO konst
+        path.DeleteNameFromPath(); // pokud jmeno pouze '.', tak odstranit
+    }
+
+    if (path.path_vector.empty()) { // root //TODO co kdyz je to primo v rootu nazev - otestovat
+        std::vector<unsigned char> root_directory_content = ReadDataFromCluster(kRootDirSize, kRootDirSectorStart,
+                                                                                true);
+        entries = GetDirectoryEntries(root_directory_content, kRootDirSize, true);
+        return kiv_os::NOS_Error::Success;
+    }
+    //TODO tahle cast by mohla jit asi do metody, casto ji poouzivam
+    DirItem dir_item = GetDirItemCluster(kRootDirSectorStart, path, fat);
+    int start_cluster = dir_item.first_cluster;
+    std::vector<int> sectors_indexes = GetSectorsIndexes(fat, start_cluster);
+
+    //TODO tohle taky nekde asi uz pouzito - do metody
+    std::vector<unsigned char> cluster_data;
+    std::vector<unsigned char> all_clusters_data;
+
+    for (int sectors_index: sectors_indexes) {
+        cluster_data = ReadDataFromCluster(1, sectors_index, false);
+        all_clusters_data.insert(all_clusters_data.end(), cluster_data.begin(), cluster_data.end());
+    }
+
+    entries = GetDirectoryEntries(all_clusters_data, sectors_indexes.size(), false);
+
+    return kiv_os::NOS_Error::Success;
+    //TODO mozna check jestli vubec existuje, nebo si to udela volajici
+}
+
+/**
+ * Precte ze souboru pozadovany pocet bytu z daneho offsetu do bufferu
+ * @param file soubor
+ * @param bytes_to_read pocet buty k precteni
+ * @param offset offset v souboru
+ * @param buffer buffer, kam bude ulozen vysledek cteni
+ * @return informace o uspechu/neuspechu
+ */
+kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, std::vector<char> &buffer) {
+    if (((file.attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory)) == 0) &&
+        ((file.attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID)) == 0)) { // soubor
+        if (file.size < (bytes_to_read + offset)) { // mimo rozsah velikosti souboru
+            return kiv_os::NOS_Error::IO_Error;
+        }
+
+        std::vector<int> sectors_indexes = GetSectorsIndexes(fat, file.handle);
+
+        size_t start_pos = offset / kSectorSize;  // prvni sektor pro cteni
+        size_t bytes_to_skip = offset % kSectorSize; // cast bytu v sektoru, ze ktereho se bude cist, ktere budou preskoceny
+        int target_cluster_index = sectors_indexes.at(start_pos);
+        std::vector<unsigned char> sector_data;
+
+        sector_data = ReadDataFromCluster(1, target_cluster_index, false);
+        for (int i = (int) bytes_to_skip; i < kSectorSize; ++i) {
+            if (bytes_to_read == buffer.size()) { // precten pocet bytu, jaky mel byt
+                return kiv_os::NOS_Error::Success;
+            }
+            buffer.push_back((char) sector_data.at(i));
+        }
+
+        // cteni dokud neni dosazen pozadovany pocet bytu
+        while (bytes_to_read > buffer.size()) {
+            target_cluster_index++; // zvyseni indexu na dalsi cluster
+            sector_data = ReadDataFromCluster(1, sectors_indexes.at(target_cluster_index), false);
+
+            for (unsigned char byte : sector_data) {
+                if (bytes_to_read == buffer.size()) { // precten pocet bytu, jaky mel byt
+                    return kiv_os::NOS_Error::Success;
+                }
+                buffer.push_back((char) byte);
+            }
+        }
+    } else { // slozka
+        std::vector<kiv_os::TDir_Entry> dir_entries;
+
+        Path path(file.name);
+        kiv_os::NOS_Error res = ReadDir(path, dir_entries);
+
+        std::vector<char> dir_entries_bytes;
+        if (res == kiv_os::NOS_Error::Success) {
+            dir_entries_bytes = ConvertDirEntriesToChar(dir_entries);
+        }
+
+        if ((dir_entries_bytes.size() * sizeof(kiv_os::TDir_Entry)) >= (bytes_to_read + offset)) { // lze precist, nepresahl se rozsah
+            for (int i = 0; i < bytes_to_read; ++i) {
+                buffer.push_back(dir_entries_bytes.at(i + offset));
+            }
+            return kiv_os::NOS_Error::Success;
+        } else {
+            return kiv_os::NOS_Error::IO_Error;
+        }
+    }
+    return kiv_os::NOS_Error::Success;
+}
+
+/**
+ * Zapise do daneho souboru na dany offset data z bufferu
+ * @param file soubor
+ * @param offset offset, na ktery se bude zapisovat
+ * @param buffer buffer, jehoz data maji by zapsana
+ * @param written pocet skutecne zapsanych bytu (ulozeno pozdeji)
+ * @return informace o uspechu/neuspechu
+ */
+kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffer, size_t &written) {
     if (offset > file.size) {
         return kiv_os::NOS_Error::IO_Error;
     }
@@ -212,7 +322,8 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t size, size_t offset, std::vecto
     int data_to_remain_last_cluster =
             static_cast<int>(offset) % kSectorSize; // tolik dat bude uchovano z posledniho clusteru
 
-    std::vector<unsigned char> last_cluster_data = ReadDataFromCluster(1, sector_indexes.back(), false); // data posledniho clusteru
+    std::vector<unsigned char> last_cluster_data = ReadDataFromCluster(1, sector_indexes.back(),
+                                                                       false); // data posledniho clusteru
     std::vector<unsigned char> buffer_to_write;
 
     // puvodni data clusteru

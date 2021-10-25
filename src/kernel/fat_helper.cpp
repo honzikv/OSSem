@@ -625,16 +625,16 @@ GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, b
 
     int i = 0;
     while (i < kSectorSize * clusters_count) {
-        if (content[i] == 0 || content[i] == 246) { //TODO check a konstanta
+        if (content.at(i) == 0 || content.at(i) == 246) { //TODO check a konstanta
             break;
         }
 
-        kiv_os::TDir_Entry dir_entry;
+        kiv_os::TDir_Entry dir_entry{};
 
         int file_name_pos = 0; // pozice ukladani jmena
 
         for (int j = 0; j < kFileNameSize; ++j) {
-            if (content[i] == ' ') { //konec nazvu souboru //TODO konstanta
+            if (content.at(i) == ' ') { //konec nazvu souboru //TODO konstanta
                 i += kFileNameSize - j; //dopocteno do 8 bytu
                 file_name_pos = j;
                 break;
@@ -647,7 +647,7 @@ GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, b
         dir_entry.file_name[file_name_pos++] = '.'; //TODO const
 
         for (int j = 0; j < kFileExtensionSize; ++j) {
-            if (content[i] == ' ') { //konec pripony souboru //TODO konstanta
+            if (content.at(i) == ' ') { //konec pripony souboru //TODO konstanta
                 i += kFileExtensionSize - j; //dopocteno do 8 bytu
                 break;
             } else {
@@ -656,18 +656,18 @@ GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, b
             }
         }
 
-        if (file_name_pos != 12) {
+        if (file_name_pos != 12) { // TODO const
             dir_entry.file_name[file_name_pos] = '\0'; //TODO const
         } else if (dir_entry.file_name[file_name_pos - 1] == '.') { //bez pripony //TODO const
             dir_entry.file_name[file_name_pos - 1] = '\0'; //TODO konst
         }
 
-        dir_entry.file_attributes = content[i++];
+        dir_entry.file_attributes = content.at(i);
 
+        i++; // preskocit atributy
         i += kDirItemUnusedBytes; // preskocit - nedulezite informace
         i += kDirItemClusterBytes; // cislo clusteru
         i += kDirItemFileSizeBytes; // velikost souboru
-
 
         dir_content.push_back(dir_entry);
     }
@@ -876,4 +876,20 @@ void ChangeFileSize(const char *file_name, size_t new_size, const std::vector<un
 
     //TODO konverze
     WriteDataToCluster(buffer_to_write, sectors_indexes.at(cluster_pos), path.path_vector.empty());
+}
+
+/**
+ * Prevede vektor struktur TDir_Entry na vektor bytu
+ * @param entries vektor struktur TDir_Entry
+ * @return vektor struktur TDir_Entry prevedeny na vektor bytu
+ */
+std::vector<char> ConvertDirEntriesToChar(std::vector<kiv_os::TDir_Entry> entries) {
+    std::vector<char> res;
+
+    for (auto &entry: entries) {
+        auto const pointer = reinterpret_cast<char *>(&entry);
+        res.insert(res.end(), pointer, pointer + sizeof(entry));
+    }
+
+    return res;
 }

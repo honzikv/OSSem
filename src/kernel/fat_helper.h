@@ -7,22 +7,22 @@
 
 #include <api.h>
 #include "path.h"
-
-const int kFatTableSectorCount = 9;
-const int kSectorSize = 512;
+//TODO comment
+const int kFatTableSectorCount = 9; // pocet sektoru vyhrazenych pro FAT
+const int kSectorSize = 512; // velikost sektoru/clusteru
 const int kDiskNum = 129;
-const int kRootDirSectorStart = 19;
-const int kUserDataStart = 33;
-const int kRootDirSize = 14;
+const int kRootDirSectorStart = 19; // pozice sektoru rootu
+const int kUserDataStart = 33; // pozice sektoru s daty
+const int kRootDirSize = 14; // velikost rootu ípocet sektorué
 const int kReservedEntries = 2; // pozice 0 a 1 jsou rezervovane
 const int kDataSectorConversion =
         kUserDataStart - kReservedEntries; //data sector zacina na pozici 33, ale prvni cluster je vzdy 2 (33 - 2 = 31)
-const int kFatAddressSize = 12;
-const int kBitsInBytes = 8;
-const int kBitsInBytesHalved = (int) (kBitsInBytes * 0.5);
+const int kFatAddressSize = 12; // pocet bitu udavajici cislo clusteru v FAT
+const int kBitsInBytes = 8; // pocet bitu v bytu
+const int kBitsInBytesHalved = (int) (kBitsInBytes * 0.5); // pocet bitu v bytu deleno dvema
 const double kIndexToFatConversion =
         (double) kFatAddressSize / kBitsInBytes; // ration na prepocet pozice do indexu v FAT
-const int kMaxClusterNum = 4096;
+const int kMaxClusterNum = 4096; // maximalni cislo clusteru
 const int kFileNameSize = 8; // maximalni delka nazvu slozky/souboru
 const int kFileExtensionSize = 3; // maximalni delka pripony slozky/souboru
 const int kDirItemUnusedBytes = 14; // pocet bytu mezi atributy a cislem prvniho clusteru v zaznamu
@@ -77,5 +77,7 @@ GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, b
 kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir);
 
 void ChangeFileSize(const char* file_name, size_t new_size, const std::vector<unsigned char>& fat);
+
+std::vector<char> ConvertDirEntriesToChar(std::vector<kiv_os::TDir_Entry> entries);
 
 #endif //OS_FAT_HELPER_H
