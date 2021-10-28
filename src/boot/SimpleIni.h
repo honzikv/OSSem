@@ -27,7 +27,7 @@
         - key/values with no section
         - removal of whitespace around sections, keys and values
     - support for multi-line values (values with embedded newline characters)
-    - optional support for multiple keys with the same name
+    - optional support for multiple keys with the same file_name
     - optional case-insensitive sections and keys (for ASCII characters only)
     - saves files with sections and keys in the same order as they were loaded
     - preserves comments on the file, section and keys where possible.
@@ -132,7 +132,7 @@
       data entry. It ends at the beginning of the section.
     - Every key may have a single "key comment". This comment will start
       with the first comment line following the section start, or the file
-      comment if there is no section name.
+      comment if there is no section file_name.
     - Comments are set at the time that the file, section or key is first
       created. The only way to modify a comment on a section or a key is to
       delete that entry and recreate it with the new comment. There is no
@@ -203,7 +203,7 @@
 //  4127 "conditional expression is constant" as the conversion classes trigger
 //  it with the statement if (sizeof(SI_CHAR) == sizeof(char)). This test will
 //  be optimized away in a release build.
-//  4503 'insert' : decorated name length exceeded, name was truncated
+//  4503 'insert' : decorated file_name length exceeded, file_name was truncated
 //  4702 "unreachable code" as the MS STL header causes it in release mode.
 //  Again, the code causing the warning will be cleaned up by the compiler.
 //  4786 "identifier truncated to 256 characters" as this is thrown hundreds
@@ -334,7 +334,7 @@ public:
         bool operator>(const Entry & rhs) const { return LoadOrder()(rhs, *this); }
 #endif
 
-        /** Strict less ordering by name of key only */
+        /** Strict less ordering by file_name of key only */
         struct KeyOrder  {
             bool operator()(const Entry & lhs, const Entry & rhs) const {
                 const static SI_STRLESS isLess = SI_STRLESS();
@@ -342,7 +342,7 @@ public:
             }
         };
 
-        /** Strict less ordering by order, and then name of key */
+        /** Strict less ordering by order, and then file_name of key */
         struct LoadOrder {
             bool operator()(const Entry & lhs, const Entry & rhs) const {
                 if (lhs.nOrder != rhs.nOrder) {
@@ -846,7 +846,7 @@ public:
 
         @param a_pSection       Name of the section to return
         @return boolean         Was a section matching the supplied
-                                name found.
+                                file_name found.
      */
     const TKeyVal * GetSection(
         const SI_CHAR * a_pSection
@@ -1073,7 +1073,7 @@ public:
         data returned by GetSection is invalid and must not be used after
         anything has been deleted from that section using this method.
         Note when multiple keys is enabled, this will delete all keys with
-        that name; to selectively delete individual key/values, use
+        that file_name; to selectively delete individual key/values, use
         DeleteValue.
 
         @param a_pSection       Section to delete key from, or if
@@ -1162,9 +1162,9 @@ private:
 
     /** Add the section/key/value to our data.
 
-        @param a_pSection   Section name. Sections will be created if they
+        @param a_pSection   Section file_name. Sections will be created if they
                             don't already exist.
-        @param a_pKey       Key name. May be NULL to create an empty section.
+        @param a_pKey       Key file_name. May be NULL to create an empty section.
                             Existing entries will be updated. New entries will
                             be created.
         @param a_pValue     Value for the key.
@@ -1572,7 +1572,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::FindEntry(
                 ++a_pData;
             }
 
-            // find the end of the section name (it may contain spaces)
+            // find the end of the section file_name (it may contain spaces)
             // and convert it to lowercase as necessary
             a_pSection = a_pData;
             while (*a_pData && *a_pData != ']' && !IsNewLineChar(*a_pData)) {
@@ -1603,7 +1603,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::FindEntry(
             return true;
         }
 
-        // find the end of the key name (it may contain spaces)
+        // find the end of the key file_name (it may contain spaces)
         // and convert it to lowercase as necessary
         a_pKey = a_pData;
         while (*a_pData && *a_pData != '=' && !IsNewLineChar(*a_pData)) {
@@ -2455,7 +2455,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
             bNeedNewLine = false;
         }
 
-        // Write the section (unless there is no section name)
+        // Write the section (unless there is no section file_name)
         if (*iSection->pItem) {
             if (!convert.ConvertToStore(iSection->pItem)) {
                 return SI_Error::SI_FAIL;

@@ -39,6 +39,9 @@ void Path::CreatePath(const char *file_path) {
  */
 void Path::CreateName() {
     full_name = path_vector.back();
+    for (char & c : full_name) { // vsechno ve FAT12 je ukladano velkymi pismeny
+        c = ::toupper(c);
+    }
     bool isExtension = false;
     for (char c : full_name) {
         if (c == '.') { //TODO const

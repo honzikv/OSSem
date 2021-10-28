@@ -29,7 +29,7 @@ auto CommandParser::createCommand(const std::vector<std::string>& commandWithPar
                                   const std::string& fileUri,
                                   const std::string& commandWithParamsAndRedirect) -> Command {
 	if (commandWithParams.empty()) {
-		throw ParseException("Error, could not parse command name as it was not present."); // TODO asi se nestane
+		throw ParseException("Error, could not parse command file_name as it was not present."); // TODO asi se nestane
 	}
 
 	// Pokud neni redirect none, musi uri pro file byt neprazdny retezec

@@ -7,14 +7,22 @@
 std::vector<unsigned char> fat;
 std::vector<unsigned char> second_fat;
 
-
+/**
+ * Nacte FAT 1 a FAT 2
+ */
 Fat12::Fat12() {
     fat = LoadFatTable(1);
     second_fat = LoadFatTable(1 + kFatTableSectorCount);
 }
 
-//TODO check na parametry, jestli opravdu vyuzivane
-
+/**
+ * Otevre soubor/adresar, pokud neexistuje, tak jej vytvori
+ * @param path cesta k souboru/adresari
+ * @param flags rezim otevreni noveho souboru
+ * @param file soubor
+ * @param attributes atributy
+ * @return vysledek operace - uspech/neuspech
+ */
 kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, uint8_t attributes) {
     file = File{};
     std::string fileName = path.full_name;
@@ -30,11 +38,11 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
     kiv_os::NOS_Error res;
 
     if (target_cluster == -1) { // nenalezen - tzn. neexistuje
-        if (flags == kiv_os::NOpen_File::fmOpen_Always) { // musi existovat, aby byl otebrem => chyba
+        if (flags == kiv_os::NOpen_File::fmOpen_Always) { // musi existovat, aby byl otevren => chyba
             return kiv_os::NOS_Error::File_Not_Found;
         } else { // vytvoreni souboru
             dir_item.file_size = 0;
-            dir_item.attribute = attributes;
+            dir_item.attributes = attributes;
 
             // slozka
             if (attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory) ||
@@ -59,18 +67,18 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
             }
         }
     } else if (((attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory)) &&
-                (dir_item.attribute & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory))) == 0) {
+                (dir_item.attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory))) == 0) {
         // neni atribut slozka - chybi nastaveny bit 0x10
         return kiv_os::NOS_Error::Permission_Denied;
     }
     // soubor/slozka existuje (pripadne vytvoren(a))
 
     file.handle = target_cluster;
-    file.attributes = dir_item.attribute;
+    file.attributes = dir_item.attributes;
 
     // zjistenu, jestli je to slozka
-    if (dir_item.attribute == static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory) ||
-        dir_item.attribute == static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID)) {
+    if (dir_item.attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory) ||
+        dir_item.attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID)) {
         std::vector<kiv_os::TDir_Entry> directory_entries = ReadDirectory(path, fat);
         dir_item.file_size = directory_entries.size() * sizeof(kiv_os::TDir_Entry);
     }
@@ -83,7 +91,7 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
  * Vytvori novy soubor
  * @param path cesta k souboru
  * @param attributes atributy souboru
- * @return zprava o uspechu / neuspechu
+ * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::CreateFile(Path &path, uint8_t attributes) {
     return CreateFileOrDir(path, attributes, fat, false);
@@ -93,7 +101,7 @@ kiv_os::NOS_Error Fat12::CreateFile(Path &path, uint8_t attributes) {
  * Vytvori novou slozku
  * @param path cesta k slozce
  * @param attributes atributy slozky
- * @return zprava o uspechu / neuspechu
+ * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::MkDir(Path &path, uint8_t attributes) {
     return CreateFileOrDir(path, attributes, fat, true);
@@ -106,6 +114,7 @@ kiv_os::NOS_Error Fat12::MkDir(Path &path, uint8_t attributes) {
  */
 kiv_os::NOS_Error Fat12::RmDir(Path &path) {
     DirItem dir_item = GetDirItemCluster(kRootDirSectorStart, path, fat); // cilova polozka
+
     if (dir_item.file_size == -1) { // nenalezeno
         return kiv_os::NOS_Error::File_Not_Found;
     }
@@ -127,44 +136,19 @@ kiv_os::NOS_Error Fat12::RmDir(Path &path) {
 
     // odstraneni odkazu z nadrazene slozky
     path.DeleteNameFromPath();
+
     std::vector<int> sector_indexes_parent_folder;
     bool is_parent_folder_root = true;
-    int start_sector = kRootDirSectorStart;
-    if (path.path_vector.empty()) { // nadrazena slozka je root
-        for (int i = kRootDirSectorStart; i < kUserDataStart; ++i) {
-            sector_indexes_parent_folder.push_back(i);
-        }
-    } else { // neni root
-        is_parent_folder_root = false;
-        DirItem dir_item_parent = GetDirItemCluster(kRootDirSectorStart, path, fat); // cilova polozka
-        sector_indexes_parent_folder = GetSectorsIndexes(fat, dir_item_parent.first_cluster);
-        start_sector = sector_indexes_parent_folder.at(0);
-    }
+    int start_sector = GetStartSector(path, fat, is_parent_folder_root, sector_indexes_parent_folder);
 
-    std::vector<DirItem> directory_items_parent_folder = GetFoldersFromDir(fat, start_sector); // obsah nadrazene slozky
+    int index_to_delete = GetItemIndex(path, start_sector, fat);
 
-    int index_to_delete = -1;
-
-    for (int i = 0; i < directory_items_parent_folder.size(); ++i) {
-        DirItem cur_dir_item = directory_items_parent_folder.at(i);
-        if (cur_dir_item.file_extension == path.extension && cur_dir_item.file_name == path.name) {
-            index_to_delete = i;
-            break;
-        }
-    }
 
     std::vector<char> folder_content;
     for (int sector_index: sector_indexes_parent_folder) {
         std::vector<unsigned char> cluster_data;
         cluster_data = ReadDataFromCluster(1, sector_index, is_parent_folder_root);
         folder_content.insert(folder_content.end(), cluster_data.begin(), cluster_data.end());
-    }
-
-
-    if (is_parent_folder_root) {
-        index_to_delete += 1; // '.' //TODO check jestli tam je
-    } else {
-        index_to_delete += 2; // '.' a '..'
     }
 
     // odstranit nechteny a doplnit 0
@@ -192,23 +176,23 @@ kiv_os::NOS_Error Fat12::RmDir(Path &path) {
  * Precte obsah dane slozky
  * @param path cesta k slozce
  * @param entries vektor TDir_Entry - bude zmenen(naplnen obsahem adresare)
- * @return informace o uspechu
+ * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::ReadDir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) {
-    if (path.path_vector.back() == ".") { //TODO konst
+    if (path.path_vector.back() == std::string(1, kCurDirChar)) {
         path.DeleteNameFromPath(); // pokud jmeno pouze '.', tak odstranit
     }
 
-    if (path.path_vector.empty()) { // root //TODO co kdyz je to primo v rootu nazev - otestovat
+    if (path.path_vector.empty()) { // root
         std::vector<unsigned char> root_directory_content = ReadDataFromCluster(kRootDirSize, kRootDirSectorStart,
                                                                                 true);
         entries = GetDirectoryEntries(root_directory_content, kRootDirSize, true);
         return kiv_os::NOS_Error::Success;
     }
-    //TODO tahle cast by mohla jit asi do metody, casto ji poouzivam
+    // ne root
+
     DirItem dir_item = GetDirItemCluster(kRootDirSectorStart, path, fat);
-    int start_cluster = dir_item.first_cluster;
-    std::vector<int> sectors_indexes = GetSectorsIndexes(fat, start_cluster);
+    std::vector<int> sectors_indexes = GetSectorsIndexes(fat, dir_item.first_cluster);
 
     //TODO tohle taky nekde asi uz pouzito - do metody
     std::vector<unsigned char> cluster_data;
@@ -231,7 +215,7 @@ kiv_os::NOS_Error Fat12::ReadDir(Path &path, std::vector<kiv_os::TDir_Entry> &en
  * @param bytes_to_read pocet buty k precteni
  * @param offset offset v souboru
  * @param buffer buffer, kam bude ulozen vysledek cteni
- * @return informace o uspechu/neuspechu
+ * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, std::vector<char> &buffer) {
     if (((file.attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory)) == 0) &&
@@ -296,7 +280,7 @@ kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, st
  * @param offset offset, na ktery se bude zapisovat
  * @param buffer buffer, jehoz data maji by zapsana
  * @param written pocet skutecne zapsanych bytu (ulozeno pozdeji)
- * @return informace o uspechu/neuspechu
+ * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffer, size_t &written) {
     if (offset > file.size) {
@@ -383,5 +367,27 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffe
     written = bytes_written;
     return kiv_os::NOS_Error::Success;
 }
+
+/**
+ * Ziska atributy daneho souboru/adresare
+ * @param path cesta k souboru/adresari
+ * @param attributes atributy - ziskana hodnota do nich ulozena
+ * @return vysledek operace - uspech/neuspech
+ */
+kiv_os::NOS_Error Fat12::GetAttributes(Path path, uint8_t &attributes) {
+    return GetOrSetAttributes(path, attributes, fat, true);
+}
+
+/**
+ * Nastavi atributy danemu souboru/adresari
+ * @param path cesta k souboru/adresari
+ * @param attributes atributy, ktere se nastavi
+ * @return vysledek operace - uspech/neuspech
+ */
+kiv_os::NOS_Error Fat12::SetAttributes(Path path, uint8_t attributes) {
+    return GetOrSetAttributes(path, attributes, fat, false);
+}
+
+
 
 
