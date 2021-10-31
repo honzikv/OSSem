@@ -92,7 +92,7 @@ std::vector<char> ConvertDirEntriesToChar(std::vector<kiv_os::TDir_Entry> entrie
 
 kiv_os::NOS_Error GetOrSetAttributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, bool read);
 
-int GetStartSector(const Path& path, const std::vector<unsigned char> &fat, bool &isRoot, std::vector<int> &sectors_indexes);
+int GetStartSector(const Path& path, const std::vector<unsigned char> &fat, bool &is_root, std::vector<int> &sectors_indexes);
 
 int GetItemIndex(const Path &path, int start_sector, const std::vector<unsigned char> &fat);
 

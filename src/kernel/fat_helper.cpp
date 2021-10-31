@@ -706,8 +706,8 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
     path.DeleteNameFromPath(); // cesta, tzn. bez posledni polozky (jmena)
 
     std::vector<int> sectors_indexes;
-    bool isRoot;
-    int start_sector = GetStartSector(path, fat, isRoot, sectors_indexes);
+    bool is_root;
+    int start_sector = GetStartSector(path, fat, is_root, sectors_indexes);
 
     std::vector<DirItem> directory_items = GetFoldersFromDir(fat, start_sector);
 
@@ -763,7 +763,7 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
     bool can_add = true; // zda je misto a lze pridat
 
 
-    if (isRoot) { // slozka v rootu
+    if (is_root) { // slozka v rootu
         if (is_dir) {
             extra_dir_item += 1; // navic '.'
         }
@@ -790,7 +790,7 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
         size_t item_pos =
                 (directory_items.size() + extra_dir_item - 1) % kMaxItemsPerCluster; // poradi v ramci clusteru
 
-        std::vector<unsigned char> cluster_data = ReadDataFromCluster(1, sectors_indexes.at(cluster_pos), isRoot);
+        std::vector<unsigned char> cluster_data = ReadDataFromCluster(1, sectors_indexes.at(cluster_pos), is_root);
 
         for (int j = 0; j < buffer_to_write.size(); ++j) {
             cluster_data.at(item_pos * kDirItemSize + j) = buffer_to_write.at(j);
@@ -799,7 +799,7 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
         for (unsigned char &data: cluster_data) {
             buffer_to_save.push_back((char) data);
         }
-        WriteDataToCluster(buffer_to_save, sectors_indexes.at(cluster_pos), isRoot);
+        WriteDataToCluster(buffer_to_save, sectors_indexes.at(cluster_pos), is_root);
     } else { // nelze alokovat cluster
         WriteValueToFat(fat, free_index, 0); // uvolni misto
         SaveFat(fat);
@@ -807,7 +807,7 @@ kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<un
     }
 
     if (is_dir) { // je slozka tak zapsat jeste '.' a pripadne '..'
-        bool is_root = path.path_vector.empty(); // je root - nema '..' //TODO check
+        is_root = path.path_vector.empty(); // je root - nema '..' //TODO check
         WriteCurrentAndParentFolder(free_index, start_sector, is_root);
     }
 
@@ -825,8 +825,8 @@ void ChangeFileSize(const char *file_name, size_t new_size, const std::vector<un
     path.DeleteNameFromPath();
 
     std::vector<int> sectors_indexes;
-    bool isRoot;
-    int start_sector = GetStartSector(path, fat, isRoot, sectors_indexes);
+    bool is_root;
+    int start_sector = GetStartSector(path, fat, is_root, sectors_indexes);
 
     int item_index = GetItemIndex(path, start_sector, fat);
 
@@ -877,8 +877,8 @@ kiv_os::NOS_Error GetOrSetAttributes(Path path, uint8_t &attributes, const std::
     path.DeleteNameFromPath(); // smazat jmeno z cesty
 
     std::vector<int> sectors_indexes;
-    bool isRoot;
-    int start_sector = GetStartSector(path, fat, isRoot, sectors_indexes); // cislo sektoru
+    bool is_root;
+    int start_sector = GetStartSector(path, fat, is_root, sectors_indexes); // cislo sektoru
 
     int item_index = GetItemIndex(path, start_sector, fat);
 
@@ -891,7 +891,7 @@ kiv_os::NOS_Error GetOrSetAttributes(Path path, uint8_t &attributes, const std::
     size_t item_pos = item_index % kMaxItemsPerCluster; // poradi v ramci clusteru
 
     std::vector<unsigned char> folder_data;
-    folder_data = ReadDataFromCluster(1, sectors_indexes.at(cluster_pos), isRoot);
+    folder_data = ReadDataFromCluster(1, sectors_indexes.at(cluster_pos), is_root);
 
     if (read) { // cteme
         attributes = folder_data.at(item_pos * kDirItemSize + kDirItemAttributesPos);
@@ -900,7 +900,7 @@ kiv_os::NOS_Error GetOrSetAttributes(Path path, uint8_t &attributes, const std::
 
         std::vector<char> buffer_to_write;
         buffer_to_write.insert(buffer_to_write.end(), folder_data.begin(), folder_data.end());
-        WriteDataToCluster(buffer_to_write, sectors_indexes.at(cluster_pos), isRoot);
+        WriteDataToCluster(buffer_to_write, sectors_indexes.at(cluster_pos), is_root);
     }
 
     return kiv_os::NOS_Error::Success;
@@ -911,21 +911,21 @@ kiv_os::NOS_Error GetOrSetAttributes(Path path, uint8_t &attributes, const std::
  * Ziska index prvniho sektoru daneho souboru/adresare, nastavi, jestli se nachazi v rootu a seznam sektoru obsahujici dany soubor
  * @param path cesta k souboru/adresari
  * @param fat FAT
- * @param isRoot nastaveni, jestli je v rootu nebo ne
+ * @param is_root nastaveni, jestli je v rootu nebo ne
  * @param sectors_indexes nastavi seznam sektoru obsahujici dany soubor/adresar
  * @return index prvniho sektoru
  */
-int GetStartSector(const Path &path, const std::vector<unsigned char> &fat, bool &isRoot,
+int GetStartSector(const Path &path, const std::vector<unsigned char> &fat, bool &is_root,
                    std::vector<int> &sectors_indexes) {
     int start_sector;
     if (path.path_vector.empty()) { // root
-        isRoot = true;
+        is_root = true;
         start_sector = kRootDirSectorStart;
         for (int i = kRootDirSectorStart; i < kUserDataStart; ++i) {
             sectors_indexes.push_back(i);
         }
     } else {
-        isRoot = false;
+        is_root = false;
         DirItem dir_item = GetDirItemCluster(kRootDirSectorStart, path, fat);
         sectors_indexes = GetSectorsIndexes(fat, dir_item.first_cluster);
         start_sector = sectors_indexes.at(0);
