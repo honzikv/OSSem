@@ -23,6 +23,11 @@
     <ClCompile Include="..\..\src\kernel\handles.cpp" />
     <ClCompile Include="..\..\src\kernel\io.cpp" />
     <ClCompile Include="..\..\src\kernel\kernel.cpp" />
+    <ClCompile Include="Pipe.cpp" />
+    <ClCompile Include="Process.cpp" />
+    <ClCompile Include="ProcessControlBlock.cpp" />
+    <ClCompile Include="ProcessDispatcher.cpp" />
+    <ClCompile Include="Thread.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h" />
@@ -30,6 +35,12 @@
     <ClInclude Include="..\..\src\kernel\handles.h" />
     <ClInclude Include="..\..\src\kernel\io.h" />
     <ClInclude Include="..\..\src\kernel\kernel.h" />
+    <ClInclude Include="AbstractFile.h" />
+    <ClInclude Include="Pipe.h" />
+    <ClInclude Include="Process.h" />
+    <ClInclude Include="ProcessControlBlock.h" />
+    <ClInclude Include="ProcessDispatcher.h" />
+    <ClInclude Include="Thread.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B4305463-59C5-40C3-9A1A-92976A40562D}</ProjectGuid>
