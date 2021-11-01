@@ -38,4 +38,6 @@ public:
 
     virtual kiv_os::NOS_Error GetAttributes(Path path, uint8_t &attributes) = 0;
 
+    virtual ~VFS() = default;
+
 };

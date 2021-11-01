@@ -19,11 +19,17 @@ void Path::CreatePath(const char *file_path) {
         if (c == '/') {
             std::string item_string(item.begin(), item.end());
             if (!item_string.empty()) {
+                for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
+                    ch = ::toupper(ch);
+                }
                 path_vector.push_back(item_string);
             }
             item.clear();
         } else if (c == '\0') {
             std::string item_string(item.begin(), item.end());
+            for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
+                ch = ::toupper(ch);
+            }
             path_vector.push_back(item_string);
             break;
         } else {
@@ -39,11 +45,8 @@ void Path::CreatePath(const char *file_path) {
  */
 void Path::CreateName() {
     full_name = path_vector.back();
-    for (char & c : full_name) { // vsechno ve FAT12 je ukladano velkymi pismeny
-        c = ::toupper(c);
-    }
     bool isExtension = false;
-    for (char c : full_name) {
+    for (char c: full_name) {
         if (c == '.') { //TODO const
             isExtension = true;
             continue;

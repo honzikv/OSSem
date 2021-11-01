@@ -192,6 +192,9 @@ kiv_os::NOS_Error Fat12::ReadDir(Path &path, std::vector<kiv_os::TDir_Entry> &en
     // ne root
 
     DirItem dir_item = GetDirItemCluster(kRootDirSectorStart, path, fat);
+    if (dir_item.first_cluster == -1) { // nenalezen
+        return kiv_os::NOS_Error::File_Not_Found;
+    }
     std::vector<int> sectors_indexes = GetSectorsIndexes(fat, dir_item.first_cluster);
 
     //TODO tohle taky nekde asi uz pouzito - do metody
@@ -227,7 +230,8 @@ kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, st
         std::vector<int> sectors_indexes = GetSectorsIndexes(fat, file.handle);
 
         size_t start_pos = offset / kSectorSize;  // prvni sektor pro cteni
-        size_t bytes_to_skip = offset % kSectorSize; // cast bytu v sektoru, ze ktereho se bude cist, ktere budou preskoceny
+        size_t bytes_to_skip =
+                offset % kSectorSize; // cast bytu v sektoru, ze ktereho se bude cist, ktere budou preskoceny
         int target_cluster_index = sectors_indexes.at(start_pos);
         std::vector<unsigned char> sector_data;
 
@@ -244,7 +248,7 @@ kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, st
             target_cluster_index++; // zvyseni indexu na dalsi cluster
             sector_data = ReadDataFromCluster(1, sectors_indexes.at(target_cluster_index), false);
 
-            for (unsigned char byte : sector_data) {
+            for (unsigned char byte: sector_data) {
                 if (bytes_to_read == buffer.size()) { // precten pocet bytu, jaky mel byt
                     return kiv_os::NOS_Error::Success;
                 }
@@ -262,7 +266,8 @@ kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, st
             dir_entries_bytes = ConvertDirEntriesToChar(dir_entries);
         }
 
-        if ((dir_entries_bytes.size() * sizeof(kiv_os::TDir_Entry)) >= (bytes_to_read + offset)) { // lze precist, nepresahl se rozsah
+        if ((dir_entries_bytes.size() * sizeof(kiv_os::TDir_Entry)) >=
+            (bytes_to_read + offset)) { // lze precist, nepresahl se rozsah
             for (int i = 0; i < bytes_to_read; ++i) {
                 buffer.push_back(dir_entries_bytes.at(i + offset));
             }
@@ -311,13 +316,14 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffe
     std::vector<unsigned char> buffer_to_write;
 
     // puvodni data clusteru
-    buffer_to_write.insert(buffer_to_write.end(), last_cluster_data.begin(), last_cluster_data.end());
+    buffer_to_write.insert(buffer_to_write.end(), last_cluster_data.begin(),
+                           last_cluster_data.begin() + data_to_remain_last_cluster);
     // nova data
     buffer_to_write.insert(buffer_to_write.end(), buffer.begin(), buffer.end());
 
     size_t bytes_written = 0 - static_cast<size_t>(data_to_remain_last_cluster);
 
-    size_t clusters_to_write_count = buffer_to_write.size() / kSectorSize + (buffer_to_write.size() % kSectorSize !=
+    size_t clusters_to_write_count = buffer_to_write.size() / kSectorSize + (buffer_to_write.size() % kSectorSize >
                                                                              0); // pocet clusteru, kam se bude zapisovat
 
     std::vector<char> cluster_data_to_write;
