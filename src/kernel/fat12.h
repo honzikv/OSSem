@@ -23,21 +23,26 @@ public:
 
     kiv_os::NOS_Error Close(File file) override;
 
-    kiv_os::NOS_Error ReadDir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) override;
+    kiv_os::NOS_Error Read_Dir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) override;
 
-    kiv_os::NOS_Error MkDir(Path &path, uint8_t attributes) override;
+    kiv_os::NOS_Error Mk_Dir(Path &path, uint8_t attributes) override;
 
-    kiv_os::NOS_Error RmDir(Path &path) override;
+    kiv_os::NOS_Error Rm_Dir(Path &path) override;
 
-    kiv_os::NOS_Error CreateFile(Path &path, uint8_t attributes) override;
+    kiv_os::NOS_Error Create_File(Path &path, uint8_t attributes) override;
 
     kiv_os::NOS_Error Read(File file, size_t bytes_to_read, size_t offset, std::vector<char> &buffer) override;
 
     kiv_os::NOS_Error Write(File file, size_t offset, std::vector<char> buffer, size_t &written) override;
 
-    kiv_os::NOS_Error SetAttributes(Path path, uint8_t attributes) override;
+    kiv_os::NOS_Error Set_Attributes(Path path, uint8_t attributes) override;
 
-    kiv_os::NOS_Error GetAttributes(Path path, uint8_t &attributes) override;
+    kiv_os::NOS_Error Get_Attributes(Path path, uint8_t &attributes) override;
+
+    bool File_Exists(Path path, int32_t current_fd, int32_t &target_fd, bool root) override;
+
+    uint32_t Get_Root_Fd() override;
+
 };
 
 

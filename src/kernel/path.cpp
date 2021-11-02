@@ -5,11 +5,11 @@
 #include "path.h"
 
 Path::Path(const char *file_path) {
-    CreatePath(file_path);
-    CreateName();
+    Create_Path(file_path);
+    Create_Name();
 }
 
-void Path::CreatePath(const char *file_path) {
+void Path::Create_Path(const char *file_path) {
     std::vector<char> item;
     int pos = 0;
     char c;
@@ -43,7 +43,7 @@ void Path::CreatePath(const char *file_path) {
 /**
  * Vytvori jmeno slozky/souboru a priponu
  */
-void Path::CreateName() {
+void Path::Create_Name() {
     full_name = path_vector.back();
     bool isExtension = false;
     for (char c: full_name) {
@@ -62,7 +62,7 @@ void Path::CreateName() {
 /**
  * Odstani nazev souboru/slozky z cesty
  */
-void Path::DeleteNameFromPath() {
+void Path::Delete_Name_From_Path() {
     path_vector.pop_back();
 }
 

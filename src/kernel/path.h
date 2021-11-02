@@ -7,13 +7,13 @@
 
 class Path {
 private:
-    void CreatePath(const char *file_path);
-    void CreateName();
+    void Create_Path(const char *file_path);
+    void Create_Name();
 public:
     std::vector<std::string> path_vector;
     std::string full_name;
     std::string name;
     std::string extension;
     Path(const char *file_path);
-    void DeleteNameFromPath();
+    void Delete_Name_From_Path();
 };

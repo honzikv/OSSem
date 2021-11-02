@@ -5,7 +5,7 @@
 #ifndef OS_FAT_HELPER_H
 #define OS_FAT_HELPER_H
 
-#include <api.h>
+#include "../api/api.h"
 #include "path.h"
 //TODO comment
 const int kFatTableSectorCount = 9; // pocet sektoru vyhrazenych pro FAT
@@ -30,6 +30,7 @@ const int kFileNameAndExtensionMaxSize = kFileNameSize + kFileExtensionSize; // 
 const int kDirItemAttributesSize = 1; // pocet bytu atributu v polozce adresare
 const int kDirItemUnusedBytes = 14; // pocet bytu mezi atributy a cislem prvniho clusteru v zaznamu
 const int kDirItemClusterBytes = 2; // pocet bytu udavajici cislo clusteru
+const int kDirItemClusterPos = 26; // pocatecni pozice bytu udavajici cislo clusteru
 const int kDirItemFileSizeBytes = 4; // pocet bytu udavajici velikost souboru
 const int kDirItemFileSizePos = 28; // pocatecni pozice bytu udavajici velikost souboru
 const int kEndClusterInt = 4095; // oznacuje konec v clusteru
@@ -49,53 +50,55 @@ struct DirItem {
     unsigned char attributes;
 };
 
-std::vector<unsigned char> LoadFatTable(int start_index);
+std::vector<unsigned char> Load_Fat_Table(int start_index);
 
-bool CheckFatConsistency(std::vector<unsigned char> first_table, std::vector<unsigned char> second_table);
+bool Check_Fat_Consistency(std::vector<unsigned char> first_table, std::vector<unsigned char> second_table);
 
-std::vector<unsigned char> ReadFromRegisters(int cluster_count, int start_index);
+std::vector<unsigned char> Read_From_Registers(int cluster_count, int start_index);
 
-std::vector<unsigned char> ReadDataFromCluster(int cluster_count, int start_index, bool is_root);
+std::vector<unsigned char> Read_Data_From_Cluster(int cluster_count, int start_index, bool is_root);
 
-uint16_t GetFreeIndex(std::vector<unsigned char> fat);
+int Get_Int_From_Char_Vector(std::vector<unsigned char> bytes);
 
-std::vector<int> GetSectorsIndexes(const std::vector<unsigned char> &fat, int start);
+uint16_t Get_Free_Index(std::vector<unsigned char> fat);
 
-DirItem GetDirItemCluster(int start_cluster, const Path &path, const std::vector<unsigned char> &fat);
+std::vector<int> Get_Sectors_Indexes(const std::vector<unsigned char> &fat, int start);
 
-std::vector<DirItem> GetFoldersFromDir(const std::vector<unsigned char> &fat, int start_sector);
+DirItem Get_Dir_Item_Cluster(int start_cluster, const Path &path, const std::vector<unsigned char> &fat);
 
-void WriteValueToFat(std::vector<unsigned char> &fat, int pos, int new_value);
+std::vector<DirItem> Get_Folders_From_Dir(const std::vector<unsigned char> &fat, int start_sector);
 
-void WriteToRegisters(std::vector<char> buffer, int start_index);
+void Write_Value_To_Fat(std::vector<unsigned char> &fat, int pos, int new_value);
 
-void WriteDataToCluster(std::vector<char> buffer, int start_cluster, bool is_root);
+void Write_To_Registers(std::vector<char> buffer, int start_index);
 
-void SaveFat(const std::vector<unsigned char> &fat);
+void Write_Data_To_Cluster(std::vector<char> buffer, int start_cluster, bool is_root);
 
-std::vector<unsigned char> GetBytesFromInt(int value);
+void Save_Fat(const std::vector<unsigned char> &fat);
 
-int AllocateNewCluster(int start_cluster, std::vector<unsigned char> &fat);
+std::vector<unsigned char> Get_Bytes_From_Int(int value);
 
-bool ValidateFileName(const std::string &file_name);
+int Allocate_New_Cluster(int start_cluster, std::vector<unsigned char> &fat);
 
-std::vector<kiv_os::TDir_Entry> ReadDirectory(Path path, const std::vector<unsigned char> &fat);
+bool Validate_File_Name(const std::string &file_name);
+
+std::vector<kiv_os::TDir_Entry> Read_Directory(Path path, const std::vector<unsigned char> &fat);
 
 std::vector<kiv_os::TDir_Entry>
-GetDirectoryEntries(std::vector<unsigned char> content, size_t clusters_count, bool is_root);
+Get_Directory_Entries(std::vector<unsigned char> content, size_t clusters_count, bool is_root);
 
-kiv_os::NOS_Error CreateFileOrDir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir);
+kiv_os::NOS_Error Create_File_Or_Dir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir);
 
-void ChangeFileSize(const char* file_name, size_t new_size, const std::vector<unsigned char>& fat);
+void Change_File_Size(const char* file_name, size_t new_size, const std::vector<unsigned char>& fat);
 
-std::vector<char> ConvertDirEntriesToChar(std::vector<kiv_os::TDir_Entry> entries);
+std::vector<char> Convert_Dir_Entries_To_Char_Vector(std::vector<kiv_os::TDir_Entry> entries);
 
-kiv_os::NOS_Error GetOrSetAttributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, bool read);
+kiv_os::NOS_Error Get_Or_Set_Attributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, bool read);
 
-int GetStartSector(const Path& path, const std::vector<unsigned char> &fat, bool &is_root, std::vector<int> &sectors_indexes);
+int Get_Start_Sector(const Path& path, const std::vector<unsigned char> &fat, bool &is_root, std::vector<int> &sectors_indexes);
 
-int GetItemIndex(const Path &path, int start_sector, const std::vector<unsigned char> &fat);
+int Get_Item_Index(const Path &path, int start_sector, const std::vector<unsigned char> &fat);
 
-bool NameMatches(const Path &path, const DirItem& dir_item);
+bool Check_Name_Matches(const Path &path, const DirItem& dir_item);
 
 #endif //OS_FAT_HELPER_H
