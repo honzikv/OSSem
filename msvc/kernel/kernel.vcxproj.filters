@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Process">
+      <UniqueIdentifier>{1cf2b891-164d-4387-8ae3-4d7d6d6f38b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Process">
+      <UniqueIdentifier>{9b89f0fd-e4a8-4295-bb91-920a8185ccc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\FileIO">
+      <UniqueIdentifier>{ff0c7059-0198-4756-882b-41f5577c452a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\kernel.cpp">
@@ -26,6 +35,21 @@
     </ClCompile>
     <ClCompile Include="..\..\src\api\api.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessControlBlock.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Pipe.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessDispatcher.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Process.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Thread.cpp">
+      <Filter>Source Files\Process</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +67,24 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\io.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessControlBlock.h">
+      <Filter>Header Files\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Pipe.h">
+      <Filter>Header Files\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractFile.h">
+      <Filter>Header Files\FileIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Process.h">
+      <Filter>Header Files\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessDispatcher.h">
+      <Filter>Header Files\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Thread.h">
+      <Filter>Header Files\Process</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
