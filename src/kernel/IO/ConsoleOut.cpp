@@ -1,5 +1,5 @@
 #include "ConsoleOut.h"
-kiv_os::NOS_Error ConsoleOut::write(const char* sourceBuffer, uint32_t bufferSize, uint32_t& bytesWritten) {
+kiv_os::NOS_Error ConsoleOut::write(const char* sourceBuffer, size_t bufferSize, size_t& bytesWritten) {
 	auto regs = kiv_hal::TRegisters();
 
 	// Zadame cislo sluzby pro zapis do konzole do AH (RAX -> H)

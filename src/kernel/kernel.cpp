@@ -12,8 +12,8 @@
 #include "IO/ConsoleIn.h"
 #include "IO/ConsoleOut.h"
 #include "Process/ProcessManager.h"
-
-static auto processManager = ProcessManager();
+#include "Process/ProcessManager.h"
+#include "Process/ProcessManager.h"
 
 HMODULE User_Programs;
 
@@ -58,7 +58,7 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 
 	const auto stdInFromHandle = static_cast<AbstractFile*>(Resolve_kiv_os_Handle(stdOutHandle));
 	const auto message = std::string("Hello Kernel\n");
-	uint32_t bytesWritten;
+	size_t bytesWritten;
 	stdInFromHandle->write(message.c_str(), message.size(), bytesWritten);
 
 	std::cout << stdInHandle << ", " << stdOutHandle << std::endl;

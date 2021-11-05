@@ -12,10 +12,10 @@
 class AbstractFile {
 public:
 	virtual ~AbstractFile() = default;
-	virtual kiv_os::NOS_Error read(char* targetBuffer, uint32_t bytes, uint32_t& bytesRead) {
+	virtual kiv_os::NOS_Error read(char* targetBuffer, size_t bytes, size_t& bytesRead) {
 		return kiv_os::NOS_Error::Success;
 	}
-	virtual kiv_os::NOS_Error write(const char* sourceBuffer, uint32_t bufferSize, uint32_t& bytesWritten) {
+	virtual kiv_os::NOS_Error write(const char* sourceBuffer, size_t bufferSize, size_t& bytesWritten) {
 		return kiv_os::NOS_Error::Success;
 	}
 	

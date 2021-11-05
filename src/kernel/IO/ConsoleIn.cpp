@@ -1,5 +1,5 @@
 #include "ConsoleIn.h"
-kiv_os::NOS_Error ConsoleIn::read(char* targetBuffer, const uint32_t bytes, uint32_t& bytesRead) {
+kiv_os::NOS_Error ConsoleIn::read(char* targetBuffer, const size_t bytes, size_t& bytesRead) {
 	auto regs = kiv_hal::TRegisters();
 	auto idx = uint32_t{0};
 	while (idx < bytes) {

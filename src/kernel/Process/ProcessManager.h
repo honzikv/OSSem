@@ -4,8 +4,10 @@
 #include "Process.h"
 #include "../api/api.h"
 #include <array>
+#include <iostream>
 #include <string>
 #include <mutex>
+#include <ostream>
 
 #include "Thread.h"
 /**
@@ -22,7 +24,7 @@ public:
 	static constexpr uint16_t TID_RANGE_END = 8144;
 	static constexpr uint16_t NO_FREE_ID = -1;
 	inline static const std::string DEFAULT_PROCESS_WORKDIR = "C:\\";  // NOLINT(clang-diagnostic-exit-time-destructors)
-
+	
 private:
 	/**
 	 * "Tabulka procesu", index je process id.
@@ -56,6 +58,7 @@ private:
 		return threadTable[tid + TID_RANGE_START];
 	}
 
+
 	std::mutex processTableMutex;
 	std::mutex threadTableMutex;
 
@@ -82,7 +85,7 @@ public:
 			return performShutdown(regs);
 
 		case kiv_os::NOS_Process::Register_Signal_Handler:
-			return performregisterSignalHandler(regs);
+			return performRegisterSignalHandler(regs);
 		}
 	}
 
@@ -132,7 +135,9 @@ public:
 	kiv_os::NOS_Error performShutdown(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
-	kiv_os::NOS_Error performregisterSignalHandler(const kiv_hal::TRegisters& regs) {
+	kiv_os::NOS_Error performRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 };
+
+inline auto processManager = ProcessManager();

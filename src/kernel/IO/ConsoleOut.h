@@ -4,5 +4,5 @@
 
 class ConsoleOut final : public AbstractFile {
 public:
-	kiv_os::NOS_Error write(const char* sourceBuffer, uint32_t bufferSize, uint32_t& bytesWritten) override;
+	kiv_os::NOS_Error write(const char* sourceBuffer, size_t bufferSize, size_t& bytesWritten) override;
 };
