@@ -6,7 +6,7 @@
 #include "hal.h"
 
 namespace kiv_os {
-	const kiv_hal::NInterrupt System_Int_Number = kiv_hal::NInterrupt(0x21);
+	const kiv_hal::NInterrupt System_Int_Number = kiv_hal::NInterrupt(0x69); // puvodne 0x21
 			//je to libovolne arbitrarni cislo, ktere neni uz obsazene v kiv_hal::NInterrupt
 
 #ifndef KERNEL

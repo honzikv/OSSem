@@ -22,7 +22,7 @@
     <Filter Include="Source Files\Shell">
       <UniqueIdentifier>{8008f6b2-dfbd-4b81-b049-f74a63ef6956}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Processes">
+    <Filter Include="Source Files\Programs">
       <UniqueIdentifier>{9d36ea4c-0c08-466a-b790-bfac1f169dae}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -72,7 +72,7 @@
       <Filter>Source Files\Shell</Filter>
     </ClCompile>
     <ClCompile Include="Freq.cpp">
-      <Filter>Source Files\Processes</Filter>
+      <Filter>Source Files\Programs</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,90 +1,107 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\Process">
+    <Filter Include="Headers">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Headers\Process">
       <UniqueIdentifier>{1cf2b891-164d-4387-8ae3-4d7d6d6f38b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Process">
-      <UniqueIdentifier>{9b89f0fd-e4a8-4295-bb91-920a8185ccc8}</UniqueIdentifier>
+    <Filter Include="Headers\IO">
+      <UniqueIdentifier>{b8cb856b-87ca-4d61-ae82-340ace1521f1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\FileIO">
-      <UniqueIdentifier>{ff0c7059-0198-4756-882b-41f5577c452a}</UniqueIdentifier>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{e042ba29-549c-4c66-ad5f-62bcb87f2d99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IO">
+      <UniqueIdentifier>{1ed4391e-64dd-48bb-8c29-49d63fe91450}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Process">
+      <UniqueIdentifier>{c7b8cd5e-7a7c-40eb-90a3-1cffa4440a6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\api">
+      <UniqueIdentifier>{f7660225-a141-4a22-b08b-f7e8a4be96f0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\kernel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\handles.cpp">
+    <ClCompile Include="..\..\src\kernel\io.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\io.cpp">
+    <ClCompile Include="..\..\src\kernel\handles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\api\api.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ProcessControlBlock.cpp">
+    <ClCompile Include="..\..\src\kernel\Process\Thread.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
-    <ClCompile Include="Pipe.cpp">
+    <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
-    <ClCompile Include="ProcessDispatcher.cpp">
+    <ClCompile Include="..\..\src\kernel\Process\Process.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
-    <ClCompile Include="Process.cpp">
-      <Filter>Source Files\Process</Filter>
+    <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp">
+      <Filter>Source Files\IO</Filter>
     </ClCompile>
-    <ClCompile Include="Thread.cpp">
-      <Filter>Source Files\Process</Filter>
+    <ClCompile Include="..\..\src\kernel\IO\ConsoleOut.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ConsoleIn.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\AbstractFile.cpp">
+      <Filter>Source Files\IO</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\api\api.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\api\hal.h">
-      <Filter>Header Files</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\handles.h">
-      <Filter>Header Files</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\io.h">
-      <Filter>Header Files</Filter>
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="ProcessControlBlock.h">
-      <Filter>Header Files\Process</Filter>
+    <ClInclude Include="..\..\src\kernel\Process\Process.h">
+      <Filter>Headers\Process</Filter>
     </ClInclude>
-    <ClInclude Include="Pipe.h">
-      <Filter>Header Files\Process</Filter>
+    <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h">
+      <Filter>Headers\Process</Filter>
     </ClInclude>
-    <ClInclude Include="AbstractFile.h">
-      <Filter>Header Files\FileIO</Filter>
+    <ClInclude Include="..\..\src\kernel\Process\Thread.h">
+      <Filter>Headers\Process</Filter>
     </ClInclude>
-    <ClInclude Include="Process.h">
-      <Filter>Header Files\Process</Filter>
+    <ClInclude Include="..\..\src\kernel\IO\ConsoleIn.h">
+      <Filter>Headers\IO</Filter>
     </ClInclude>
-    <ClInclude Include="ProcessDispatcher.h">
-      <Filter>Header Files\Process</Filter>
+    <ClInclude Include="..\..\src\kernel\IO\ConsoleOut.h">
+      <Filter>Headers\IO</Filter>
     </ClInclude>
-    <ClInclude Include="Thread.h">
-      <Filter>Header Files\Process</Filter>
+    <ClInclude Include="..\..\src\kernel\IO\Pipe.h">
+      <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="FileService.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\AbstractFile.h">
+      <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\api\api.h">
+      <Filter>Headers\api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\api\hal.h">
+      <Filter>Headers\api</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
