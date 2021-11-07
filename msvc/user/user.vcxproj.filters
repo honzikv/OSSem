@@ -25,6 +25,9 @@
     <Filter Include="Source Files\Programs">
       <UniqueIdentifier>{9d36ea4c-0c08-466a-b790-bfac1f169dae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Programs">
+      <UniqueIdentifier>{08175ba7-6988-486e-a8f6-505999333f94}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h">
@@ -45,14 +48,14 @@
     <ClInclude Include="..\..\src\user\Shell\CommandParser.h">
       <Filter>Header Files\Shell</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\user\Shell\ShellInterpreter.h">
+    <ClInclude Include="..\..\src\user\Shell\Shell.h">
       <Filter>Header Files\Shell</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\user\Freq.h">
-      <Filter>Header Files\Shell</Filter>
+      <Filter>Header Files\Programs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -71,7 +74,7 @@
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp">
       <Filter>Source Files\Shell</Filter>
     </ClCompile>
-    <ClCompile Include="Freq.cpp">
+    <ClCompile Include="..\..\src\user\Freq.cpp">
       <Filter>Source Files\Programs</Filter>
     </ClCompile>
   </ItemGroup>

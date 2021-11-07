@@ -15,6 +15,7 @@ enum class RedirectType : uint8_t {
 	Both, // Ze souboru i do souboru
 	None // Zadny - Default
 
+
 };
 
 /// <summary>
@@ -48,12 +49,13 @@ struct Command {
 
 	Command(std::string commandName, std::vector<std::string> params, std::string sourceFile = "", std::string targetFile = "");
 
-
-	[[nodiscard]] std::string toString() const;
+	std::string toString() const;
 	
 	friend bool operator==(const Command& lhs, const Command& rhs);
 
 	friend bool operator!=(const Command& lhs, const Command& rhs) { return !(lhs == rhs); }
+
+
 
 private:
 	static inline RedirectType resolveRedirectType(const std::string& sourceFile, const std::string& targetFile) {

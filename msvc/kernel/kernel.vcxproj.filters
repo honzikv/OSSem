@@ -24,8 +24,17 @@
     <Filter Include="Source Files\Process">
       <UniqueIdentifier>{c7b8cd5e-7a7c-40eb-90a3-1cffa4440a6e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Headers\api">
+    <Filter Include="Source Files\API">
+      <UniqueIdentifier>{e51a0ddb-e707-4776-a534-f823b529ea6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\API">
       <UniqueIdentifier>{f7660225-a141-4a22-b08b-f7e8a4be96f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Utils">
+      <UniqueIdentifier>{0ff0b42d-6f89-4c60-9c35-ffa72aed4ac7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{a05e3b21-5c8d-4bef-8061-3667ec9dc656}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -38,13 +47,10 @@
     <ClCompile Include="..\..\src\kernel\handles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\api\api.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\Process\Thread.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp">
+    <ClCompile Include="..\..\src\kernel\Process\RunnableManager.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\Process\Process.cpp">
@@ -62,6 +68,12 @@
     <ClCompile Include="..\..\src\kernel\IO\AbstractFile.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\api\api.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Utils\Semaphore.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -76,7 +88,7 @@
     <ClInclude Include="..\..\src\kernel\Process\Process.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h">
+    <ClInclude Include="..\..\src\kernel\Process\RunnableManager.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\Thread.h">
@@ -91,17 +103,26 @@
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
-    <ClInclude Include="FileService.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\AbstractFile.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\api\api.h">
-      <Filter>Headers\api</Filter>
+      <Filter>Headers\API</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\api\hal.h">
-      <Filter>Headers\api</Filter>
+      <Filter>Headers\API</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h">
+      <Filter>Headers\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Utils\Config.h">
+      <Filter>Headers\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Utils\Logging.h">
+      <Filter>Headers\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\RunnableState.h">
+      <Filter>Headers\Process</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

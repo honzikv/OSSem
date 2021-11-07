@@ -11,7 +11,7 @@
 ///	Funkce vraci File_Not_Found, pokud handle k pozadovanemu souboru neexistuje
 /// </summary>
 /// <param name="regs">Kontext</param>
-void performRead(kiv_hal::TRegisters& regs) {
+void Perform_Read(kiv_hal::TRegisters& regs) {
 	const auto fileHandle = Resolve_kiv_os_Handle(regs.rdx.x);
 	if (fileHandle == INVALID_HANDLE_VALUE) {
 		regs.rax.r = -1;
@@ -21,14 +21,13 @@ void performRead(kiv_hal::TRegisters& regs) {
 	const auto file = static_cast<AbstractFile*>(fileHandle);
 	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);
 	const auto bytes = regs.rcx.r; // kolik bytu se ma precist
-	auto bytesRead = size_t{ 0 }; // pocet prectenych bytu
+	auto bytes_read = size_t{ 0 }; // pocet prectenych bytu
 	
-	const auto result = file->read(buffer, bytes, bytesRead);
-	// Nastavime pocet prectenych bytu a vysledek operace
+	const auto result = file->Read(buffer, bytes, bytes_read);
 
 	// Pokud je vysledek success vratime pocet bytu v rax
 	if (result == kiv_os::NOS_Error::Success) {
-		regs.rax.r = bytesRead;
+		regs.rax.r = bytes_read;
 		return;
 	}
 
@@ -43,26 +42,25 @@ void performRead(kiv_hal::TRegisters& regs) {
 ///	Funkce vraci File_Not_Found, pokud handle k pozadovanemu souboru neexistuje
 /// </summary>
 /// <param name="regs">Kontext</param>
-void performWrite(kiv_hal::TRegisters& regs) {
-	const auto fileHandle = Resolve_kiv_os_Handle(regs.rdx.x);
-	if (fileHandle == INVALID_HANDLE_VALUE) {
+void Perform_Write(kiv_hal::TRegisters& regs) {
+	const auto file_handle = Resolve_kiv_os_Handle(regs.rdx.x);
+	if (file_handle == INVALID_HANDLE_VALUE) {
 		regs.rax.r = -1;
 		regs.rbx.e = static_cast<decltype(regs.rbx.e)>(kiv_os::NOS_Error::File_Not_Found);
 	}
 
 	// File handle je void pointer, ktery muzeme pretypovat na nas objekt
-	const auto file = static_cast<AbstractFile*>(fileHandle);
+	const auto file = static_cast<AbstractFile*>(file_handle);
 	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);
 	const auto bytes = regs.rcx.r;
 
-	auto bytesWritten = size_t{ 0 };
+	auto bytes_written = size_t{ 0 };
 
-	const auto result = file->write(buffer, bytes, bytesWritten);
-	// Nastavime pocet prectenych bytu a vysledek operace
+	const auto result = file->Write(buffer, bytes, bytes_written);
 
 	// Pokud je vysledek Success vratime pocet bytu v rax
 	if (result == kiv_os::NOS_Error::Success) {
-		regs.rax.r = bytesWritten;
+		regs.rax.r = bytes_written;
 		return;
 	}
 
@@ -76,12 +74,12 @@ void Handle_IO(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_File_System>(regs.rax.l)) {
 
 		case kiv_os::NOS_File_System::Read_File: {
-			performRead(regs);
+			Perform_Read(regs);
 			break;
 		}
 
 		case kiv_os::NOS_File_System::Write_File: {
-			performWrite(regs);
+			Perform_Write(regs);
 			break;
 		}
 		case kiv_os::NOS_File_System::Open_File: {

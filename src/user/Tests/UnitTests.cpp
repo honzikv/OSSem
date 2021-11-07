@@ -147,7 +147,7 @@ auto shellTest_InvalidInput3(Shell& shellInterpreter) {
 		return;
 	}
 
-	auto expectedCommand = Command(":))):L(:)", {}, "", "::}🙌🙌🙌");
+	auto expectedCommand = Command(":))):L(:)", {},  "::}🙌🙌🙌", "");
 	try {
 		compareCommands(expectedCommand, commands[0]);
 	}

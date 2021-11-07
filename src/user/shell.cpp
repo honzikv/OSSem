@@ -14,7 +14,7 @@
 
 
 size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
-
+	
 #if IS_DEBUG
 	TestRunner::runTests();
 #endif
@@ -23,7 +23,6 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 
-	// Pole jako objekt - k pointeru se pristupuje pres buffer.data()
 	auto buffer = std::array<char, BUFFER_SIZE>(); // buffer pro nacitani user inputu
 	size_t counter;
 
@@ -31,10 +30,10 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 	// 	"Shell zobrazuje echo zadaneho retezce. Prikaz exit ukonci shell.\n";
 	// kiv_os_rtl::Write_File(std_out, intro, strlen(intro), counter);
 
-
+	
 	// Shell interpreter parsuje prikazy a vola prislusne sluzby OS
 	// Unique pointer (make_unique) vytvori objekt na heapu, takze se sam smaze pri ukonceni scopu
-	const auto shellInterpreter = std::make_unique<Shell>(regs, std_in, std_out);
+	const auto shell = std::make_unique<Shell>(regs, std_in, std_out);
 
 	constexpr auto prompt = "C:\\>"; // todo: filesystem integration
 	do {

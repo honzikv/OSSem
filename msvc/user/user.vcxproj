@@ -25,17 +25,17 @@
     <ClInclude Include="..\..\src\user\rtl.h" />
     <ClInclude Include="..\..\src\user\shell.h" />
     <ClInclude Include="..\..\src\user\Shell\CommandParser.h" />
-    <ClInclude Include="..\..\src\user\Shell\ShellInterpreter.h" />
+    <ClInclude Include="..\..\src\user\Shell\Shell.h" />
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h" />
     <ClInclude Include="..\..\src\user\Utils\StringUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
+    <ClCompile Include="..\..\src\user\Freq.cpp" />
     <ClCompile Include="..\..\src\user\rtl.cpp" />
     <ClCompile Include="..\..\src\user\shell.cpp" />
     <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp" />
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp" />
-    <ClCompile Include="Freq.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A5F63FF3-DE9A-4B0B-BBF9-AD27200CE81F}</ProjectGuid>

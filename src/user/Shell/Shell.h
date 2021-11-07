@@ -10,6 +10,9 @@ constexpr size_t BUFFER_SIZE = 256;
 constexpr auto NEWLINE_SYMBOL = "\n";
 constexpr auto EXIT_COMMAND = "exit";
 
+
+extern "C" size_t __stdcall shell(const kiv_hal::TRegisters & regs);
+
 /**
  * 
  * Wrapper pro shell() funkci pro lepsi citelnost kodu

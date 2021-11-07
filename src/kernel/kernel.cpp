@@ -2,18 +2,13 @@
 
 #include "kernel.h"
 
-#include <iostream>
-#include <ostream>
-
 #include "io.h"
 #include <Windows.h>
 
-#include "handles.h"
 #include "IO/ConsoleIn.h"
 #include "IO/ConsoleOut.h"
-#include "Process/ProcessManager.h"
+#include "Process/RunnableManager.h"
 
-HMODULE User_Programs;
 
 void Initialize_Kernel() {
 	User_Programs = LoadLibraryW(L"user.dll");
@@ -34,7 +29,7 @@ void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 			break;
 
 		case kiv_os::NOS_Service_Major::Process:
-			ProcessManager::get().serveProcess(regs);
+			RunnableManager::get().Process_Syscall(regs);
 			break;
 	}
 
@@ -48,23 +43,28 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	auto stdOut = ConsoleOut();
 
 	// Vytvorime handle pro stdIn a stdOut
-	const auto stdInHandle = Convert_Native_Handle(&stdIn);
-	const auto stdOutHandle = Convert_Native_Handle(&stdOut);
-
-	// Vytvorime shell, ktery bude blokovat, dokud se nevypne pres ctrl+c, exit, apod.
-
-
-	const auto stdInFromHandle = static_cast<AbstractFile*>(Resolve_kiv_os_Handle(stdOutHandle));
-	const auto message = std::string("Hello Kernel\n");
-	size_t bytesWritten;
-	stdInFromHandle->write(message.c_str(), message.size(), bytesWritten);
-
-	std::cout << stdInHandle << ", " << stdOutHandle << std::endl;
-	int x;
-	std::cin >> x;
+	const auto std_in_handle = Convert_Native_Handle(&stdIn);
+	const auto std_out_handle = Convert_Native_Handle(&stdOut);
 
 	Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
 
+	// Vytvorime shell
+	auto regs = kiv_hal::TRegisters();
+	const auto shell_command = "shell";
+	const auto shell_args = "";
+
+	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
+	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Clone);
+	regs.rcx.l = static_cast<decltype(regs.rcx.l)>(kiv_os::NClone::Create_Process);
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(shell_command); // rdx je pretypovany pointer na jmeno souboru
+	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(shell_args); // rdi je pointer na argumenty
+	regs.rbx.e = std_in_handle << 16 | std_out_handle; // rbx obsahuje stdin a stdout
+
+	Sys_Call(regs);
+
+	while (1) {
+		
+	}
 
 	Shutdown_Kernel();
 }

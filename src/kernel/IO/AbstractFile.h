@@ -13,19 +13,19 @@ public:
 	/// <summary>
 	/// Precte data ze souboru do bufferu. Vychozi implementace vraci UnknownError
 	/// </summary>
-	/// <param name="targetBuffer">Buffer, do ktereho se data zapisuji</param>
+	/// <param name="target_buffer">Buffer, do ktereho se data zapisuji</param>
 	/// <param name="bytes">Pocet bytu, ktery se ma precist</param>
-	/// <param name="bytesRead">Pocet prectenych bytu</param>
+	/// <param name="bytes_read">Pocet prectenych bytu</param>
 	/// <returns></returns>
-	virtual kiv_os::NOS_Error read(char* targetBuffer, size_t bytes, size_t& bytesRead);
+	virtual kiv_os::NOS_Error Read(char* target_buffer, size_t bytes, size_t& bytes_read);
 
 	/// <summary>
 	/// Zapise data do souboru z bufferu. Vychozi implementace vraci UnknownError
 	/// </summary>
-	/// <param name="sourceBuffer">Buffer, ze ktereho se data ctou</param>
+	/// <param name="source_buffer">Buffer, ze ktereho se data ctou</param>
 	/// <param name="bytes">Pocet bytu, ktery se ma zapsat</param>
-	/// <param name="bytesWritten">Pocet zapsanych bytu po operaci</param>
+	/// <param name="bytes_written">Pocet zapsanych bytu po operaci</param>
 	/// <returns></returns>
-	virtual kiv_os::NOS_Error write(const char* sourceBuffer, size_t bytes, size_t& bytesWritten);
+	virtual kiv_os::NOS_Error Write(const char* source_buffer, size_t bytes, size_t& bytes_written);
 
 };

@@ -28,8 +28,9 @@
     <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp" />
     <ClCompile Include="..\..\src\kernel\kernel.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Process.cpp" />
-    <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp" />
+    <ClCompile Include="..\..\src\kernel\Process\RunnableManager.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Thread.cpp" />
+    <ClCompile Include="..\..\src\kernel\Utils\Semaphore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h" />
@@ -42,9 +43,12 @@
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h" />
     <ClInclude Include="..\..\src\kernel\kernel.h" />
     <ClInclude Include="..\..\src\kernel\Process\Process.h" />
-    <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h" />
+    <ClInclude Include="..\..\src\kernel\Process\RunnableManager.h" />
+    <ClInclude Include="..\..\src\kernel\Process\RunnableState.h" />
     <ClInclude Include="..\..\src\kernel\Process\Thread.h" />
-    <ClInclude Include="FileService.h" />
+    <ClInclude Include="..\..\src\kernel\Utils\Config.h" />
+    <ClInclude Include="..\..\src\kernel\Utils\Logging.h" />
+    <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B4305463-59C5-40C3-9A1A-92976A40562D}</ProjectGuid>

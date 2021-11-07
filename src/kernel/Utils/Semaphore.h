@@ -14,7 +14,7 @@ class Semaphore {
 	/// <summary>
 	/// Condition variable pro uspani vlakna
 	/// </summary>
-	std::condition_variable conditionVariable;
+	std::condition_variable condition_variable;
 
 	/// <summary>
 	/// Pocet vstupu soucasne
@@ -26,12 +26,12 @@ public:
 	/// <summary>
 	/// Ziskani pristupu - blokuje, pokud je count = 0
 	/// </summary>
-	void acquire();
+	void Acquire();
 
 	/// <summary>
 	/// Uvolneni pristupu - zvysi count o 1 a notifikuje jakekoliv spici vlakno nad condition variable
 	/// </summary>
-	void release();
+	void Release();
 
 	/// <summary>
 	/// Konstruktor pro semafor, ktery automaticky blokne pri acquire() a jine vlakno ho odblokne pomoci release()

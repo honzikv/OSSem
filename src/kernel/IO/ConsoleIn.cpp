@@ -1,5 +1,5 @@
 #include "ConsoleIn.h"
-kiv_os::NOS_Error ConsoleIn::read(char* targetBuffer, const size_t bytes, size_t& bytesRead) {
+kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t bytes, size_t& bytes_read) {
 	auto regs = kiv_hal::TRegisters();
 	auto idx = size_t{0};
 	while (idx < bytes) {
@@ -35,12 +35,12 @@ kiv_os::NOS_Error ConsoleIn::read(char* targetBuffer, const size_t bytes, size_t
 			}
 			case kiv_hal::NControl_Codes::NUL:
 			case kiv_hal::NControl_Codes::CR: {
-				bytesRead = idx; // Zde k indexu 1 nepridavame, protoze CR znak nas nezajima
+				bytes_read = idx; // Zde k indexu 1 nepridavame, protoze CR znak nas nezajima
 				return kiv_os::NOS_Error::Success;
 			}
 
 			default: {
-				targetBuffer[idx] = symbol;
+				target_buffer[idx] = symbol;
 				idx += 1;
 
 				regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NVGA_BIOS::Write_String);
