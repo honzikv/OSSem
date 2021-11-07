@@ -5,108 +5,87 @@
 
 #include "IO/AbstractFile.h"
 
-size_t Read_Line_From_Console(char* buffer, const size_t buffer_size) {
-	kiv_hal::TRegisters registers;
+/// <summary>
+/// Provede cteni ze souboru - pro soubor zavola metodu read()
+///
+///	Funkce vraci File_Not_Found, pokud handle k pozadovanemu souboru neexistuje
+/// </summary>
+/// <param name="regs">Kontext</param>
+void performRead(kiv_hal::TRegisters& regs) {
+	const auto fileHandle = Resolve_kiv_os_Handle(regs.rdx.x);
+	if (fileHandle == INVALID_HANDLE_VALUE) {
+		regs.rax.r = -1;
+		regs.rbx.e = static_cast<decltype(regs.rbx.e)>(kiv_os::NOS_Error::File_Not_Found);
+	}
+	
+	const auto file = static_cast<AbstractFile*>(fileHandle);
+	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);
+	const auto bytes = regs.rcx.r; // kolik bytu se ma precist
+	auto bytesRead = size_t{ 0 }; // pocet prectenych bytu
+	
+	const auto result = file->read(buffer, bytes, bytesRead);
+	// Nastavime pocet prectenych bytu a vysledek operace
 
-	size_t pos = 0;
-	while (pos < buffer_size) {
-		//read char
-		registers.rax.h = static_cast<decltype(registers.rax.l)>(kiv_hal::NKeyboard::Read_Char);
-		kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Keyboard, registers);
-
-		if (!registers.flags.non_zero) break; //nic jsme neprecetli, 
-		//pokud je rax.l EOT, pak byl zrejme vstup korektne ukoncen
-		//jinak zrejme doslo k chybe zarizeni
-
-		char ch = registers.rax.l;
-
-		//osetrime zname kody
-		switch (static_cast<kiv_hal::NControl_Codes>(ch)) {
-			case kiv_hal::NControl_Codes::BS: {
-				//mazeme znak z bufferu
-				if (pos > 0) pos--;
-
-				registers.rax.h = static_cast<decltype(registers.rax.l)>(kiv_hal::NVGA_BIOS::Write_Control_Char);
-				registers.rdx.l = ch;
-				kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, registers);
-			}
-			break;
-
-			case kiv_hal::NControl_Codes::LF: break; //jenom pohltime, ale necteme
-			case kiv_hal::NControl_Codes::NUL: //chyba cteni?
-			case kiv_hal::NControl_Codes::EOT: //konec textu
-			case kiv_hal::NControl_Codes::CR: return pos; //docetli jsme az po Enter
-
-
-			default: buffer[pos] = ch;
-				pos++;
-				registers.rax.h = static_cast<decltype(registers.rax.l)>(kiv_hal::NVGA_BIOS::Write_String);
-				registers.rdx.r = reinterpret_cast<decltype(registers.rdx.r)>(&ch);
-				registers.rcx.r = 1;
-				kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, registers);
-				break;
-		}
+	// Pokud je vysledek success vratime pocet bytu v rax
+	if (result == kiv_os::NOS_Error::Success) {
+		regs.rax.r = bytesRead;
+		return;
 	}
 
-	return pos;
-
+	// Jinak nastavime flag a do rax zapiseme chybu
+	regs.flags.carry = 1;
+	regs.rax.e = static_cast<decltype(regs.rax.e)>(result);
 }
 
-void performRead(kiv_hal::TRegisters& regs) {
-	const auto fileDescriptor = regs.rdx.x;
-	const auto file = static_cast<AbstractFile*>(Resolve_kiv_os_Handle(fileDescriptor));
-	auto buffer = reinterpret_cast<char*>(regs.rdi.r);
-	auto bytes = regs.rcx.r;
-	auto bytesRead = size_t{ 0 };
-	const auto result = file->read(buffer, bytes, bytesRead);
+/// <summary>
+/// Provede zapis do souboru - pro soubor zavola metodu write().
+///
+///	Funkce vraci File_Not_Found, pokud handle k pozadovanemu souboru neexistuje
+/// </summary>
+/// <param name="regs">Kontext</param>
+void performWrite(kiv_hal::TRegisters& regs) {
+	const auto fileHandle = Resolve_kiv_os_Handle(regs.rdx.x);
+	if (fileHandle == INVALID_HANDLE_VALUE) {
+		regs.rax.r = -1;
+		regs.rbx.e = static_cast<decltype(regs.rbx.e)>(kiv_os::NOS_Error::File_Not_Found);
+	}
+
+	// File handle je void pointer, ktery muzeme pretypovat na nas objekt
+	const auto file = static_cast<AbstractFile*>(fileHandle);
+	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);
+	const auto bytes = regs.rcx.r;
+
+	auto bytesWritten = size_t{ 0 };
+
+	const auto result = file->write(buffer, bytes, bytesWritten);
+	// Nastavime pocet prectenych bytu a vysledek operace
+
+	// Pokud je vysledek Success vratime pocet bytu v rax
+	if (result == kiv_os::NOS_Error::Success) {
+		regs.rax.r = bytesWritten;
+		return;
+	}
+
+	// Jinak nastavime flag a do rax zapiseme chybu
+	regs.flags.carry = 1;
+	regs.rax.e = static_cast<decltype(regs.rax.e)>(result);
 }
+
 
 void Handle_IO(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_File_System>(regs.rax.l)) {
 
 		case kiv_os::NOS_File_System::Read_File: {
 			performRead(regs);
+			break;
 		}
-
 
 		case kiv_os::NOS_File_System::Write_File: {
-			//Spravne bychom nyni meli pouzit interni struktury kernelu a zadany handle resolvovat na konkretni objekt, ktery pise na konkretni zarizeni/souboru/roury.
-			//Ale protoze je tohle jenom kostra, tak to rovnou biosem posleme na konzoli.
-			kiv_hal::TRegisters registers;
-			registers.rax.h = static_cast<decltype(registers.rax.h)>(kiv_hal::NVGA_BIOS::Write_String);
-			registers.rdx.r = regs.rdi.r;
-			registers.rcx = regs.rcx;
-
-			//preklad parametru dokoncen, zavolame sluzbu
-			kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, registers);
-
-			regs.flags.carry |= (registers.rax.r == 0 ? 1 : 0);
-			//jestli jsme nezapsali zadny znak, tak jiste doslo k nejake chybe
-			regs.rax = registers.rcx; //VGA BIOS nevraci pocet zapsanych znaku, tak predpokladame, ze zapsal vsechny
+			performWrite(regs);
+			break;
 		}
-		break; //Write_File
-
-
-			/* Nasledujici dve vetve jsou ukazka, ze starsiho zadani, ktere ukazuji, jak mate mapovat Windows HANDLE na kiv_os handle a zpet, vcetne jejich alokace a uvolneni
-		
-				case kiv_os::scCreate_File: {
-					HANDLE result = CreateFileA((char*)regs.rdx.r, GENERIC_READ | GENERIC_WRITE, (DWORD)regs.rcx.r, 0, OPEN_EXISTING, 0, 0);
-					//zde je treba podle Rxc doresit shared_read, shared_write, OPEN_EXISING, etc. podle potreby
-					regs.flags.carry = result == INVALID_HANDLE_VALUE;
-					if (!regs.flags.carry) regs.rax.x = Convert_Native_Handle(result);
-					else regs.rax.r = GetLastError();
-				}
-											break;	//scCreateFile
-		
-				case kiv_os::scClose_Handle: {
-						HANDLE hnd = Resolve_kiv_os_Handle(regs.rdx.x);
-						regs.flags.carry = !CloseHandle(hnd);
-						if (!regs.flags.carry) Remove_Handle(regs.rdx.x);				
-							else regs.rax.r = GetLastError();
-					}
-		
-					break;	//CloseFile
-		
-			*/
+		case kiv_os::NOS_File_System::Open_File: {
+			
+		}
 	}
 }

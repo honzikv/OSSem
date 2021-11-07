@@ -1,7 +1,7 @@
 ﻿#include "UnitTests.h"
 
 #include <iostream>
-#include "Shell/ShellInterpreter.h"
+#include "Shell/Shell.h"
 
 void compareCommands(Command& actual, Command& expected) {
 	if (actual != expected) {
@@ -11,10 +11,10 @@ void compareCommands(Command& actual, Command& expected) {
 	}
 }
 
-auto shellTest_SimpleCommand(ShellInterpreter& shellInterpreter) {
+auto shellTest_SimpleCommand(Shell& shellInterpreter) {
 	const auto input = "ls -a -b -c";
 
-	auto expectedCommand = Command("ls", {"-a", "-b", "-c"}, RedirectType::None, {});
+	auto expectedCommand = Command("ls", {"-a", "-b", "-c"});
 	auto commands = shellInterpreter.parseCommands(input);
 
 	if (commands.size() > 1) {
@@ -34,7 +34,7 @@ auto shellTest_SimpleCommand(ShellInterpreter& shellInterpreter) {
 
 }
 
-auto shellTest_NoCommand(ShellInterpreter& shellInterpreter) {
+auto shellTest_NoCommand(Shell& shellInterpreter) {
 	auto input = "";
 
 	const auto commands = shellInterpreter.parseCommands(input);
@@ -45,7 +45,7 @@ auto shellTest_NoCommand(ShellInterpreter& shellInterpreter) {
 	std::cout << "shellTest_NoCommand Test succeeded" << std::endl;
 }
 
-auto shellTest_FileRedirect(ShellInterpreter& shellInterpreter) {
+auto shellTest_FileRedirect(Shell& shellInterpreter) {
 	auto input = "command1 < data.json";
 
 	const auto commands = shellInterpreter.parseCommands(input);
@@ -55,7 +55,7 @@ auto shellTest_FileRedirect(ShellInterpreter& shellInterpreter) {
 		return;
 	}
 
-	auto expectedCommand = Command("command1", {}, RedirectType::FromFile, "data.json");
+	auto expectedCommand = Command("command1", {}, "data.json", "");
 	auto actualCommand = commands[0];
 
 	try {
@@ -69,15 +69,15 @@ auto shellTest_FileRedirect(ShellInterpreter& shellInterpreter) {
 	std::cout << "shellTest_FileRedirect Test succeeded." << std::endl;
 }
 
-auto shellTest_MultipleCommandsWithFileRedirects(ShellInterpreter& shellInterpreter) {
+auto shellTest_MultipleCommandsWithFileRedirects(Shell& shellInterpreter) {
 	auto input = "command1 -a -b | command2 > out.json|command3|command4 |command5 -a -b -c < from.json";
 
 	auto expectedCommands = std::vector<Command>({
-		{"command1", {"-a", "-b"}, None, {}},
-		{"command2", {}, ToFile, "out.json"},
-		{"command3", {}, None, {}},
-		{"command4", {}, None, {}},
-		{"command5", {"-a", "-b", "-c"}, FromFile, "from.json"},
+		{"command1", {"-a", "-b"}},
+		{"command2", {}, "", "out.json"},
+		{"command3", {}},
+		{"command4", {}},
+		{"command5", {"-a", "-b", "-c"}, "from.json", ""},
 
 	});
 
@@ -102,7 +102,7 @@ auto shellTest_MultipleCommandsWithFileRedirects(ShellInterpreter& shellInterpre
 	std::cout << "shellTest_MultipleCommandsWithFileRedirects Test succeeded." << std::endl;
 }
 
-auto shellTest_InvalidInput1(ShellInterpreter& shellInterpreter) {
+auto shellTest_InvalidInput1(Shell& shellInterpreter) {
 	const auto input = "command <| command";
 	try {
 		shellInterpreter.parseCommands(input);
@@ -120,7 +120,7 @@ auto shellTest_InvalidInput1(ShellInterpreter& shellInterpreter) {
 	std::cerr << "shellTest_InvalidInput1: Error, no exception was thrown" << std::endl;
 }
 
-auto shellTest_InvalidInput2(ShellInterpreter& shellInterpreter) {
+auto shellTest_InvalidInput2(Shell& shellInterpreter) {
 	const auto input = "| | | <> <<<.././/.sdf./sd";
 	try {
 		shellInterpreter.parseCommands(input);
@@ -138,7 +138,7 @@ auto shellTest_InvalidInput2(ShellInterpreter& shellInterpreter) {
 	std::cerr << "shellTest_InvalidInput2: Error, no exception was thrown" << std::endl;
 }
 
-auto shellTest_InvalidInput3(ShellInterpreter& shellInterpreter) {
+auto shellTest_InvalidInput3(Shell& shellInterpreter) {
 	const auto input = "||||||:))):L(:)<::}🙌🙌🙌";
 	auto commands = shellInterpreter.parseCommands(input);
 	if (commands.size() != 1) {
@@ -147,7 +147,7 @@ auto shellTest_InvalidInput3(ShellInterpreter& shellInterpreter) {
 		return;
 	}
 
-	auto expectedCommand = Command(":))):L(:)", {}, RedirectType::FromFile, "::}🙌🙌🙌");
+	auto expectedCommand = Command(":))):L(:)", {}, "", "::}🙌🙌🙌");
 	try {
 		compareCommands(expectedCommand, commands[0]);
 	}
@@ -158,7 +158,7 @@ auto shellTest_InvalidInput3(ShellInterpreter& shellInterpreter) {
 	std::cout << "shellTest_InvalidInput3 Test succeeded." << std::endl;
 }
 
-auto shellTest_InvalidInput4(ShellInterpreter& shellInterpreter) {
+auto shellTest_InvalidInput4(Shell& shellInterpreter) {
 	const auto input =
 		"She travelling acceptance men unpleasant her especially entreaties law. Law forth but end any arise chief arose.";
 	auto commands = shellInterpreter.parseCommands(input);
@@ -170,7 +170,7 @@ auto shellTest_InvalidInput4(ShellInterpreter& shellInterpreter) {
 	auto expectedCommand = Command("She", {
 		"travelling", "acceptance", "men", "unpleasant", "her", "especially", "entreaties", "law.", "Law", "forth",
 		"but", "end", "any", "arise", "chief", "arose."
-		}, RedirectType::None, "");
+		}, "", "");
 	
 	try {
 		compareCommands(expectedCommand, commands[0]);
@@ -185,7 +185,7 @@ auto shellTest_InvalidInput4(ShellInterpreter& shellInterpreter) {
 
 
 void TestRunner::runTests() {
-	auto shellInterpreter = ShellInterpreter({}, {}, {});
+	auto shellInterpreter = Shell({}, {}, {});
 	
 	shellTest_SimpleCommand(shellInterpreter);
 	shellTest_NoCommand(shellInterpreter);

@@ -5,7 +5,7 @@
 #ifndef OS_FAT_HELPER_H
 #define OS_FAT_HELPER_H
 
-#include <api.h>
+#include "../api/api.h"
 #include "path.h"
 //TODO comment
 const int kFatTableSectorCount = 9; // pocet sektoru vyhrazenych pro FAT

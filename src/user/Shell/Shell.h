@@ -11,22 +11,11 @@ constexpr auto NEWLINE_SYMBOL = "\n";
 constexpr auto EXIT_COMMAND = "exit";
 
 /**
- * Trida pro zpracovani prikazu z shellu
- *
- * Wrapper pro shell() funkci, aby v byl kod aspon trochu citelny
+ * 
+ * Wrapper pro shell() funkci pro lepsi citelnost kodu
  */
-class ShellInterpreter {
-
-	/**
-	 * Vsechny dostupne programy v OS
-	 */
-	std::unordered_set<std::string> possiblePrograms = {
-		"type", "md", "rd", "dir", "echo", "find", "sort", "rgen", "tasklist", "freq", "shutdown", "cd",
-
-		// Custom
-		"toggledebug"
-	};
-
+class Shell {
+	
 	// reference na registry
 	const kiv_hal::TRegisters& registers;
 
@@ -42,15 +31,12 @@ class ShellInterpreter {
 	// debug mode
 	bool debugOn = false;
 
-	// Pocitadlo pro tisk do konzole
-	size_t counter;
-
 	// IO buffer
 	std::array<char, BUFFER_SIZE> buffer;
 
 public:
 	// Ctor ziska z funkce shell vsechny registry + handle na stdin a stdout
-	ShellInterpreter(const kiv_hal::TRegisters& registers, const kiv_os::THandle& stdIn,
+	Shell(const kiv_hal::TRegisters& registers, const kiv_os::THandle& stdIn,
 	                 const kiv_os::THandle& stdOut) :
 		registers(registers),
 		stdIn(stdIn),
@@ -59,8 +45,8 @@ public:
 	std::vector<Command> parseCommands(const std::string& line);
 	
 
-	auto executeCommand(const Command& command) -> void;
+	void executeCommand(const Command& command);
 
-	auto toggleDebug() -> void;
+	void toggleDebug();
 
 };

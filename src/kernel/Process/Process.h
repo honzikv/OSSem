@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <unordered_map>
+
+#include "Thread.h"
 #include "../api/api.h"
 
 /// <summary>
@@ -56,5 +58,6 @@ struct Process {
 	/// Navratovy kod procesu
 	/// </summary>
 	kiv_os::NOS_Error returnCode = kiv_os::NOS_Error::Success;
+	
 };
 

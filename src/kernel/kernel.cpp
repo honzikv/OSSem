@@ -12,8 +12,6 @@
 #include "IO/ConsoleIn.h"
 #include "IO/ConsoleOut.h"
 #include "Process/ProcessManager.h"
-#include "Process/ProcessManager.h"
-#include "Process/ProcessManager.h"
 
 HMODULE User_Programs;
 
@@ -36,7 +34,7 @@ void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 			break;
 
 		case kiv_os::NOS_Service_Major::Process:
-			processManager.serveProcess(regs);
+			ProcessManager::get().serveProcess(regs);
 			break;
 	}
 

@@ -13,7 +13,6 @@ std::mt19937 gen(rd());
 std::uniform_int_distribution<> dis(1, 6);
 
 
-
 kiv_os::THandle Convert_Native_Handle(const HANDLE hnd) {
 	std::lock_guard<std::mutex> guard(Handles_Guard);
 

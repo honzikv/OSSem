@@ -1,18 +1,13 @@
 #pragma once
 #include <memory>
-
-#include "Process.h"
-#include "../api/api.h"
 #include <array>
-#include <iostream>
 #include <string>
 #include <mutex>
-#include <ostream>
 
 #include "Thread.h"
-/**
- * Trida, ktera ma na starost spravu jednotlivych procesu v OS
- */
+#include "Process.h"
+#include "../api/api.h"
+
 class ProcessManager {
 public:
 	/**
@@ -23,8 +18,13 @@ public:
 	static constexpr uint16_t TID_RANGE_START = 4096;
 	static constexpr uint16_t TID_RANGE_END = 8144;
 	static constexpr uint16_t NO_FREE_ID = -1;
-	inline static const std::string DEFAULT_PROCESS_WORKDIR = "C:\\";  // NOLINT(clang-diagnostic-exit-time-destructors)
-	
+	inline static const std::string DEFAULT_PROCESS_WORKDIR = "C:\\"; // NOLINT(clang-diagnostic-exit-time-destructors)
+
+	static ProcessManager& get() {
+		static ProcessManager instance;
+		return instance;
+	}
+
 private:
 	/**
 	 * "Tabulka procesu", index je process id.
@@ -62,6 +62,11 @@ private:
 	std::mutex processTableMutex;
 	std::mutex threadTableMutex;
 
+	ProcessManager() = default;
+	~ProcessManager() = default;
+	ProcessManager(const ProcessManager&) = delete;
+	ProcessManager& operator=(const ProcessManager&) = delete;
+
 public:
 	/**
 	 * Obsluha pri zadosti o praci s procesem
@@ -69,23 +74,23 @@ public:
 	kiv_os::NOS_Error serveProcess(kiv_hal::TRegisters& regs) {
 		auto operation = regs.rax.l;
 		switch (static_cast<kiv_os::NOS_Process>(operation)) {
-		case kiv_os::NOS_Process::Clone:
-			return performClone(regs);
+			case kiv_os::NOS_Process::Clone:
+				return performClone(regs);
 
-		case kiv_os::NOS_Process::Wait_For:
-			return performWaitFor(regs);
+			case kiv_os::NOS_Process::Wait_For:
+				return performWaitFor(regs);
 
-		case kiv_os::NOS_Process::Read_Exit_Code:
-			return performReadExitCode(regs);
+			case kiv_os::NOS_Process::Read_Exit_Code:
+				return performReadExitCode(regs);
 
-		case kiv_os::NOS_Process::Exit:
-			return performProcessExit(regs);
+			case kiv_os::NOS_Process::Exit:
+				return performProcessExit(regs);
 
-		case kiv_os::NOS_Process::Shutdown:
-			return performShutdown(regs);
+			case kiv_os::NOS_Process::Shutdown:
+				return performShutdown(regs);
 
-		case kiv_os::NOS_Process::Register_Signal_Handler:
-			return performRegisterSignalHandler(regs);
+			case kiv_os::NOS_Process::Register_Signal_Handler:
+				return performRegisterSignalHandler(regs);
 		}
 	}
 
@@ -110,6 +115,7 @@ public:
 			return kiv_os::NOS_Error::Out_Of_Memory; // OOM
 		}
 
+		// Ziskame jmeno programu a argumenty
 		const auto programName = std::string(reinterpret_cast<char*>(regs.rdx.r)); // NOLINT(performance-no-int-to-ptr)
 		const auto programArgs = std::string(reinterpret_cast<char*>(regs.rdi.r)); // NOLINT(performance-no-int-to-ptr)
 
@@ -119,25 +125,29 @@ public:
 
 
 	}
+
 	// TODO impl this
 	kiv_os::NOS_Error createNewThread(kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
+
 	kiv_os::NOS_Error performWaitFor(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
+
 	kiv_os::NOS_Error performReadExitCode(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
+
 	kiv_os::NOS_Error performProcessExit(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
+
 	kiv_os::NOS_Error performShutdown(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
+
 	kiv_os::NOS_Error performRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 };
-
-inline auto processManager = ProcessManager();

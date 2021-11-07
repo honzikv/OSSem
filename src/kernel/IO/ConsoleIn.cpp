@@ -1,7 +1,7 @@
 #include "ConsoleIn.h"
 kiv_os::NOS_Error ConsoleIn::read(char* targetBuffer, const size_t bytes, size_t& bytesRead) {
 	auto regs = kiv_hal::TRegisters();
-	auto idx = uint32_t{0};
+	auto idx = size_t{0};
 	while (idx < bytes) {
 		// Precteme znak
 		regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Read_Char);

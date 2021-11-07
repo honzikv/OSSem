@@ -7,7 +7,7 @@
 
 #include "shell.h"
 #include "rtl.h"
-#include "Shell/ShellInterpreter.h"
+#include "Shell/Shell.h"
 
 // Debug pro run testu
 #define IS_DEBUG true
@@ -34,7 +34,7 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 
 	// Shell interpreter parsuje prikazy a vola prislusne sluzby OS
 	// Unique pointer (make_unique) vytvori objekt na heapu, takze se sam smaze pri ukonceni scopu
-	const auto shellInterpreter = std::make_unique<ShellInterpreter>(regs, std_in, std_out);
+	const auto shellInterpreter = std::make_unique<Shell>(regs, std_in, std_out);
 
 	constexpr auto prompt = "C:\\>"; // todo: filesystem integration
 	do {
@@ -70,11 +70,11 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 	// return testShellParsing1();
 }
 
-std::vector<Command> ShellInterpreter::parseCommands(const std::string& line) {
+std::vector<Command> Shell::parseCommands(const std::string& line) {
 	return commandParser->parseCommands(line);
 }
 
-auto ShellInterpreter::executeCommand(const Command& command) -> void {
+auto Shell::executeCommand(const Command& command) -> void {
 	if (command.commandName == "toggledebug") {
 		toggleDebug();
 	}
@@ -82,6 +82,6 @@ auto ShellInterpreter::executeCommand(const Command& command) -> void {
 	// TODO impl
 }
 
-auto ShellInterpreter::toggleDebug() -> void {
+auto Shell::toggleDebug() -> void {
 	debugOn = !debugOn;
 }
