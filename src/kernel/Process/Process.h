@@ -1,21 +1,15 @@
 #pragma once
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
-#include "RunnableState.h"
+#include "Task.h"
 #include "../api/api.h"
-
-
 
 /// <summary>
 /// Reprezentuje proces (resp. PCB)
 /// </summary>
-class Process {
-
-	/// <summary>
-	/// Stav procesu
-	/// </summary>
-	RunnableState process_state = RunnableState::Ready;
+class Process : public Task {
 
 	/// <summary>
 	/// PID
@@ -52,29 +46,15 @@ class Process {
 	/// </summary>
 	std::vector<kiv_os::THandle> threads;
 
-	/// <summary>
-	/// Seznam handleru, co cekaji na dokonceni tohoto procesu
-	/// </summary>
-	std::vector<kiv_os::THandle> on_finish_subscribers;
-
-	/// <summary>
-	/// Navratovy kod procesu
-	/// </summary>
-	kiv_os::NOS_Error return_code = kiv_os::NOS_Error::Success;
-
 public:
 	Process(kiv_os::THandle pid, kiv_os::THandle main_thread_tid, kiv_os::THandle parent_pid,
 	        kiv_os::THandle std_in, kiv_os::THandle std_out);
 
-	void Assign_Thread(kiv_os::THandle tid);
-
-	inline void Set_Running() {
-		process_state = RunnableState::Running;
-	}
-
-	inline void Set_Finished() {
-		process_state = RunnableState::Finished;
-	}
+	/// <summary>
+	/// Prida vlakno do procesu
+	/// </summary>
+	/// <param name="tid">tid vlakna</param>
+	void Add_Thread(kiv_os::THandle tid);
 
 	[[nodiscard]] inline kiv_os::THandle Get_Pid() const { return pid; }
 	[[nodiscard]] inline kiv_os::THandle Get_Parent_Pid() const { return parent_pid; }
@@ -87,10 +67,6 @@ public:
 	}
 
 	[[nodiscard]] inline const std::vector<kiv_os::THandle>& Get_Process_Threads() const { return threads; }
+	
 
-	[[nodiscard]] inline const std::vector<kiv_os::THandle>& Get_On_Finish_Subscribers() const {
-		return on_finish_subscribers;
-	}
-
-	[[nodiscard]] inline kiv_os::NOS_Error Get_Return_Code() const { return return_code; }
 };

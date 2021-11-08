@@ -4,10 +4,21 @@
 #include <string>
 #include <mutex>
 
+#include "handles.h"
 #include "Thread.h"
 #include "Process.h"
+#include "SuspendCallback.h"
 #include "../api/api.h"
 #include "Utils/Logging.h"
+
+/// <summary>
+/// Typ handle pro wait for funkcionalitu
+/// </summary>
+enum class HandleType {
+	INVALID,
+	THREAD,
+	PROCESS
+};
 
 /// <summary>
 /// Trida, ktera se stara o spravu procesu a vlaken
@@ -17,9 +28,9 @@ public:
 	// Konstanty pro rozsahy pidu a tidu
 
 	static constexpr uint16_t PID_RANGE_START = 0;
-	static constexpr uint16_t PID_RANGE_END = 4095;
+	static constexpr uint16_t PID_RANGE_END = 4096;
 	static constexpr uint16_t TID_RANGE_START = 4096;
-	static constexpr uint16_t TID_RANGE_END = 8144;
+	static constexpr uint16_t TID_RANGE_END = 8192;
 	static constexpr uint16_t NO_FREE_ID = -1;
 
 	/// <summary>
@@ -31,7 +42,7 @@ public:
 	/// Singleton ziskani objektu. Provede lazy inicializaci a vrati referenci
 	/// </summary>
 	/// <returns>Referenci na singleton instanci teto tridy</returns>
-	static ProcessManager& get() {
+	static ProcessManager& Get() {
 		static ProcessManager instance;
 		return instance;
 	}
@@ -40,29 +51,40 @@ private:
 	/// <summary>
 	/// Tabulka procesu
 	/// </summary>
-	std::array<std::shared_ptr<Process>, PID_RANGE_END - PID_RANGE_START> process_table;
+	std::array<std::shared_ptr<Process>, PID_RANGE_END - PID_RANGE_START> process_table = {};
 
 	/// <summary>
 	/// Tabulka vlaken
 	/// </summary>
-	std::array<std::shared_ptr<Thread>, TID_RANGE_END - TID_RANGE_START> thread_table;
+	std::array<std::shared_ptr<Thread>, TID_RANGE_END - TID_RANGE_START> thread_table = {};
 
 	/// <summary>
-	/// TID -> Windows HANDLE
+	/// TID -> Handle
 	/// </summary>
-	std::unordered_map<std::thread::id, kiv_os::THandle> native_tid_to_kiv_handle;
+	std::unordered_map<std::thread::id, kiv_os::THandle> native_tid_to_kiv_handle = {};
+
+	/// <summary>
+	/// Handle -> Tid
+	///	Pro mazani
+	/// </summary>
+	std::unordered_map<kiv_os::THandle, std::thread::id> kiv_handle_to_native_tid = {};
+
+	/// <summary>
+	/// Hashmapa s callbacky pro probouzeni vlaken
+	/// </summary>
+	std::unordered_map<kiv_os::THandle, std::shared_ptr<SuspendCallback>> suspend_callbacks = {};
 
 	/// <summary>
 	/// Ziska prvni volny pid, pokud neni vrati NO_FREE_ID
 	/// </summary>
 	/// <returns>Volny pid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	kiv_os::THandle Get_Free_Pid() const;
+	[[nodiscard]] kiv_os::THandle Get_Free_Pid() const;
 
 	/// <summary>
 	/// Ziska prvni volny tid, pokud neni vrati NO_FREE_ID
 	/// </summary>
 	/// <returns>Volny tid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	kiv_os::THandle Get_Free_Tid() const;
+	[[nodiscard]] kiv_os::THandle Get_Free_Tid() const;
 
 	/// <summary>
 	/// Getter pro proces podle pidu
@@ -78,24 +100,35 @@ private:
 	/// <param name="pid">pid procesu</param>
 	void Add_Process(std::shared_ptr<Process> process, kiv_os::THandle pid);
 
-	/// <summary>
-	/// Getter pro vlakno procesu podle tidu
-	/// </summary>
-	/// <param name="tid">tid</param>
-	/// <returns>Pointer na vlakno</returns>
-	std::shared_ptr<Thread> Get_Thread(const kiv_os::THandle tid);
-
-	void Add_Thread(std::shared_ptr<Thread> thread, kiv_os::THandle tid );
+	void Add_Thread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
 
 	/// <summary>
-	/// Slouzi k zamykani kriticke sekce
+	/// Slouzi k zamykani kriticke sekce pro procesy a vlakna (tabulky)
 	/// </summary>
-	std::recursive_mutex mutex;
+	std::recursive_mutex tasks_mutex;
+
+	/// <summary>
+	/// Mutex pro callbacky pro vzbuzeni
+	/// </summary>
+	std::mutex suspend_callbacks_mutex;
 
 	ProcessManager() = default;
 	~ProcessManager() = default;
-	ProcessManager(const ProcessManager&) = delete;
-	ProcessManager& operator=(const ProcessManager&) = delete;
+	ProcessManager(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
+	ProcessManager& operator=(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
+
+	/// <summary>
+	/// Najde PID rodice pro dane vlakno
+	/// </summary>
+	/// <returns></returns>
+	kiv_os::THandle Find_Parent_Pid();
+
+	/// <summary>
+	/// Ziska THandle pro aktualne bezici vlakno. Bezici vlakno musi byt umistene v tabulce, jinak
+	///	metoda vyhodi runtime exception
+	/// </summary>
+	/// <returns>Tid aktualne beziciho vlakna</returns>
+	kiv_os::THandle Get_Current_Tid();
 
 public:
 	/// <summary>
@@ -113,32 +146,71 @@ public:
 	kiv_os::NOS_Error Perform_Clone(kiv_hal::TRegisters& regs);
 
 	/// <summary>
-	/// 
+	/// Getter pro vlakno procesu podle tidu
 	/// </summary>
-	/// <returns></returns>
-	kiv_os::THandle Find_Parent_Pid();
-
-	void Dispatch_Process(std::shared_ptr<Process> process);
+	/// <param name="tid">tid</param>
+	/// <returns>Pointer na vlakno</returns>
+	std::shared_ptr<Thread> Get_Thread(const kiv_os::THandle tid);
 
 	kiv_os::NOS_Error Create_Process(kiv_hal::TRegisters& regs);
 
-	// TODO impl this
 	kiv_os::NOS_Error Create_Thread(kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 
-	kiv_os::NOS_Error Perform_Wait_For(const kiv_hal::TRegisters& regs) {
-		auto handle_array = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r);
-		auto handle_count = static_cast<uint32_t>(regs.rcx.e);
+	/// <summary>
+	/// Spusti
+	/// </summary>
+	/// <param name="subscriber_handle"></param>
+	/// <param name="notifier_handle"></param>
+	void Trigger_Suspend_Callback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
 
-		// Protoze pri volani se mohlo nektere vlakno zastavit, chceme zkontrolovat, zda-li jsou
-		// vsechny handly  existuji a vyradit ty, co neexistuji
-		auto valid_handles = std::vector<kiv_os::THandle>();
-		for (uint32_t i = 0; i < handle_count; i += 1) {
-			
-		}
+	/// <summary>
+	/// Prevede proces ze stavu Running do stavu Finished
+	/// </summary>
+	/// <param name="pid"></param>
+	void Finish_Process(kiv_os::THandle pid);
 
-	}
+	/// <summary>
+	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
+	///	se neukonci shell.
+	/// </summary>
+	void Create_Init_Process();
+
+	/// <summary>
+	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
+	/// </summary>
+	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
+	void Initialize_Suspend_Callback(kiv_os::THandle subscriber_handle);
+
+	/// <summary>
+	/// Odstrani callback pro vzbuzeni
+	/// </summary>
+	/// <param name="subscriber_handle"></param>
+	void Remove_Suspend_Callback(kiv_os::THandle subscriber_handle);
+
+	/// <summary>
+	/// Vrati typ handle pro  dane id
+	/// </summary>
+	/// <param name="id">id, pro ktere chceme typ handle dostat</param>
+	/// <returns>typ handle</returns>
+	static HandleType Get_Handle_Type(const kiv_os::THandle id);
+
+	/// <summary>
+	/// Prida proces pro ostatni handles (proces/vlakno) jako subscribera, ktereho musi handles po dokonceni vzbudit
+	/// </summary>
+	/// <param name="handle_array">pointer na pole handlu</param>
+	/// <param name="handle_array_size">velikost pole</param>
+	/// <param name="current_tid">tid aktualniho vlakna</param>
+	void Add_Current_Thread_As_Subscriber(const kiv_os::THandle* handle_array, uint32_t handle_array_size,
+	                                      kiv_os::THandle current_tid);
+
+	/// <summary>
+	/// Provede NOS_Process::Wait_For
+	/// </summary>
+	/// <param name="regs">kontext</param>
+	/// <returns>vysledek operace</returns>
+	kiv_os::NOS_Error Perform_Wait_For(kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error Perform_Read_Exit_Code(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;

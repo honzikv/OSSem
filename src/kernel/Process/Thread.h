@@ -1,6 +1,9 @@
 #pragma once
 
-#include "RunnableState.h"
+#include <vector>
+
+#include "Task.h"
+#include "TaskState.h"
 #include "../api/api.h"
 #include "Utils/Semaphore.h"
 
@@ -8,9 +11,7 @@
 /// <summary>
 /// Reprezentuje vlakno
 /// </summary>
-class Thread {
-
-	RunnableState runnableState = RunnableState::Ready;
+class Thread : public Task {
 
 	/// <summary>
 	/// Program, ktery bude vlakno vykonavat
@@ -18,7 +19,7 @@ class Thread {
 	const kiv_os::TThread_Proc program;
 
 	/// <summary>
-	/// 
+	/// Kontext vlakna
 	/// </summary>
 	kiv_hal::TRegisters regs;
 
@@ -27,19 +28,21 @@ class Thread {
 	/// </summary>
 	bool is_main_thread;
 
-	kiv_os::THandle tid;
+	/// <summary>
+	/// Tid vlakna
+	/// </summary>
+	const kiv_os::THandle tid;
 
 	/// <summary>
 	/// Pid procesu, ke kteremu toto vlakno patri
 	/// </summary>
-	kiv_os::THandle pid;
+	const kiv_os::THandle pid;
 
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne
 	/// </summary>
 	void Thread_Func();
 
-	std::vector<>
 
 public:
 
@@ -47,11 +50,12 @@ public:
 	: program(program), regs(context), is_main_thread(is_main_thread), tid(tid), pid(pid) { }
 
 	/// <summary>
-	/// Provede inicializaci std::thread. Vlakno se blokne a vyckava, dokud se nezavola dispatch(),
-	///	pote provede dany program 
+	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho id
 	/// </summary>
-	std::thread::id Init();
+	std::thread::id Dispatch();
 
-	[[nodiscard]] kiv_os::THandle Get_Tid() const { return tid; }
-	[[nodiscard]] kiv_os::THandle Get_Pid() const { return pid; }
+	[[nodiscard]] inline kiv_os::THandle Get_Tid() const { return tid; }
+	[[nodiscard]] inline kiv_os::THandle Get_Pid() const { return pid; }
+
+	[[nodiscard]] TaskState Get_State();
 };

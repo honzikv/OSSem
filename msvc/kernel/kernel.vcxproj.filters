@@ -12,9 +12,6 @@
     <Filter Include="Headers\Process">
       <UniqueIdentifier>{1cf2b891-164d-4387-8ae3-4d7d6d6f38b4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Headers\IO">
-      <UniqueIdentifier>{b8cb856b-87ca-4d61-ae82-340ace1521f1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files">
       <UniqueIdentifier>{e042ba29-549c-4c66-ad5f-62bcb87f2d99}</UniqueIdentifier>
     </Filter>
@@ -24,17 +21,20 @@
     <Filter Include="Source Files\Process">
       <UniqueIdentifier>{c7b8cd5e-7a7c-40eb-90a3-1cffa4440a6e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\API">
-      <UniqueIdentifier>{e51a0ddb-e707-4776-a534-f823b529ea6f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Headers\API">
-      <UniqueIdentifier>{f7660225-a141-4a22-b08b-f7e8a4be96f0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Headers\Utils">
       <UniqueIdentifier>{0ff0b42d-6f89-4c60-9c35-ffa72aed4ac7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Utils">
       <UniqueIdentifier>{a05e3b21-5c8d-4bef-8061-3667ec9dc656}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\Api">
+      <UniqueIdentifier>{f7660225-a141-4a22-b08b-f7e8a4be96f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\IO">
+      <UniqueIdentifier>{b8cb856b-87ca-4d61-ae82-340ace1521f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Api">
+      <UniqueIdentifier>{e51a0ddb-e707-4776-a534-f823b529ea6f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -69,12 +69,18 @@
       <Filter>Source Files\IO</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\api\api.cpp">
-      <Filter>Source Files\API</Filter>
+      <Filter>Source Files\Api</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\Utils\Semaphore.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\Process\NotifyCallback.cpp">
+    <ClCompile Include="..\..\src\kernel\Process\SuspendCallback.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Process\Task.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Process\InitProcess.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
   </ItemGroup>
@@ -110,10 +116,10 @@
       <Filter>Headers\IO</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\api\api.h">
-      <Filter>Headers\API</Filter>
+      <Filter>Headers\Api</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\api\hal.h">
-      <Filter>Headers\API</Filter>
+      <Filter>Headers\Api</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h">
       <Filter>Headers\Utils</Filter>
@@ -124,10 +130,16 @@
     <ClInclude Include="..\..\src\kernel\Utils\Logging.h">
       <Filter>Headers\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Process\RunnableState.h">
+    <ClInclude Include="..\..\src\kernel\Process\TaskState.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Process\NotifyCallback.h">
+    <ClInclude Include="..\..\src\kernel\Process\SuspendCallback.h">
+      <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\Task.h">
+      <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\InitProcess.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
   </ItemGroup>

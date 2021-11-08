@@ -8,12 +8,12 @@ void Semaphore::Acquire() {
 		condition_variable.wait(lock);
 	}
 	count -= 1;
-	Log("Semaphore acquired");
+	LogDebug("Semaphore acquired");
 }
 
 void Semaphore::Release() {
 	std::scoped_lock lock(mutex);
-	Log("Releasing lock");
+	LogDebug("Releasing lock");
 	count += 1;
 	condition_variable.notify_one();
 }

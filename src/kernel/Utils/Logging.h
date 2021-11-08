@@ -4,14 +4,26 @@
 
 #include "Utils/Config.h"
 
-inline void Log(std::string& str) {
+inline void LogDebug(const std::string& str) {
 #if IS_DEBUG
 	std::cout << "debug:\t" << str << std::endl;
 #endif
 }
 
-inline void Log(const char* str) {
+inline void LogDebug(const char* str) {
 #if IS_DEBUG
 	std::cout << "debug:\t" << str << std::endl;
+#endif
+}
+
+inline void LogWarning(std::string& str) {
+#if IS_DEBUG
+	std::cout << "warning:\t" << str << std::endl;
+#endif
+}
+
+inline void LogWarning(const char* str) {
+#if IS_DEBUG
+	std::cout << "warning:\t" << str << std::endl;
 #endif
 }

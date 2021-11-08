@@ -1,19 +1,24 @@
 #include "Thread.h"
+
+#include <iostream>
+
 #include "ProcessManager.h"
 
 
 void Thread::Thread_Func() {
 	Set_Running();
-	task_exit_code = static_cast<kiv_os::NOS_Error>(program(regs)); // ziskame exit code z programu
+	program(regs);
 
 	// Program dobehl, takze muzeme notifikovat vsechny subscribery
-	Finish(tid);
+	Set_Finished();
+	Notify_Subscribers(tid);
 
-	// Pokud je toto vlakno main, ukoncime i proces
+	// Nastavime exit code
+
+	// Pokud je toto vlakno main, ukoncime proces
 	if (is_main_thread) {
-		ProcessManager::Get().Finish_Process(pid);
+		ProcessManager::Get().Terminate_Process(pid);
 	}
-	
 }
 
 std::thread::id Thread::Dispatch() {
@@ -22,5 +27,3 @@ std::thread::id Thread::Dispatch() {
 	thread.detach(); // vlakno musime detachnout
 	return thread_id; // vratime thread id
 }
-
-TaskState Thread::Get_State() { return task_state; }
