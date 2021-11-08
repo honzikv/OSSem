@@ -78,29 +78,34 @@ private:
 	/// Ziska prvni volny pid, pokud neni vrati NO_FREE_ID
 	/// </summary>
 	/// <returns>Volny pid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	[[nodiscard]] kiv_os::THandle Get_Free_Pid() const;
+	[[nodiscard]] kiv_os::THandle GetFreePid() const;
 
 	/// <summary>
 	/// Ziska prvni volny tid, pokud neni vrati NO_FREE_ID
 	/// </summary>
 	/// <returns>Volny tid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	[[nodiscard]] kiv_os::THandle Get_Free_Tid() const;
+	[[nodiscard]] kiv_os::THandle GetFreeTid() const;
 
 	/// <summary>
 	/// Getter pro proces podle pidu
 	/// </summary>
 	/// <param name="pid">pid</param>
 	/// <returns>Pointer na proces</returns>
-	std::shared_ptr<Process> Get_Process(kiv_os::THandle pid);
+	std::shared_ptr<Process> GetProcess(kiv_os::THandle pid);
 
 	/// <summary>
 	/// Prida proces do tabulky
 	/// </summary>
 	/// <param name="process">Pointer na proces</param>
 	/// <param name="pid">pid procesu</param>
-	void Add_Process(std::shared_ptr<Process> process, kiv_os::THandle pid);
+	void AddProcess(std::shared_ptr<Process> process, kiv_os::THandle pid);
 
-	void Add_Thread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
+	/// <summary>
+	/// Prida vlakno do tabulky
+	/// </summary>
+	/// <param name="thread">Pointer na vlakno</param>
+	/// <param name="tid">tid vlakna</param>
+	void AddThread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
 
 	/// <summary>
 	/// Slouzi k zamykani kriticke sekce pro procesy a vlakna (tabulky)
@@ -121,14 +126,14 @@ private:
 	/// Najde PID rodice pro dane vlakno
 	/// </summary>
 	/// <returns></returns>
-	kiv_os::THandle Find_Parent_Pid();
+	kiv_os::THandle FindParentPid();
 
 	/// <summary>
 	/// Ziska THandle pro aktualne bezici vlakno. Bezici vlakno musi byt umistene v tabulce, jinak
 	///	metoda vyhodi runtime exception
 	/// </summary>
 	/// <returns>Tid aktualne beziciho vlakna</returns>
-	kiv_os::THandle Get_Current_Tid();
+	kiv_os::THandle GetCurrentThreadTid();
 
 public:
 	/// <summary>
@@ -136,25 +141,25 @@ public:
 	/// </summary>
 	/// <param name="regs">registry</param>
 	/// <returns>vysledek operace</returns>
-	kiv_os::NOS_Error Process_Syscall(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error ProcessSyscall(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Provede klonovani procesu nebo vlakna
 	/// </summary>
 	/// <param name="regs">kontext</param>
 	/// <returns>Success pokud vse probehlo v poradku, jinak chybu</returns>
-	kiv_os::NOS_Error Perform_Clone(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error PerformClone(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Getter pro vlakno procesu podle tidu
 	/// </summary>
 	/// <param name="tid">tid</param>
 	/// <returns>Pointer na vlakno</returns>
-	std::shared_ptr<Thread> Get_Thread(const kiv_os::THandle tid);
+	std::shared_ptr<Thread> GetThread(const kiv_os::THandle tid);
 
-	kiv_os::NOS_Error Create_Process(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error CreateProcess(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error Create_Thread(kiv_hal::TRegisters& regs) {
+	kiv_os::NOS_Error CreateThread(kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 
@@ -163,38 +168,38 @@ public:
 	/// </summary>
 	/// <param name="subscriber_handle"></param>
 	/// <param name="notifier_handle"></param>
-	void Trigger_Suspend_Callback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
+	void TriggerSuspendCallback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
 
 	/// <summary>
 	/// Prevede proces ze stavu Running do stavu Finished
 	/// </summary>
 	/// <param name="pid"></param>
-	void Finish_Process(kiv_os::THandle pid);
+	void FinishProcess(kiv_os::THandle pid);
 
 	/// <summary>
 	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
 	///	se neukonci shell.
 	/// </summary>
-	void Create_Init_Process();
+	void CreateInitProcess();
 
 	/// <summary>
 	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
 	/// </summary>
 	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
-	void Initialize_Suspend_Callback(kiv_os::THandle subscriber_handle);
+	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
 
 	/// <summary>
 	/// Odstrani callback pro vzbuzeni
 	/// </summary>
 	/// <param name="subscriber_handle"></param>
-	void Remove_Suspend_Callback(kiv_os::THandle subscriber_handle);
+	void RemoveSuspendCallback(kiv_os::THandle subscriber_handle);
 
 	/// <summary>
 	/// Vrati typ handle pro  dane id
 	/// </summary>
 	/// <param name="id">id, pro ktere chceme typ handle dostat</param>
 	/// <returns>typ handle</returns>
-	static HandleType Get_Handle_Type(const kiv_os::THandle id);
+	static HandleType GetHandleType(const kiv_os::THandle id);
 
 	/// <summary>
 	/// Prida proces pro ostatni handles (proces/vlakno) jako subscribera, ktereho musi handles po dokonceni vzbudit
@@ -202,7 +207,7 @@ public:
 	/// <param name="handle_array">pointer na pole handlu</param>
 	/// <param name="handle_array_size">velikost pole</param>
 	/// <param name="current_tid">tid aktualniho vlakna</param>
-	void Add_Current_Thread_As_Subscriber(const kiv_os::THandle* handle_array, uint32_t handle_array_size,
+	void AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_array, uint32_t handle_array_size,
 	                                      kiv_os::THandle current_tid);
 
 	/// <summary>
@@ -210,21 +215,21 @@ public:
 	/// </summary>
 	/// <param name="regs">kontext</param>
 	/// <returns>vysledek operace</returns>
-	kiv_os::NOS_Error Perform_Wait_For(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error PerformWaitFor(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error Perform_Read_Exit_Code(const kiv_hal::TRegisters& regs) {
+	kiv_os::NOS_Error PerformReadExitCode(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 
-	kiv_os::NOS_Error Perform_Process_Exit(const kiv_hal::TRegisters& regs) {
+	kiv_os::NOS_Error PerformProcessExit(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 
-	kiv_os::NOS_Error Perform_Shutdown(const kiv_hal::TRegisters& regs) {
+	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 
-	kiv_os::NOS_Error Perform_Register_Signal_Handler(const kiv_hal::TRegisters& regs) {
+	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 };

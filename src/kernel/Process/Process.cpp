@@ -7,6 +7,6 @@ Process::Process(const kiv_os::THandle pid, const kiv_os::THandle main_thread_ti
 	threads.push_back(main_thread_tid);
 }
 
-void Process::Add_Thread(const kiv_os::THandle tid) {
+void Process::AddThread(const kiv_os::THandle tid) {
 	threads.push_back(tid);
 }

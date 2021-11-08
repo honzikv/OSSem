@@ -41,7 +41,7 @@ class Thread : public Task {
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne
 	/// </summary>
-	void Thread_Func();
+	void ThreadFunc();
 
 
 public:
@@ -54,8 +54,8 @@ public:
 	/// </summary>
 	std::thread::id Dispatch();
 
-	[[nodiscard]] inline kiv_os::THandle Get_Tid() const { return tid; }
-	[[nodiscard]] inline kiv_os::THandle Get_Pid() const { return pid; }
+	[[nodiscard]] inline kiv_os::THandle GetTid() const { return tid; }
+	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }
 
-	[[nodiscard]] TaskState Get_State();
+	[[nodiscard]] TaskState GetState();
 };

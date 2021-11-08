@@ -30,7 +30,7 @@ void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 			break;
 
 		case kiv_os::NOS_Service_Major::Process:
-			ProcessManager::Get().Process_Syscall(regs);
+			ProcessManager::Get().ProcessSyscall(regs);
 			break;
 	}
 
@@ -50,7 +50,7 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
 
 	// Vytvorime "fake" Init proces
-	ProcessManager::Get().Create_Init_Process();
+	ProcessManager::Get().CreateInitProcess();
 
 	// Vytvorime shell
 	const auto shell_command = "shell";

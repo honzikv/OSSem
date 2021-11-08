@@ -54,19 +54,19 @@ public:
 	/// Prida vlakno do procesu
 	/// </summary>
 	/// <param name="tid">tid vlakna</param>
-	void Add_Thread(kiv_os::THandle tid);
+	void AddThread(kiv_os::THandle tid);
 
-	[[nodiscard]] inline kiv_os::THandle Get_Pid() const { return pid; }
-	[[nodiscard]] inline kiv_os::THandle Get_Parent_Pid() const { return parent_pid; }
-	[[nodiscard]] inline kiv_os::THandle Get_Std_In() const { return std_in; }
-	[[nodiscard]] inline kiv_os::THandle Get_Std_Out() const { return std_out; }
-	[[nodiscard]] inline std::string& Get_Working_Dir() { return working_dir; }
+	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }
+	[[nodiscard]] inline kiv_os::THandle GetParentPid() const { return parent_pid; }
+	[[nodiscard]] inline kiv_os::THandle GetStdIn() const { return std_in; }
+	[[nodiscard]] inline kiv_os::THandle GetStdOut() const { return std_out; }
+	[[nodiscard]] inline std::string& GetWorkingDir() { return working_dir; }
 
-	[[nodiscard]] inline const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& Get_Signal_Callbacks() const {
+	[[nodiscard]] inline const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() const {
 		return signal_callbacks;
 	}
 
-	[[nodiscard]] inline const std::vector<kiv_os::THandle>& Get_Process_Threads() const { return threads; }
+	[[nodiscard]] inline const std::vector<kiv_os::THandle>& GetProcessThreads() const { return threads; }
 	
 
 };
