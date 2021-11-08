@@ -4,14 +4,15 @@
 #include <string>
 #include <mutex>
 
-#include "kernel.h"
 #include "Thread.h"
 #include "Process.h"
 #include "../api/api.h"
-#include "handles.h"
 #include "Utils/Logging.h"
 
-class RunnableManager {
+/// <summary>
+/// Trida, ktera se stara o spravu procesu a vlaken
+/// </summary>
+class ProcessManager {
 public:
 	// Konstanty pro rozsahy pidu a tidu
 
@@ -30,8 +31,8 @@ public:
 	/// Singleton ziskani objektu. Provede lazy inicializaci a vrati referenci
 	/// </summary>
 	/// <returns>Referenci na singleton instanci teto tridy</returns>
-	static RunnableManager& get() {
-		static RunnableManager instance;
+	static ProcessManager& get() {
+		static ProcessManager instance;
 		return instance;
 	}
 
@@ -91,10 +92,10 @@ private:
 	/// </summary>
 	std::recursive_mutex mutex;
 
-	RunnableManager() = default;
-	~RunnableManager() = default;
-	RunnableManager(const RunnableManager&) = delete;
-	RunnableManager& operator=(const RunnableManager&) = delete;
+	ProcessManager() = default;
+	~ProcessManager() = default;
+	ProcessManager(const ProcessManager&) = delete;
+	ProcessManager& operator=(const ProcessManager&) = delete;
 
 public:
 	/// <summary>
@@ -127,7 +128,16 @@ public:
 	}
 
 	kiv_os::NOS_Error Perform_Wait_For(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
+		auto handle_array = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r);
+		auto handle_count = static_cast<uint32_t>(regs.rcx.e);
+
+		// Protoze pri volani se mohlo nektere vlakno zastavit, chceme zkontrolovat, zda-li jsou
+		// vsechny handly  existuji a vyradit ty, co neexistuji
+		auto valid_handles = std::vector<kiv_os::THandle>();
+		for (uint32_t i = 0; i < handle_count; i += 1) {
+			
+		}
+
 	}
 
 	kiv_os::NOS_Error Perform_Read_Exit_Code(const kiv_hal::TRegisters& regs) {

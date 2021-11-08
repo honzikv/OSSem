@@ -1,17 +1,17 @@
-#include "RunnableManager.h"
+#include "ProcessManager.h"
+#include "kernel.h"
+#include "handles.h"
 
-
-kiv_os::THandle RunnableManager::Get_Free_Pid() const {
+kiv_os::THandle ProcessManager::Get_Free_Pid() const {
 	for (uint16_t i = 0; i < static_cast<uint16_t>(process_table.size()); i += 1) {
 		if (process_table[i] == nullptr) {
 			return i + PID_RANGE_START;
 		}
 	}
-
 	return NO_FREE_ID;
 }
 
-kiv_os::THandle RunnableManager::Get_Free_Tid() const {
+kiv_os::THandle ProcessManager::Get_Free_Tid() const {
 	for (uint16_t i = 0; i < static_cast<uint16_t>(thread_table.size()); i += 1) {
 		if (thread_table[i] == nullptr) {
 			return i + TID_RANGE_START;
@@ -20,23 +20,23 @@ kiv_os::THandle RunnableManager::Get_Free_Tid() const {
 	return NO_FREE_ID;
 }
 
-std::shared_ptr<Process> RunnableManager::Get_Process(const kiv_os::THandle pid) {
+std::shared_ptr<Process> ProcessManager::Get_Process(const kiv_os::THandle pid) {
 	return process_table[pid - PID_RANGE_START];
 }
 
-void RunnableManager::Add_Process(const std::shared_ptr<Process> process, const kiv_os::THandle pid) {
+void ProcessManager::Add_Process(const std::shared_ptr<Process> process, const kiv_os::THandle pid) {
 	process_table[pid] = process;
 }
 
-std::shared_ptr<Thread> RunnableManager::Get_Thread(const kiv_os::THandle tid) {
+std::shared_ptr<Thread> ProcessManager::Get_Thread(const kiv_os::THandle tid) {
 	return thread_table[tid - TID_RANGE_START];
 }
 
-auto RunnableManager::Add_Thread(const std::shared_ptr<Thread> thread, const kiv_os::THandle tid) -> void {
+auto ProcessManager::Add_Thread(const std::shared_ptr<Thread> thread, const kiv_os::THandle tid) -> void {
 	thread_table[tid - TID_RANGE_START] = thread;
 }
 
-kiv_os::NOS_Error RunnableManager::Process_Syscall(kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error ProcessManager::Process_Syscall(kiv_hal::TRegisters& regs) {
 	// Spustime jednotlive funkce podle operace
 	auto operation = regs.rax.l;
 	switch (static_cast<kiv_os::NOS_Process>(operation)) {
@@ -60,7 +60,7 @@ kiv_os::NOS_Error RunnableManager::Process_Syscall(kiv_hal::TRegisters& regs) {
 	}
 }
 
-kiv_os::NOS_Error RunnableManager::Perform_Clone(kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error ProcessManager::Perform_Clone(kiv_hal::TRegisters& regs) {
 	const auto operationType = static_cast<kiv_os::NClone>(regs.rcx.l);
 	if (operationType == kiv_os::NClone::Create_Process) {
 		return Create_Process(regs);
@@ -73,7 +73,7 @@ kiv_os::NOS_Error RunnableManager::Perform_Clone(kiv_hal::TRegisters& regs) {
 	return kiv_os::NOS_Error::Invalid_Argument;
 }
 
-kiv_os::THandle RunnableManager::Find_Parent_Pid() {
+kiv_os::THandle ProcessManager::Find_Parent_Pid() {
 	const auto tid_handle = std::this_thread::get_id();
 
 	// Pokud nelze tid prevest vratime invalid handle
@@ -86,13 +86,12 @@ kiv_os::THandle RunnableManager::Find_Parent_Pid() {
 	return thread_table[tid]->Get_Pid();
 }
 
-void RunnableManager::Dispatch_Process(std::shared_ptr<Process> process) {
+void ProcessManager::Dispatch_Process(std::shared_ptr<Process> process) {
 	const auto main_thread_tid = process->Get_Process_Threads()[0];
-	Get_Thread(main_thread_tid)->Dispatch();
 	process->Set_Running();
 }
 
-kiv_os::NOS_Error RunnableManager::Create_Process(kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error ProcessManager::Create_Process(kiv_hal::TRegisters& regs) {
 	// Ziskame jmeno programu a argumenty
 	const auto programName = std::string(reinterpret_cast<char*>(regs.rdx.r)); // NOLINT(performance-no-int-to-ptr)
 	const auto programArgs = std::string(reinterpret_cast<char*>(regs.rdi.r)); // NOLINT(performance-no-int-to-ptr)
@@ -126,23 +125,25 @@ kiv_os::NOS_Error RunnableManager::Create_Process(kiv_hal::TRegisters& regs) {
 	process_context.rax.x = std_in;
 	process_context.rbx.x = std_out;
 
-	// Nyni musime vytvorit process (pcb) a jeho hlavni vlakno
+	// Vytvorime vlakno procesu, kde se spusti program
 	auto main_thread = std::make_shared<Thread>(program, process_context, tid, pid);
 
-	// Pro prvni spusteny proces (shell) vrati metoda invalid pid - tzn. proces nema rodice
+	// Zjistime, zda-li vlakno, ve kterem se proces vytvari ma nejakeho rodice a nastavime ho (pokud existuje
+	// jinak se nastavi invalid value)
 	auto parent_process_pid = Find_Parent_Pid();
 	auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out);
 
 	// Pridame proces a vlakno do tabulky
 	Add_Process(process, pid);
 	Add_Thread(main_thread, tid);
-	
 
+	// Spustime vlakno
 	auto thread_handle = main_thread->Init();
 	native_tid_to_kiv_handle[thread_handle] = tid;
 
 	// Spustime proces
 	Dispatch_Process(process);
 
+	// Vratime success
 	return kiv_os::NOS_Error::Success;
 }

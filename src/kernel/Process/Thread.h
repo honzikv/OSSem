@@ -27,12 +27,6 @@ class Thread {
 	/// </summary>
 	bool is_main_thread;
 
-	/// <summary>
-	/// Semafor pro synchronizaci. Tento semafor se inicializuje na count = 0, aby se vlakno
-	///	po init() bloklo a cekalo na spusteni
-	/// </summary>
-	Semaphore semaphore;
-
 	kiv_os::THandle tid;
 
 	/// <summary>
@@ -45,12 +39,9 @@ class Thread {
 	/// </summary>
 	void Thread_Func();
 
+	std::vector<>
 
 public:
-	/// <summary>
-	/// Spusti vlakno
-	/// </summary>
-	void Dispatch();
 
 	Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os::THandle tid, kiv_os::THandle pid, bool is_main_thread = true)
 	: program(program), regs(context), is_main_thread(is_main_thread), tid(tid), pid(pid) { }

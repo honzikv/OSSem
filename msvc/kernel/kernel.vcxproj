@@ -27,8 +27,9 @@
     <ClCompile Include="..\..\src\kernel\IO\AbstractFile.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp" />
     <ClCompile Include="..\..\src\kernel\kernel.cpp" />
+    <ClCompile Include="..\..\src\kernel\Process\NotifyCallback.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Process.cpp" />
-    <ClCompile Include="..\..\src\kernel\Process\RunnableManager.cpp" />
+    <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Thread.cpp" />
     <ClCompile Include="..\..\src\kernel\Utils\Semaphore.cpp" />
   </ItemGroup>
@@ -42,8 +43,9 @@
     <ClInclude Include="..\..\src\kernel\IO\AbstractFile.h" />
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h" />
     <ClInclude Include="..\..\src\kernel\kernel.h" />
+    <ClInclude Include="..\..\src\kernel\Process\NotifyCallback.h" />
     <ClInclude Include="..\..\src\kernel\Process\Process.h" />
-    <ClInclude Include="..\..\src\kernel\Process\RunnableManager.h" />
+    <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h" />
     <ClInclude Include="..\..\src\kernel\Process\RunnableState.h" />
     <ClInclude Include="..\..\src\kernel\Process\Thread.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Config.h" />

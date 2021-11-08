@@ -8,11 +8,6 @@ void Thread::Thread_Func() {
 	program(regs); // Spusteni programu
 }
 
-void Thread::Dispatch() {
-	semaphore.Release();
-}
-
-
 std::thread::id Thread::Init() {
 	Log("Thread init");
 	auto thread = std::thread(&Thread::Thread_Func, this);

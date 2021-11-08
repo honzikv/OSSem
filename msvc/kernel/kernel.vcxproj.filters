@@ -50,7 +50,7 @@
     <ClCompile Include="..\..\src\kernel\Process\Thread.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\Process\RunnableManager.cpp">
+    <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\Process\Process.cpp">
@@ -74,6 +74,9 @@
     <ClCompile Include="..\..\src\kernel\Utils\Semaphore.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Process\NotifyCallback.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -88,7 +91,7 @@
     <ClInclude Include="..\..\src\kernel\Process\Process.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Process\RunnableManager.h">
+    <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\Thread.h">
@@ -122,6 +125,9 @@
       <Filter>Headers\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\RunnableState.h">
+      <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\NotifyCallback.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
   </ItemGroup>

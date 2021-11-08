@@ -7,7 +7,7 @@
 
 #include "IO/ConsoleIn.h"
 #include "IO/ConsoleOut.h"
-#include "Process/RunnableManager.h"
+#include "Process/ProcessManager.h"
 
 
 void Initialize_Kernel() {
@@ -29,7 +29,7 @@ void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 			break;
 
 		case kiv_os::NOS_Service_Major::Process:
-			RunnableManager::get().Process_Syscall(regs);
+			ProcessManager::get().Process_Syscall(regs);
 			break;
 	}
 
@@ -61,11 +61,7 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	regs.rbx.e = std_in_handle << 16 | std_out_handle; // rbx obsahuje stdin a stdout
 
 	Sys_Call(regs);
-
-	while (1) {
-		
-	}
-
+	
 	Shutdown_Kernel();
 }
 
