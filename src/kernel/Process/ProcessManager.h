@@ -17,14 +17,15 @@
 /// </summary>
 enum class HandleType {
 	INVALID,
-	THREAD,
-	PROCESS
+	Thread,
+	Process
 };
 
 /// <summary>
 /// Trida, ktera se stara o spravu procesu a vlaken
 /// </summary>
 class ProcessManager {
+	// NOLINT(cppcoreguidelines-special-member-functions)
 public:
 	// Konstanty pro rozsahy pidu a tidu
 
@@ -145,6 +146,33 @@ public:
 	kiv_os::NOS_Error ProcessSyscall(kiv_hal::TRegisters& regs);
 
 	/// <summary>
+	/// Spusti
+	/// </summary>
+	/// <param name="subscriber_handle"></param>
+	/// <param name="notifier_handle"></param>
+	void TriggerSuspendCallback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
+
+	/// <summary>
+	/// Prevede proces ze stavu Running do stavu Finished
+	/// </summary>
+	/// <param name="pid"></param>
+	void FinishProcess(kiv_os::THandle pid);
+
+	/// <summary>
+	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
+	///	se neukonci shell.
+	/// </summary>
+	void CreateInitProcess();
+
+
+	/// <summary>
+	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
+	/// </summary>
+	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
+	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
+
+private:
+	/// <summary>
 	/// Provede klonovani procesu nebo vlakna
 	/// </summary>
 	/// <param name="regs">kontext</param>
@@ -172,30 +200,6 @@ public:
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error CreateThread(kiv_hal::TRegisters& regs);
 
-	/// <summary>
-	/// Spusti
-	/// </summary>
-	/// <param name="subscriber_handle"></param>
-	/// <param name="notifier_handle"></param>
-	void TriggerSuspendCallback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
-
-	/// <summary>
-	/// Prevede proces ze stavu Running do stavu Finished
-	/// </summary>
-	/// <param name="pid"></param>
-	void FinishProcess(kiv_os::THandle pid);
-
-	/// <summary>
-	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
-	///	se neukonci shell.
-	/// </summary>
-	void CreateInitProcess();
-
-	/// <summary>
-	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
-	/// </summary>
-	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
-	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
 
 	/// <summary>
 	/// Odstrani callback pro vzbuzeni
@@ -226,13 +230,25 @@ public:
 	/// <returns>vysledek operace</returns>
 	kiv_os::NOS_Error PerformWaitFor(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformReadExitCode(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	/// <summary>
+	/// Odstrani proces z tabulky
+	/// </summary>
+	/// <param name="process">Reference na proces</param>
+	void RemoveProcess(std::shared_ptr<Process> process);
 
-	kiv_os::NOS_Error PerformProcessExit(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	/// <summary>
+	/// Odstrani vlakno z tabulky a lookup map
+	/// </summary>
+	/// <param name="thread">Reference na vlakno</param>
+	void RemoveThread(std::shared_ptr<Thread> thread);
+
+	/// <summary>
+	/// Provede cteni exit codu
+	/// </summary>
+	/// <param name="regs">Registry pro zapsani vysledku</param>
+	/// <param name="remove_task">Zda-li se ma proces odstranit z tabulky</param>
+	/// <returns></returns>
+	kiv_os::NOS_Error PerformGetTaskExitCode(kiv_hal::TRegisters& regs, bool remove_task);
 
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;

@@ -1,11 +1,17 @@
 #pragma once
 
+#include "Shell/Shell.h"
+#if IS_DEBUG
+
+/// <summary>
+/// Jednoducha trida pro debugovani shellu
+/// </summary>
 class TestRunner {
 
 public:
-	/**
-	 * Spusteni unit testu (resp. hodne zjednodusene varianty)
-	 * Testy do konzole vypisuji XXX test succeeded. 
-	 */
+	/// <summary>
+	/// Spusteni testu
+	/// </summary>
 	static void runTests();
 };
+#endif

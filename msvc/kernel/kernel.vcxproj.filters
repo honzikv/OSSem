@@ -80,9 +80,6 @@
     <ClCompile Include="..\..\src\kernel\Process\Task.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\Process\InitProcess.cpp">
-      <Filter>Source Files\Process</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -137,9 +134,6 @@
       <Filter>Headers\Process</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\Task.h">
-      <Filter>Headers\Process</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Process\InitProcess.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
   </ItemGroup>

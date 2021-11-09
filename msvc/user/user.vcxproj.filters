@@ -39,7 +39,7 @@
     <ClInclude Include="..\..\src\user\rtl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\user\shell.h">
+    <ClInclude Include="..\..\src\user\shell_commands.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\user\Utils\StringUtils.h">

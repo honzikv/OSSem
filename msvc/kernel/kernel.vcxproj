@@ -27,7 +27,6 @@
     <ClCompile Include="..\..\src\kernel\IO\AbstractFile.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp" />
     <ClCompile Include="..\..\src\kernel\kernel.cpp" />
-    <ClCompile Include="..\..\src\kernel\Process\InitProcess.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\SuspendCallback.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Process.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp" />
@@ -45,7 +44,6 @@
     <ClInclude Include="..\..\src\kernel\IO\AbstractFile.h" />
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h" />
     <ClInclude Include="..\..\src\kernel\kernel.h" />
-    <ClInclude Include="..\..\src\kernel\Process\InitProcess.h" />
     <ClInclude Include="..\..\src\kernel\Process\Task.h" />
     <ClInclude Include="..\..\src\kernel\Process\SuspendCallback.h" />
     <ClInclude Include="..\..\src\kernel\Process\Process.h" />

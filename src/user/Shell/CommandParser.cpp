@@ -1,18 +1,18 @@
 #include "CommandParser.h"
 #include <sstream>
 
-Command::Command(std::string commandName, std::vector<std::string> params, std::string sourceFile,
-                 std::string targetFile):
+Command::Command(std::string command_name, std::vector<std::string> params, std::string source_file,
+                 std::string target_file):
 	params(std::move(params)),
-	commandName(std::move(commandName)),
-	redirectType(resolveRedirectType(sourceFile, targetFile)),
-	sourceFile(std::move(sourceFile)),
-	targetFile(std::move(targetFile)) {}
+	command_name(std::move(command_name)),
+	redirect_type(ResolveRedirectType(source_file, target_file)),
+	source_file(std::move(source_file)),
+	target_file(std::move(target_file)) {}
 
-std::string Command::toString() const {
+std::string Command::ToString() const {
 
-	std::string redirectTypeStr = "";
-	switch (redirectType) {
+	std::string redirectTypeStr;
+	switch (redirect_type) {
 		case RedirectType::Both:
 			redirectTypeStr = "BOTH";
 			break;
@@ -28,8 +28,8 @@ std::string Command::toString() const {
 	}
 
 	auto stringStream = std::stringstream();
-	stringStream << "commandName: " << commandName << ", redirectType: " << redirectTypeStr << ", Sourcefile: " <<
-		sourceFile << ", targetFile: " << targetFile << std::endl;
+	stringStream << "commandName: " << command_name << ", redirectType: " << redirectTypeStr << ", Sourcefile: " <<
+		source_file << ", targetFile: " << target_file << std::endl;
 	stringStream << "params: [";
 	for (const auto& param : params) {
 		stringStream << param << " ";
@@ -43,49 +43,49 @@ const char* ParseException::what() const throw() {
 	return err.c_str();
 }
 
-Command CommandParser::createCommand(const std::vector<std::string>& commandWithParams, const RedirectType redirectType,
-                                     const std::string& sourceFile, const std::string& targetFile,
-                                     const std::string& commandWithParamsAndRedirect) {
-	if (commandWithParams.empty()) {
+Command CommandParser::CreateCommand(const std::vector<std::string>& command_with_params, const RedirectType redirect_type,
+                                     const std::string& source_file, const std::string& target_file,
+                                     const std::string& command_with_params_and_redirect) {
+	if (command_with_params.empty()) {
 		throw ParseException("Error, could not parse command file_name as it was not present.");
 	}
 
 	// Pokud neni redirect none, musi uri pro file byt neprazdny retezec
-	if (redirectType != RedirectType::None) {
+	if (redirect_type != RedirectType::None) {
 
 		// Vratime prikaz - pokud nema parametry, vytvorime pouze prazdny vektor, jinak je zkopirujeme z indexu 1..n
-		return Command(commandWithParams[0],
-		               commandWithParams.size() > 1
-			               ? std::vector(commandWithParams.begin() + 1, commandWithParams.end())
-			               : std::vector<std::string>(), sourceFile, targetFile);
+		return Command(command_with_params[0],
+		               command_with_params.size() > 1
+			               ? std::vector(command_with_params.begin() + 1, command_with_params.end())
+			               : std::vector<std::string>(), source_file, target_file);
 	}
 
 	// Jinak je prikaz bez redirectu -> file pro presmerovani bude prazdny retezec
 	// Opet zkopirujeme z 1..n parametry, pokud existuji
-	return Command(commandWithParams[0],
-	               commandWithParams.size() > 1
-		               ? std::vector(commandWithParams.begin() + 1, commandWithParams.end())
+	return Command(command_with_params[0],
+	               command_with_params.size() > 1
+		               ? std::vector(command_with_params.begin() + 1, command_with_params.end())
 		               : std::vector<std::string>());
 }
 
-RedirectType CommandParser::getRedirectType(const std::string& commandWithParams) const {
+RedirectType CommandParser::GetRedirectType(const std::string& command_with_params) const {
 	// Pocet symbolu ">" v prikazu
 	const auto numberOfToFileRedirects =
-		std::count(commandWithParams.begin(), commandWithParams.end(), '>');
+		std::count(command_with_params.begin(), command_with_params.end(), '>');
 
 	// Pocet symbolu "<" v prikazu
 	const auto numberOfFromFileRedirects =
-		std::count(commandWithParams.begin(), commandWithParams.end(), '<');
+		std::count(command_with_params.begin(), command_with_params.end(), '<');
 
 	// Pokud je pocet vyskytu symbolu pro presmerovani vetsi nebo rovno 2 vyhodime exception
 	if (numberOfToFileRedirects >= 2) {
 		throw ParseException(R"(Error, more than one redirect symbol ">" is present in: )" +
-			commandWithParams);
+			command_with_params);
 	}
 
 	if (numberOfFromFileRedirects >= 2) {
 		throw ParseException(R"(Error, more than one redirect symbol "<" is present in: )" +
-			commandWithParams);
+			command_with_params);
 	}
 
 	if (numberOfFromFileRedirects == 1 && numberOfToFileRedirects == 1) {
@@ -99,23 +99,23 @@ RedirectType CommandParser::getRedirectType(const std::string& commandWithParams
 	return numberOfToFileRedirects == 1 ? RedirectType::ToFile : RedirectType::None;
 }
 
-auto CommandParser::splitByFileRedirect(const std::string& commandWithParams, const RedirectType redirectType) const
+auto CommandParser::SplitByFileRedirect(const std::string& command_with_params, const RedirectType redirect_type) const
 -> std::tuple<std::string, std::string, std::string> {
 
-	if (redirectType == RedirectType::None) {
-		return {"", "", commandWithParams};
+	if (redirect_type == RedirectType::None) {
+		return {"", "", command_with_params};
 	}
 
 	// Pokud nastane situace, ze mame oba dva redirecty, nejprve rozdelime podle symbolu <> a nasledne zpracujeme oba stringy
-	if (redirectType == RedirectType::Both) {
-		auto sourceFileIdx = commandWithParams.find_first_of('<');
-		auto targetFileIdx = commandWithParams.find_first_of('>');
+	if (redirect_type == RedirectType::Both) {
+		auto sourceFileIdx = command_with_params.find_first_of('<');
+		auto targetFileIdx = command_with_params.find_first_of('>');
 		auto targetFile = targetFileIdx > sourceFileIdx
-			                  ? commandWithParams.substr(targetFileIdx + 1, commandWithParams.size() - targetFileIdx)
-			                  : commandWithParams.substr(targetFileIdx + 1, commandWithParams.size() - sourceFileIdx);
+			                  ? command_with_params.substr(targetFileIdx + 1, command_with_params.size() - targetFileIdx)
+			                  : command_with_params.substr(targetFileIdx + 1, command_with_params.size() - sourceFileIdx);
 		auto sourceFile = sourceFileIdx > targetFileIdx
-			                  ? commandWithParams.substr(sourceFileIdx + 1, commandWithParams.size() - sourceFileIdx)
-			                  : commandWithParams.substr(sourceFileIdx + 1, commandWithParams.size() - targetFileIdx);
+			                  ? command_with_params.substr(sourceFileIdx + 1, command_with_params.size() - sourceFileIdx)
+			                  : command_with_params.substr(sourceFileIdx + 1, command_with_params.size() - targetFileIdx);
 		targetFile = StringUtils::trimWhitespaces(targetFile);
 		sourceFile = StringUtils::trimWhitespaces(sourceFile);
 
@@ -130,18 +130,18 @@ auto CommandParser::splitByFileRedirect(const std::string& commandWithParams, co
 		return {
 			sourceFile,
 			targetFile,
-			commandWithParams.substr(0, sourceFileIdx > targetFileIdx ? targetFileIdx : sourceFileIdx)
+			command_with_params.substr(0, sourceFileIdx > targetFileIdx ? targetFileIdx : sourceFileIdx)
 		};
 	}
 
 	// Pro jeden redirect muzeme snadno rozdelit pomoci regexu
-	auto splitByRedirect = StringUtils::splitByRegex(commandWithParams, redirectRegex);
+	auto splitByRedirect = StringUtils::splitByRegex(command_with_params, REDIRECT_REGEX);
 
 	// Ze splitu bysme meli dostat dvojici prikaz args (0ty prvek) a nazev souboru
 	// Nicmene se muze stat ze se string nevyskytuje (napr. command >|), ale redirect symbol ano.
 	// V tomto pripade vyhodime exception
 	if (splitByRedirect.size() != 2) {
-		const auto redirectSymbol = redirectType == RedirectType::FromFile ? "\"<\"" : "\">\"";
+		const auto redirectSymbol = redirect_type == RedirectType::FromFile ? "\"<\"" : "\">\"";
 		throw ParseException(std::string(R"(Error, no file specified for redirect )") + redirectSymbol);
 	}
 
@@ -151,18 +151,18 @@ auto CommandParser::splitByFileRedirect(const std::string& commandWithParams, co
 
 	// A pokud tim zbyde prazdny retezec vyhodime exception
 	if (fileUri.empty()) {
-		const auto redirectSymbol = redirectType == RedirectType::FromFile ? "\"<\"" : "\">\"";
+		const auto redirectSymbol = redirect_type == RedirectType::FromFile ? "\"<\"" : "\">\"";
 		throw ParseException(std::string(R"(Error, no file specified for redirect )") + redirectSymbol);
 	}
 
-	if (redirectType == RedirectType::FromFile) {
+	if (redirect_type == RedirectType::FromFile) {
 		return {fileUri, "", splitByRedirect[0]};
 	}
 
 	return {"", fileUri, splitByRedirect[0]};
 }
 
-std::vector<Command> CommandParser::parseCommands(const std::string& input) const {
+std::vector<Command> CommandParser::ParseCommands(const std::string& input) const {
 	if (input.empty() || input == "\n") {
 		// Pokud se jedna o newline nebo je string prazdny, preskocime
 		return std::vector<Command>();
@@ -171,7 +171,7 @@ std::vector<Command> CommandParser::parseCommands(const std::string& input) cons
 	auto result = std::vector<Command>();
 
 	// Nejprve split pomoci pipe symbolu
-	const auto tokensByPipeSymbol = StringUtils::splitByRegex(input, pipeRegex);
+	const auto tokensByPipeSymbol = StringUtils::splitByRegex(input, PIPE_REGEX);
 
 	for (const auto& splitByPipe : tokensByPipeSymbol) {
 		auto commandWithParamsAndRedirect = StringUtils::trimWhitespaces(splitByPipe);
@@ -180,20 +180,20 @@ std::vector<Command> CommandParser::parseCommands(const std::string& input) cons
 		}
 
 		// Ziskame typ redirectu
-		auto redirectType = getRedirectType(commandWithParamsAndRedirect);
+		auto redirectType = GetRedirectType(commandWithParamsAndRedirect);
 
 		// Rozparsujeme string pro presmerovani
 		auto [sourceFile, targetFile, splitByRedirectSymbols] =
-			splitByFileRedirect(commandWithParamsAndRedirect, redirectType);
+			SplitByFileRedirect(commandWithParamsAndRedirect, redirectType);
 
 		// Odstranime vsechny whitespaces na zacatku a konci - tzn. z " test " dostaneme "test"
 		auto trimmed = StringUtils::trimWhitespaces(splitByRedirectSymbols);
 
 		// Levou stranu od redirect symbolu rozdelime uz jenom podle mezer
-		auto commandWithParams = StringUtils::splitByRegex(trimmed, whitespaceRegex);
+		auto commandWithParams = StringUtils::splitByRegex(trimmed, WHITESPACE_REGEX);
 
 		// Vytvorime prikaz
-		auto command = createCommand(commandWithParams, redirectType, sourceFile, targetFile,
+		auto command = CreateCommand(commandWithParams, redirectType, sourceFile, targetFile,
 		                             commandWithParamsAndRedirect);
 		result.push_back(command);
 	}
@@ -204,8 +204,8 @@ std::vector<Command> CommandParser::parseCommands(const std::string& input) cons
 
 bool operator==(const Command& lhs, const Command& rhs) {
 	return lhs.params == rhs.params // == pro vector udela == pro kazdy element
-		&& lhs.commandName == rhs.commandName
-		&& lhs.redirectType == rhs.redirectType
-		&& lhs.sourceFile == rhs.sourceFile
-		&& lhs.targetFile == rhs.targetFile;
+		&& lhs.command_name == rhs.command_name
+		&& lhs.redirect_type == rhs.redirect_type
+		&& lhs.source_file == rhs.source_file
+		&& lhs.target_file == rhs.target_file;
 }

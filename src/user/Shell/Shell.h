@@ -4,52 +4,106 @@
 #include <array>
 #include "../api/api.h"
 #include "CommandParser.h"
+#include "rtl.h"
 
 constexpr auto NEWLINE_MESSAGE = "\n";
-constexpr size_t BUFFER_SIZE = 256;
+constexpr size_t BUFFER_SIZE = 512;
 constexpr auto NEWLINE_SYMBOL = "\n";
 constexpr auto EXIT_COMMAND = "exit";
 
 
-extern "C" size_t __stdcall shell(const kiv_hal::TRegisters & regs);
+// Debug
+#define IS_DEBUG true
 
-/**
- * 
- * Wrapper pro shell() funkci pro lepsi citelnost kodu
- */
+extern "C" size_t __stdcall shell(const kiv_hal::TRegisters& regs);
+
+/// <summary>
+/// Pro prehlednost je shell objekt
+/// </summary>
 class Shell {
-	
-	// reference na registry
-	const kiv_hal::TRegisters& registers;
 
-	// reference na stdin
-	const kiv_os::THandle& stdIn;
+	/// <summary>
+	/// Reference na registry
+	/// </summary>
+	kiv_hal::TRegisters registers;
 
-	// reference na stdout
-	const kiv_os::THandle& stdOut;
+	/// <summary>
+	/// Reference na standardni vstup a vystup
+	/// </summary>
+	const kiv_os::THandle std_in, std_out;
 
-	// interni objekt na parsovani dat - alokace na heapu
-	const std::unique_ptr<CommandParser> commandParser = std::make_unique<CommandParser>();
+	/// <summary>
+	/// Interni objekt na parsovani dat
+	/// </summary>
+	const std::unique_ptr<CommandParser> command_parser = std::make_unique<CommandParser>();
 
-	// debug mode
-	bool debugOn = false;
+	/// <summary>
+	/// Aktualni cesta, ve ktere se shell nachazi
+	/// </summary>
+	std::string current_path;
 
-	// IO buffer
-	std::array<char, BUFFER_SIZE> buffer;
+	/// <summary>
+	/// Buffer na IO
+	/// </summary>
+	std::array<char, BUFFER_SIZE> buffer = {};
+
+	void Write(const std::string& message) const;
+
+	void WriteLine(const std::string& message) const;
+
 
 public:
-	// Ctor ziska z funkce shell vsechny registry + handle na stdin a stdout
-	Shell(const kiv_hal::TRegisters& registers, const kiv_os::THandle& stdIn,
-	                 const kiv_os::THandle& stdOut) :
-		registers(registers),
-		stdIn(stdIn),
-		stdOut(stdOut) {}
+	/// <summary>
+	/// Konstruktor
+	/// </summary>
+	/// <param name="registers">Registry</param>
+	/// <param name="std_in">Standardni vstup</param>
+	/// <param name="std_out">Standardni vystup</param>
+	/// <param name="current_path">Aktualni cesta</param>
+	Shell(const kiv_hal::TRegisters& registers, kiv_os::THandle std_in, kiv_os::THandle std_out,
+	      const std::string& current_path);
 
-	std::vector<Command> parseCommands(const std::string& line);
-	
+#if IS_DEBUG
+	std::vector<Command> ParseCommands(const std::string& line);
+#endif
 
-	void executeCommand(const Command& command);
+	void ExecuteCommands(const std::vector<Command>& commands) {
+		
+	}
 
-	void toggleDebug();
+	void Run() {
+		auto command_parser = CommandParser();
+		while (strcmp(buffer.data(), EXIT_COMMAND) != 0) {
+			Write(current_path); // Zapiseme aktualni cestu
+
+			// Uzivatelsky vstup
+			size_t bytesRead;
+			if (kiv_os_rtl::Read_File(std_in, buffer.data(), buffer.size(), bytesRead)) {
+				if (bytesRead < buffer.size()) { }
+
+				// Ziskame uzivatelsky vstup
+				auto user_input = std::string(buffer.begin(),
+				                              bytesRead >= buffer.size()
+					                              ? buffer.end()
+					                              : buffer.begin() + bytesRead);
+
+				auto commands = std::vector<Command>();
+				try {
+					commands = command_parser.ParseCommands(user_input);
+					WriteLine("");
+				}
+				catch (ParseException& ex) { // Pri chybe vypiseme hlasku do konzole a restartujeme while loop
+					WriteLine(ex.what());
+					continue;
+				}
+
+				ExecuteCommands(commands); // Provedeme vsechny prikazy
+			}
+			else {
+				break;
+			}
+		}
+	}
+
 
 };

@@ -4,9 +4,9 @@
 #include <vector>
 #include <locale>
 
-/**
- * Funkce pro praci s retezci
- */
+/// <summary>
+/// Funkce pro praci s retezci
+/// </summary>
 namespace StringUtils {
 
 

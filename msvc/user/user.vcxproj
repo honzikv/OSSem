@@ -23,7 +23,7 @@
     <ClInclude Include="..\..\src\api\hal.h" />
     <ClInclude Include="..\..\src\user\Freq.h" />
     <ClInclude Include="..\..\src\user\rtl.h" />
-    <ClInclude Include="..\..\src\user\shell.h" />
+    <ClInclude Include="..\..\src\user\shell_commands.h" />
     <ClInclude Include="..\..\src\user\Shell\CommandParser.h" />
     <ClInclude Include="..\..\src\user\Shell\Shell.h" />
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h" />
