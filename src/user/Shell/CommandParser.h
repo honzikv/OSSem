@@ -1,76 +1,11 @@
 #pragma once
-#include <optional>
 #include <regex>
 #include <string>
-#include <utility>
 #include <vector>
+
+#include "Command.h"
 #include "Utils/StringUtils.h"
 
-/**
- * Typ presmerovani v souboru
- */
-enum class RedirectType : uint8_t {
-	FromFile,
-	// Ze souboru
-	ToFile,
-	// Do souboru
-	Both,
-	// Ze souboru i do souboru
-	None // Zadny - Default
-};
-
-/// <summary>
-/// Reprezentuje prikaz v commandline
-/// </summary>
-struct Command {
-	/// <summary>
-	/// Parametry prikazu
-	/// </summary>
-	const std::vector<std::string> params;
-
-	/// <summary>
-	/// Jmeno pozadovaneho prikazu
-	/// </summary>
-	const std::string command_name;
-
-	/// <summary>
-	/// Typ presmerovani - ze souboru, do souboru, oboji, zadne
-	/// </summary>
-	const RedirectType redirect_type;
-
-	/// <summary>
-	/// Vstupni soubor (napr. xyz < source.json)
-	/// </summary>
-	const std::string source_file;
-
-	/// <summary>
-	/// Cilovy soubor (napr. xyz > target.json)
-	/// </summary>
-	const std::string target_file;
-
-	Command(std::string command_name, std::vector<std::string> params, std::string source_file = "",
-	        std::string target_file = "");
-
-	[[nodiscard]] std::string ToString() const;
-
-	friend bool operator==(const Command& lhs, const Command& rhs);
-
-	friend bool operator!=(const Command& lhs, const Command& rhs) { return !(lhs == rhs); }
-
-
-private:
-	static inline RedirectType ResolveRedirectType(const std::string& source_file, const std::string& target_file) {
-		if (source_file.empty() && target_file.empty()) {
-			return RedirectType::None;
-		}
-
-		if (!source_file.empty() && !target_file.empty()) {
-			return RedirectType::Both;
-		}
-
-		return !source_file.empty() ? RedirectType::FromFile : RedirectType::ToFile;
-	}
-};
 
 /**
  * Exception pri parsovani uzivatelskeho vstupu

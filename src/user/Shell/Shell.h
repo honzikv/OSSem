@@ -5,6 +5,7 @@
 #include "../api/api.h"
 #include "CommandParser.h"
 #include "rtl.h"
+#include "Utils/Logging.h"
 
 constexpr auto NEWLINE_MESSAGE = "\n";
 constexpr size_t BUFFER_SIZE = 512;
@@ -12,8 +13,6 @@ constexpr auto NEWLINE_SYMBOL = "\n";
 constexpr auto EXIT_COMMAND = "exit";
 
 
-// Debug
-#define IS_DEBUG true
 
 extern "C" size_t __stdcall shell(const kiv_hal::TRegisters& regs);
 
@@ -33,9 +32,9 @@ class Shell {
 	const kiv_os::THandle std_in, std_out;
 
 	/// <summary>
-	/// Interni objekt na parsovani dat
+	/// Instance command parseru
 	/// </summary>
-	const std::unique_ptr<CommandParser> command_parser = std::make_unique<CommandParser>();
+	CommandParser command_parser;
 
 	/// <summary>
 	/// Aktualni cesta, ve ktere se shell nachazi
@@ -46,6 +45,8 @@ class Shell {
 	/// Buffer na IO
 	/// </summary>
 	std::array<char, BUFFER_SIZE> buffer = {};
+
+	bool exit_triggered = false;
 
 	void Write(const std::string& message) const;
 
@@ -67,43 +68,21 @@ public:
 	std::vector<Command> ParseCommands(const std::string& line);
 #endif
 
-	void ExecuteCommands(const std::vector<Command>& commands) {
-		
+	/// <summary>
+	/// Provadi seznam prikazu, dokud nenastane chyba
+	/// </summary>
+	/// <param name="commands">Seznam prikazu, ktery se ma provest</param>
+	void RunCommands(const std::vector<Command>& commands);
+
+	void PreparePipes(std::vector<Command>& commands);
+
+	/// <summary>
+	/// Spusti shell - ten bezi, dokud se nezavola exit nebo shutdown
+	/// </summary>
+	void Run();
+
+	std::pair<bool, std::string> ChangeDirectory(const std::string& path) {
+		return { false, "Not Yet Implemented" };
 	}
-
-	void Run() {
-		auto command_parser = CommandParser();
-		while (strcmp(buffer.data(), EXIT_COMMAND) != 0) {
-			Write(current_path); // Zapiseme aktualni cestu
-
-			// Uzivatelsky vstup
-			size_t bytesRead;
-			if (kiv_os_rtl::Read_File(std_in, buffer.data(), buffer.size(), bytesRead)) {
-				if (bytesRead < buffer.size()) { }
-
-				// Ziskame uzivatelsky vstup
-				auto user_input = std::string(buffer.begin(),
-				                              bytesRead >= buffer.size()
-					                              ? buffer.end()
-					                              : buffer.begin() + bytesRead);
-
-				auto commands = std::vector<Command>();
-				try {
-					commands = command_parser.ParseCommands(user_input);
-					WriteLine("");
-				}
-				catch (ParseException& ex) { // Pri chybe vypiseme hlasku do konzole a restartujeme while loop
-					WriteLine(ex.what());
-					continue;
-				}
-
-				ExecuteCommands(commands); // Provedeme vsechny prikazy
-			}
-			else {
-				break;
-			}
-		}
-	}
-
 
 };
