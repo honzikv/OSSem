@@ -5,6 +5,7 @@
 #include <mutex>
 
 #include "handles.h"
+#include "kernel.h"
 #include "Thread.h"
 #include "Process.h"
 #include "SuspendCallback.h"
@@ -133,7 +134,7 @@ private:
 	///	metoda vyhodi runtime exception
 	/// </summary>
 	/// <returns>Tid aktualne beziciho vlakna</returns>
-	kiv_os::THandle GetCurrentThreadTid();
+	kiv_os::THandle GetCurrentTid();
 
 public:
 	/// <summary>
@@ -157,11 +158,19 @@ public:
 	/// <returns>Pointer na vlakno</returns>
 	std::shared_ptr<Thread> GetThread(const kiv_os::THandle tid);
 
+	/// <summary>
+	/// Vytvori proces s hlavnim vlaknem a prida je do tabulek
+	/// </summary>
+	/// <param name="regs">Registry pro zapsani vysledku</param>
+	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error CreateProcess(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error CreateThread(kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	/// <summary>
+	/// Vytvori nove vlakno pro aktualne bezici proces
+	/// </summary>
+	/// <param name="regs">Registry pro zapsani vysledku</param>
+	/// <returns>Vysledek operace</returns>
+	kiv_os::NOS_Error CreateThread(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Spusti
@@ -208,7 +217,7 @@ public:
 	/// <param name="handle_array_size">velikost pole</param>
 	/// <param name="current_tid">tid aktualniho vlakna</param>
 	void AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_array, uint32_t handle_array_size,
-	                                      kiv_os::THandle current_tid);
+	                                  kiv_os::THandle current_tid);
 
 	/// <summary>
 	/// Provede NOS_Process::Wait_For

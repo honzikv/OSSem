@@ -88,7 +88,7 @@ kiv_os::THandle ProcessManager::FindParentPid() {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-kiv_os::THandle ProcessManager::GetCurrentThreadTid() {
+kiv_os::THandle ProcessManager::GetCurrentTid() {
 	const auto lock = std::scoped_lock(tasks_mutex);
 	return native_tid_to_kiv_handle[std::this_thread::get_id()];
 }
@@ -96,11 +96,11 @@ kiv_os::THandle ProcessManager::GetCurrentThreadTid() {
 
 kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
 	// Ziskame jmeno programu a argumenty
-	const auto programName = std::string(reinterpret_cast<char*>(regs.rdx.r)); // NOLINT(performance-no-int-to-ptr)
-	const auto programArgs = std::string(reinterpret_cast<char*>(regs.rdi.r)); // NOLINT(performance-no-int-to-ptr)
+	const auto program_name = reinterpret_cast<char*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
+	const auto program_args = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
 
 	// Ziskame funkci s programem a pretypujeme ji na TThread_Proc
-	const auto program = reinterpret_cast<kiv_os::TThread_Proc>(GetProcAddress(User_Programs, programName.c_str()));
+	const auto program = reinterpret_cast<kiv_os::TThread_Proc>(GetProcAddress(User_Programs, program_name));
 	// Pokud program neexistuje vratime Invalid_Argument
 	if (!program) {
 		regs.flags.carry = 1;
@@ -120,16 +120,18 @@ kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
 	const auto tid = GetFreeTid();
 
 	if (pid == NO_FREE_ID || tid == NO_FREE_ID) {
+		regs.flags.non_zero = 1;
 		return kiv_os::NOS_Error::Out_Of_Memory;
 	}
 
-	// Nastavime registry pro proces a predame je hlavnimu vlaknu
+	// Nastavime stdin a stdout pro proces a predame je hlavnimu vlaknu
+	// Argumenty programu se kopiruji do objektu Thread a ten si je nastavi sam
 	auto process_context = kiv_hal::TRegisters();
 	process_context.rax.x = std_in;
 	process_context.rbx.x = std_out;
 
 	// Vytvorime vlakno procesu, kde se spusti program
-	const auto main_thread = std::make_shared<Thread>(program, process_context, tid, pid);
+	const auto main_thread = std::make_shared<Thread>(program, process_context, tid, pid, program_args);
 
 	// Zjistime, zda-li vlakno, ve kterem se proces vytvari ma nejakeho rodice a nastavime ho (pokud existuje
 	// jinak se nastavi invalid value)
@@ -141,9 +143,11 @@ kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
 	AddThread(main_thread, tid);
 
 	// Spustime vlakno
-	const auto thread_handle = main_thread->Dispatch();
-	native_tid_to_kiv_handle[thread_handle] = tid;
-	kiv_handle_to_native_tid[tid] = thread_handle;
+	const auto native_tid = main_thread->Dispatch();
+
+	// Namapujeme nativni tid na THandle
+	native_tid_to_kiv_handle[native_tid] = tid;
+	kiv_handle_to_native_tid[tid] = native_tid;
 	process->SetRunning();
 	regs.rax.x = pid;
 
@@ -151,8 +155,75 @@ kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
 	return kiv_os::NOS_Error::Success;
 }
 
+kiv_os::NOS_Error ProcessManager::CreateThread(kiv_hal::TRegisters& regs) {
+	// Ziskame jmeno programu a argumenty
+	const auto program_name = reinterpret_cast<char*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
+	const auto program_args = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
+
+	// Ziskame funkci s programem a pretypujeme ji na TThread_Proc
+	const auto program = reinterpret_cast<kiv_os::TThread_Proc>(GetProcAddress(User_Programs, program_name));
+	// Pokud program neexistuje vratime Invalid_Argument
+	if (!program) {
+		regs.flags.carry = 1;
+		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument);
+		return kiv_os::NOS_Error::Invalid_Argument;
+	}
+
+	// bx.e = (stdin << 16) | stdout
+	const auto std_out = static_cast<uint16_t>(regs.rbx.e & 0xffff);
+	// vymaskujeme prvnich 16 msb a pretypujeme na uint16
+	const auto std_in = static_cast<uint16_t>(regs.rbx.e >> 16 & 0xffff);
+	// posuneme o 16 bitu a vymaskujeme prvnich 16 lsb
+
+	// Vytvorime zamek, protoze ziskame tid, ktery by nikdo nemel sebrat
+	auto lock = std::scoped_lock(tasks_mutex);
+	auto tid = GetFreeTid();
+	if (tid == NO_FREE_ID) {
+		regs.flags.carry = 1;
+		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::Out_Of_Memory);
+		return kiv_os::NOS_Error::Out_Of_Memory;
+	}
+
+	// Nastavime stdin a stdout pro proces a predame je hlavnimu vlaknu
+	// Argumenty programu se kopiruji do objektu Thread a ten si je nastavi sam
+	auto thread_context = kiv_hal::TRegisters();
+	thread_context.rax.x = std_in;
+	thread_context.rbx.x = std_out;
+
+	// Ziskame aktualni proces
+	const auto current_thread = GetThread(GetCurrentTid());
+	if (current_thread == nullptr) {
+		// toto by nastat nicmene nemelo
+		regs.flags.carry = 1;
+		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found);
+		return kiv_os::NOS_Error::File_Not_Found;
+	}
+
+	const auto current_process = GetProcess(current_thread->GetPid());
+	if (current_process == nullptr) {
+		// toto by nastat nicmene nemelo
+		regs.flags.carry = 1;
+		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found);
+		return kiv_os::NOS_Error::File_Not_Found;
+	}
+
+	const auto thread = std::make_shared<Thread>(program, thread_context, tid, current_process->GetPid(),
+	                                             program_args, false);
+
+	// Pridame vlakno do tabulky a spustime
+	AddThread(thread, tid);
+	const auto native_tid = thread->Dispatch();
+
+	// Namapujeme nativni tid na THandle
+	native_tid_to_kiv_handle[native_tid] = tid;
+	kiv_handle_to_native_tid[tid] = native_tid;
+	regs.rax.x = tid; // Vratime zpet tid vlakna
+
+	return kiv_os::NOS_Error::Success;
+}
+
 void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_handle,
-                                              const kiv_os::THandle notifier_handle) {
+                                            const kiv_os::THandle notifier_handle) {
 	auto lock = std::scoped_lock(suspend_callbacks_mutex);
 	const auto callback = suspend_callbacks[subscriber_handle];
 	if (callback == nullptr) {
@@ -204,8 +275,8 @@ HandleType ProcessManager::GetHandleType(const kiv_os::THandle id) {
 }
 
 void ProcessManager::AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_array,
-                                                      const uint32_t handle_array_size,
-                                                      const kiv_os::THandle current_tid) {
+                                                  const uint32_t handle_array_size,
+                                                  const kiv_os::THandle current_tid) {
 	// Pro validaci musime locknout tabulku
 	// Validujeme protoze se muze stat, ze procesy mezitim co jsme provadeli metodu
 	// dobehli, a byly odstranene z tabulek
@@ -238,7 +309,7 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 	const auto handle_count = regs.rcx.e;
 
 	// Thread id aktualne beziciho vlakna
-	const auto current_tid = GetCurrentThreadTid();
+	const auto current_tid = GetCurrentTid();
 
 	// Pridame vlakno do vsech existujicich procesu/vlaken v handle_array
 	AddCurrentThreadAsSubscriber(handle_array, handle_count, current_tid);
@@ -282,7 +353,8 @@ void ProcessManager::CreateInitProcess() {
 	                                         kiv_os::Invalid_Handle);
 
 	auto func = [](const kiv_hal::TRegisters& _) -> size_t { return 0; };
-	auto thread = std::make_shared<Thread>(func, kiv_hal::TRegisters(), tid, pid);
+	const char* args = "";
+	auto thread = std::make_shared<Thread>(func, kiv_hal::TRegisters(), tid, pid, args);
 
 	// Pridame do tabulky
 	AddProcess(process, pid);

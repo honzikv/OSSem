@@ -13,13 +13,21 @@ void Thread::ThreadFunc() {
 	if (is_main_thread) {
 		ProcessManager::Get().FinishProcess(pid);
 	}
-	
+
 }
+
+Thread::Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os::THandle tid, kiv_os::THandle pid,
+               const char* args, bool is_main_thread): program(program), regs(context), is_main_thread(is_main_thread),
+                                                       args(args),
+                                                       tid(tid), pid(pid) {
+	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(this->args.c_str());
+}
+
 
 std::thread::id Thread::Dispatch() {
 	auto thread = std::thread(&Thread::ThreadFunc, this);
 	const auto thread_id = thread.get_id();
-	thread.detach(); // vlakno musime detachnout
+	thread.detach(); // vlakno detachneme
 	return thread_id; // vratime thread id
 }
 
