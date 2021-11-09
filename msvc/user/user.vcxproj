@@ -23,17 +23,20 @@
     <ClInclude Include="..\..\src\api\hal.h" />
     <ClInclude Include="..\..\src\user\Freq.h" />
     <ClInclude Include="..\..\src\user\rtl.h" />
+    <ClInclude Include="..\..\src\user\Shell\Command.h" />
     <ClInclude Include="..\..\src\user\shell_commands.h" />
     <ClInclude Include="..\..\src\user\Shell\CommandParser.h" />
     <ClInclude Include="..\..\src\user\Shell\Shell.h" />
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h" />
+    <ClInclude Include="..\..\src\user\Utils\Logging.h" />
     <ClInclude Include="..\..\src\user\Utils\StringUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
     <ClCompile Include="..\..\src\user\Freq.cpp" />
     <ClCompile Include="..\..\src\user\rtl.cpp" />
-    <ClCompile Include="..\..\src\user\shell.cpp" />
+    <ClCompile Include="..\..\src\user\Shell.cpp" />
+    <ClCompile Include="..\..\src\user\Shell\Command.cpp" />
     <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp" />
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp" />
   </ItemGroup>

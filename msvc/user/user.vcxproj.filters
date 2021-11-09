@@ -57,15 +57,18 @@
     <ClInclude Include="..\..\src\user\Freq.h">
       <Filter>Header Files\Programs</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\user\Shell\Command.h">
+      <Filter>Header Files\Shell</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\user\Utils\Logging.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\user\rtl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\api\api.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\user\shell.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp">
@@ -76,6 +79,12 @@
     </ClCompile>
     <ClCompile Include="..\..\src\user\Freq.cpp">
       <Filter>Source Files\Programs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user\Shell\Command.cpp">
+      <Filter>Source Files\Shell</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user\Shell.cpp">
+      <Filter>Source Files\Shell</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
