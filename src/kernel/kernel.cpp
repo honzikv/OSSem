@@ -1,10 +1,15 @@
-#pragma once
+﻿#pragma once
 
 #include "kernel.h"
+
 #include "io.h"
 #include <Windows.h>
 
-HMODULE User_Programs;
+#include "IO/ConsoleIn.h"
+#include "IO/ConsoleOut.h"
+#include "IO/IOManager.h"
+#include "Process/ProcessManager.h"
+#include "Utils/Config.h"
 
 
 void Initialize_Kernel() {
@@ -15,72 +20,99 @@ void Shutdown_Kernel() {
 	FreeLibrary(User_Programs);
 }
 
-void __stdcall Sys_Call(kiv_hal::TRegisters &regs) {
-
+/// <summary>
+/// Funkce pro systemove volani
+/// </summary>
+/// <param name="regs">registry s kontextem</param>
+void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_Service_Major>(regs.rax.h)) {
-	
-		case kiv_os::NOS_Service_Major::File_System:		
-			Handle_IO(regs);
+		case kiv_os::NOS_Service_Major::File_System:
+			IOManager::Get().HandleIO(regs);
 			break;
 
+		case kiv_os::NOS_Service_Major::Process:
+			ProcessManager::Get().ProcessSyscall(regs);
+			break;
 	}
 
 }
 
-void __stdcall Bootstrap_Loader(kiv_hal::TRegisters &context) {
+/// <summary>
+/// Vytvori proces pro shell
+/// </summary>
+/// <param name="shell_regs">reference na registry (pro precteni pidu shellu)</param>
+/// <param name="std_in_handle">reference na stdin</param>
+/// <param name="std_out_handle">reference na stdout</param>
+void CreateShell(kiv_hal::TRegisters& shell_regs, kiv_os::THandle std_in_handle, kiv_os::THandle std_out_handle) {
+	const auto shell_command = "shell";
+	const auto shell_args = "";
+
+	shell_regs.rax.h = static_cast<decltype(shell_regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
+	shell_regs.rax.l = static_cast<decltype(shell_regs.rax.l)>(kiv_os::NOS_Process::Clone);
+	shell_regs.rcx.l = static_cast<decltype(shell_regs.rcx.l)>(kiv_os::NClone::Create_Process);
+	// rdx je pretypovany pointer na jmeno souboru
+	shell_regs.rdx.r = reinterpret_cast<decltype(shell_regs.rdx.r)>(shell_command);
+	shell_regs.rdi.r = reinterpret_cast<decltype(shell_regs.rdi.r)>(shell_args); // rdi je pointer na argumenty
+	shell_regs.rbx.e = std_in_handle << 16 | std_out_handle; // rbx obsahuje stdin a stdout
+	Sys_Call(shell_regs);
+}
+
+/// <summary>
+/// Proces pocka, dokud shell neskonci
+/// </summary>
+/// <param name="shell_pid"></param>
+void WaitForShell(kiv_os::THandle shell_pid) {
+	auto regs = kiv_hal::TRegisters();
+	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
+	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Wait_For);
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(&shell_pid); // pointer na shell_pid
+	regs.rcx.e = 1; // pouze jeden prvek
+	Sys_Call(regs);
+}
+
+void RemoveShellProcess(const kiv_os::THandle shell_pid) {
+	auto regs = kiv_hal::TRegisters();
+	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
+	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Exit);
+	regs.rdx.x = shell_pid;
+	Sys_Call(regs);
+}
+
+void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	Initialize_Kernel();
-	kiv_hal::Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
+	
+	// Nechame si vytvorit stdin a stdout
+	const auto [std_in_handle, std_out_handle] = IOManager::Get().CreateStdIO();
 
-	//v ramci ukazky jeste vypiseme dostupne disky
-	kiv_hal::TRegisters regs;
-	for (regs.rdx.l = 0; ; regs.rdx.l++) {
-		kiv_hal::TDrive_Parameters params;		
-		regs.rax.h = static_cast<uint8_t>(kiv_hal::NDisk_IO::Drive_Parameters);;
-		regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(&params);
-		kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Disk_IO, regs);
-			
-		if (!regs.flags.carry) {
-			auto print_str = [](const char* str) {
-				kiv_hal::TRegisters regs;
-				regs.rax.l = static_cast<uint8_t>(kiv_os::NOS_File_System::Write_File);
-				regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(str);
-				regs.rcx.r = strlen(str);
-				Handle_IO(regs);
-			};
+	Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
 
-			const char dec_2_hex[16] = { L'0', L'1', L'2', L'3', L'4', L'5', L'6', L'7', L'8', L'9', L'A', L'B', L'C', L'D', L'E', L'F' };
-			char hexa[3];
-			hexa[0] = dec_2_hex[regs.rdx.l >> 4];
-			hexa[1] = dec_2_hex[regs.rdx.l & 0xf];
-			hexa[2] = 0;
+	// Vytvorime "fake" Init proces
+	ProcessManager::Get().CreateInitProcess();
 
-			print_str("Nalezen disk: 0x");
-			print_str(hexa);
-			print_str("\n");
+	auto shell_regs = kiv_hal::TRegisters();
+	CreateShell(shell_regs, std_in_handle, std_out_handle);
 
-		}
+	// Nyni musime blokovat v "tomto" vlakne, dokud shell neskonci
+	const auto shell_pid = shell_regs.rax.x;
+	WaitForShell(shell_pid);
+	RemoveShellProcess(shell_pid);
 
-		if (regs.rdx.l == 255) break;
-	}
-
-	//spustime shell - v realnem OS bychom ovsem spousteli login
-	kiv_os::TThread_Proc shell = (kiv_os::TThread_Proc)GetProcAddress(User_Programs, "shell");
-	if (shell) {
-		//spravne se ma shell spustit pres clone!
-		//ale ten v kostre pochopitelne neni implementovan		
-		shell(regs);
-	}
-
+	// TODO remove this debug
+#if IS_DEBUG
+	LogDebug("DEBUG: Init killed. Stopped before Kernel Shutdown");
+	while (true) { }
+#endif
 
 	Shutdown_Kernel();
 }
 
 
-void Set_Error(const bool failed, kiv_hal::TRegisters &regs) {
+void Set_Error(const bool failed, kiv_hal::TRegisters& regs) {
 	if (failed) {
 		regs.flags.carry = true;
 		regs.rax.r = GetLastError();
 	}
-	else
+	else {
 		regs.flags.carry = false;
+	}
 }

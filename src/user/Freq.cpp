@@ -48,7 +48,7 @@ extern "C" size_t __stdcall freq(const kiv_hal::TRegisters& regs) {
 
 	const auto stdOut = static_cast<kiv_os::THandle>(regs.rax.x);
 	auto stringStream = std::stringstream(); // pro formatovani je nejsnazsi pouzit string stream
-	for (auto i = 0; i < byteFrequencies.size(); i += 1) {
+	for (auto i = uint64_t{ 0 }; i < byteFrequencies.size(); i += 1) {
 		const auto byteFreq = byteFrequencies[0];
 		if (byteFreq == 0) {
 			continue;

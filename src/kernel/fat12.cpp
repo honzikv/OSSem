@@ -3,6 +3,7 @@
 //
 
 #include "fat12.h"
+#include "path.h"
 
 std::vector<unsigned char> fat;
 std::vector<unsigned char> second_fat;

@@ -22,8 +22,11 @@
     <Filter Include="Source Files\Shell">
       <UniqueIdentifier>{8008f6b2-dfbd-4b81-b049-f74a63ef6956}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Processes">
+    <Filter Include="Source Files\Programs">
       <UniqueIdentifier>{9d36ea4c-0c08-466a-b790-bfac1f169dae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Programs">
+      <UniqueIdentifier>{08175ba7-6988-486e-a8f6-505999333f94}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,7 +39,7 @@
     <ClInclude Include="..\..\src\user\rtl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\user\shell.h">
+    <ClInclude Include="..\..\src\user\shell_commands.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\user\Utils\StringUtils.h">
@@ -45,14 +48,20 @@
     <ClInclude Include="..\..\src\user\Shell\CommandParser.h">
       <Filter>Header Files\Shell</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\user\Shell\ShellInterpreter.h">
+    <ClInclude Include="..\..\src\user\Shell\Shell.h">
       <Filter>Header Files\Shell</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\user\Tests\UnitTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\user\Freq.h">
+      <Filter>Header Files\Programs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\user\Shell\Command.h">
       <Filter>Header Files\Shell</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\user\Utils\Logging.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -62,17 +71,20 @@
     <ClCompile Include="..\..\src\api\api.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\user\shell.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\user\Shell\CommandParser.cpp">
       <Filter>Source Files\Shell</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\user\Tests\UnitTests.cpp">
       <Filter>Source Files\Shell</Filter>
     </ClCompile>
-    <ClCompile Include="Freq.cpp">
-      <Filter>Source Files\Processes</Filter>
+    <ClCompile Include="..\..\src\user\Freq.cpp">
+      <Filter>Source Files\Programs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user\Shell\Command.cpp">
+      <Filter>Source Files\Shell</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user\Shell.cpp">
+      <Filter>Source Files\Shell</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -1,16 +1,12 @@
-
 #include "Tests/UnitTests.h"
 
 #include <array>
 #include <iostream>
 #include <memory>
 
-#include "shell.h"
-#include "rtl.h"
-#include "Shell/ShellInterpreter.h"
-
-// Debug pro run testu
-#define IS_DEBUG true
+#include "shell_commands.h"
+#include "Shell/Shell.h"
+#include "Utils/Logging.h"
 
 
 size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
@@ -18,70 +14,118 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 #if IS_DEBUG
 	TestRunner::runTests();
 #endif
-
-	// stdin a stdout jsou asi schvalne predany v registrech ?
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 
-	// Pole jako objekt - k pointeru se pristupuje pres buffer.data()
-	auto buffer = std::array<char, BUFFER_SIZE>(); // buffer pro nacitani user inputu
-	size_t counter;
+	const auto shell = std::make_unique<Shell>(regs, std_in, std_out, "C:\\");
 
-	// constexpr auto intro = "Vitejte v kostre semestralni prace z KIV/OS.\n"
-	// 	"Shell zobrazuje echo zadaneho retezce. Prikaz exit ukonci shell.\n";
-	// kiv_os_rtl::Write_File(std_out, intro, strlen(intro), counter);
+	// Spustime shell
+	shell->Run();
 
+	return static_cast<size_t>(kiv_os::NOS_Error::Success);
 
-	// Shell interpreter parsuje prikazy a vola prislusne sluzby OS
-	// Unique pointer (make_unique) vytvori objekt na heapu, takze se sam smaze pri ukonceni scopu
-	const auto shellInterpreter = std::make_unique<ShellInterpreter>(regs, std_in, std_out);
+}
 
-	constexpr auto prompt = "C:\\>"; // todo: filesystem integration
-	do {
-		kiv_os_rtl::Write_File(std_out, prompt, strlen(prompt), counter);
+void Shell::Write(const std::string& message) const {
+	size_t written; // Pro toto predpokladame, ze se zapisi byty vsechny
+	kiv_os_rtl::Write_File(std_out, message.data(), message.size(), written);
+}
 
-		if (kiv_os_rtl::Read_File(std_in, buffer.data(), BUFFER_SIZE, counter)) {
-			if (counter == BUFFER_SIZE) {
-				counter--;
+void Shell::WriteLine(const std::string& message) const {
+	Write(message + NEWLINE_SYMBOL);
+}
+
+Shell::Shell(const kiv_hal::TRegisters& registers, kiv_os::THandle std_in, kiv_os::THandle std_out,
+             const std::string& current_path):
+	registers(registers),
+	std_in(std_in),
+	std_out(std_out),
+	current_path(current_path) {}
+
+std::vector<Command> Shell::ParseCommands(const std::string& line) {
+	return command_parser.ParseCommands(line);
+}
+
+void Shell::RunCommands(const std::vector<Command>& commands) {
+	for (auto i = 0; i < commands.size(); i += 1) {
+		const auto& command = commands[i];
+		const auto params = command.Params();
+
+		// Shell neni mozne volat pres syscall, takze se pro nej musi vytvorit v shellu specialni funkce
+		if (command.command_name == "cd") {
+			const auto [success, errorMessage] = ChangeDirectory(params);
+			if (!success) {
+				// Pokud dosl
+				WriteLine(errorMessage);
+				break;
 			}
-
-			buffer[counter] = 0; //udelame z precteneho vstup null-terminated retezec
-
-			// Vypis newline do konzole
-			// kiv_os_rtl::Write_File(std_out, NEWLINE_SYMBOL, strlen(NEWLINE_SYMBOL), counter);
-			// Parsovani vstupu z konzole
-			// shellInterpreter->parseLine(buffer.data());
-
-			// Puvodni - pouze echo do konzole
-			// kiv_os_rtl::Write_File(std_out, buffer.data(), strlen(buffer.data()), counter); //a vypiseme ho
-
-			// Vypis newline do konzole
-			// kiv_os_rtl::Write_File(std_out, NEWLINE_SYMBOL, strlen(NEWLINE_SYMBOL), counter);
-
+			continue;
 		}
-		else {
-			break; //EOF
+
+		if (command.command_name == "exit") {
+			Terminate();
 		}
 	}
-	while (strcmp(buffer.data(), EXIT_COMMAND) != 0); // dokud nezada user EXIT
-
-	return 0;
-
-	// return testShellParsing1();
 }
 
-std::vector<Command> ShellInterpreter::parseCommands(const std::string& line) {
-	return commandParser->parseCommands(line);
-}
+std::pair<bool, std::string> Shell::PreparePipes(std::vector<Command>& commands) {
+	for (size_t i = 0; i < commands.size() - 1; i += 1) {
+		size_t j = i + 1;
 
-auto ShellInterpreter::executeCommand(const Command& command) -> void {
-	if (command.commandName == "toggledebug") {
-		toggleDebug();
+		auto& command = commands[i];
+		// Pokud ma prikaz redirect type pro vstup i vystup a zaroven chceme predat data procesu vyhodime chybu
+		// (nelze zkonstruovat kvuli api)
+		if (command.redirect_type == RedirectType::Both) {
+			return { false, "Error, cannot redirect to a program and file at the same time" };
+		}
+
+		// Pokud mame | program < file.txt vyhodime chybu
+		if (command.redirect_type == RedirectType::FromFile && i != 0) {
+			return { false, "Error, cannot read input from file and program at the same time" };
+		}
+
+		// Pokud mame program > out.txt | another_program vyhodime chybu
+		if (command.redirect_type == RedirectType::ToFile && j != commands.size() - 1) {
+			return { false, "Error, cannot redirect input to file and program at the same time" };
+		}
+
+
 	}
-
-	// TODO impl
 }
 
-auto ShellInterpreter::toggleDebug() -> void {
-	debugOn = !debugOn;
+void Shell::Run() {
+	while (run) {
+		Write(current_path); // Zapiseme aktualni cestu
+
+		// Vyresetujeme buffer
+		std::fill_n(buffer.data(), buffer.size(), 0);
+
+		// Precteme uzivatelsky vstup
+		size_t bytesRead;
+		const auto read_success = kiv_os_rtl::Read_File(std_in, buffer.data(), buffer.size(), bytesRead);
+		if (!read_success) {
+			// Pokud EOT ukoncime while loop
+			break;
+		}
+
+		// Ziskame uzivatelsky vstup, ktery prevedeme na std::sting (vyresi za nas \0 terminaci)
+		auto user_input = std::string(buffer.begin(),
+		                              bytesRead >= buffer.size()
+			                              ? buffer.end()
+			                              : buffer.begin() + bytesRead);
+
+		// Vytvorime seznam prikazu a zkusime je rozparsovat z uzivatelskeho vstupu
+		auto commands = std::vector<Command>();
+		try {
+			commands = command_parser.ParseCommands(user_input);
+			WriteLine("");
+		}
+		catch (ParseException& ex) {
+			// Pri chybe vypiseme hlasku do konzole a restartujeme while loop
+			WriteLine(ex.what());
+			continue;
+		}
+
+		RunCommands(commands); // Provedeme vsechny prikazy
+	}
 }

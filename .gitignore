@@ -9,3 +9,7 @@
 /msvc/user/x64/Debug
 /msvc/boot/.vs/boot/v16
 /msvc/kernel/.vs/kernel/v16
+/msvc/kernel/.vs/kernel
+/msvc/kernel/x64/Release
+/msvc/user/.vs/user/v17
+/msvc/user/.vs/user

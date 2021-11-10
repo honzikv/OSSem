@@ -1,61 +1,11 @@
 #pragma once
-#include <optional>
 #include <regex>
 #include <string>
-#include <utility>
 #include <vector>
+
+#include "Command.h"
 #include "Utils/StringUtils.h"
 
-/**
- * Typ presmerovani v souboru
- */
-enum RedirectType : uint8_t {
-	FromFile, // Ze souboru
-	ToFile, // Do souboru
-	None // Zadny - Default
-
-};
-
-/**
- * Obsahuje data pro jeden prikaz
- */
-struct Command {
-	/*
-	 * Parametry prikazu
-	 */
-	const std::vector<std::string> params;
-
-	/**
-	 * Nazev prikazu
-	 */
-	const std::string commandName;
-
-	/**
-	 * Typ presmerovani - ze souboru, nebo do souboru
-	 */
-	const RedirectType redirectType;
-
-	/**
-	 * Reference na soubor pro presmerovani (pokud existuje)
-	 */
-	const std::string file;
-
-
-	Command(std::string commandName, std::vector<std::string> params,
-	        RedirectType redirectType = {}, std::string file = {});
-
-	/**
-	 * ToString pro debug
-	 */
-	[[nodiscard]] std::string toString() const;
-
-	/**
-	 * Operator pro rovnost (pouziti v unit testech)
-	 */
-	friend bool operator==(const Command& lhs, const Command& rhs);
-
-	friend bool operator!=(const Command& lhs, const Command& rhs) { return !(lhs == rhs); }
-};
 
 /**
  * Exception pri parsovani uzivatelskeho vstupu
@@ -75,28 +25,41 @@ public:
 
 class CommandParser {
 
-	const std::regex pipeRegex = std::regex("\\|");
-	const std::regex redirectToFileRegex = std::regex("\\>");
-	const std::regex redirectFromFileRegex = std::regex("\\<");
-	const std::regex redirectRegex = std::regex("\\<|\\>");
-	const std::regex whitespaceRegex = std::regex("\\s+");
+	const std::regex PIPE_REGEX = std::regex("\\|");
+	const std::regex REDIRECT_TO_FILE_REGEX = std::regex("\\>");
+	const std::regex REDIRECT_FROM_FILE_REGEX = std::regex("\\<");
+	const std::regex REDIRECT_REGEX = std::regex("\\<|\\>");
+	const std::regex WHITESPACE_REGEX = std::regex("\\s+");
 
-	/**
-	 * Funkce pro vytvoreni prikazu
-	 */
-	static auto createCommand(const std::vector<std::string>& commandWithParams, const RedirectType redirectType,
-	                          const std::string& fileUri, const std::string& commandWithParamsAndRedirect) -> Command;
-	/**
-	 * Rozdeli soubory podle < nebo > a vrati je jako pair RedirectType a vektor tokenu
-	 */
-	[[nodiscard]]
-	auto splitByFileRedirect(const std::string& commandWithParams) const
-	-> std::pair<RedirectType, std::vector<std::string>> ;
+	static Command CreateCommand(const std::vector<std::string>& command_with_params,
+	                             const RedirectType redirect_type, const std::string& source_file,
+	                             const std::string& target_file,
+	                             const std::string& command_with_params_and_redirect);
+
+	/// <summary>
+	/// Rozdeli radek obsahujici prikaz, argumenty a (potencialni) redirecty souboru na trojici:
+	/// zdrojovy soubor, cilovy soubor, prikaz s argumenty
+	/// </summary>
+	/// <param name="command_with_params">Prikaz s argumenty a presmerovanim</param>
+	/// <param name="redirect_type">Typ presmerovani (z metody getRedirectType)</param>
+	/// <returns>zdrojovy soubor, cilovy soubor, prikaz s argumenty</returns>
+	[[nodiscard]] auto SplitByFileRedirect(const std::string& command_with_params,
+	                                       const RedirectType redirect_type) const
+	-> std::tuple<std::string, std::string, std::string>;
+
+
+	/// <summary>
+	/// Zjisti typ presmerovani v prikazu
+	/// </summary>
+	/// <param name="command_with_params">Prikaz s argumenty a presmerovanim</param>
+	/// <returns>Typ presmerovani</returns>
+	[[nodiscard]] RedirectType GetRedirectType(const std::string& command_with_params) const;
 
 public:
-	/**
-	 * Zpracuje vsechny prikazy, pokud je to mozne. Jinak vyhodi ParseException
-	 */
-	[[nodiscard]]
-	auto parseCommands(const std::string& input) const -> std::vector<Command> ;
+	/// <summary>
+	/// Zpracuje vsechny prikazy z jedne radky a vrati vektor prikazu, ktere lze dale zpracovat
+	/// </summary>
+	/// <param name="input">Radka </param>
+	/// <returns>Typ presmerovani</returns>
+	[[nodiscard]] std::vector<Command> ParseCommands(const std::string& input) const;
 };
