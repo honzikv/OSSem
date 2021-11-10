@@ -15,9 +15,9 @@ Buildíme popořadě (asi? fungovalo i Kernel -> User -> Boot):
  3. Boot
 
 # Linky
-<!-- - Setup pro VSCode: https://code.visualstudio.com/docs/cpp/config-msvc
+- Setup pro VSCode: https://code.visualstudio.com/docs/cpp/config-msvc
 - Resharper C++: https://www.jetbrains.com/resharper-cpp/
-- GitHub:
+<!-- - GitHub:
 	- https://github.com/Cajova-Houba/kiv-os-simulator
 	- https://github.com/vairad/zcu-os
 	- https://github.com/johnny-wolf/kiv-os
