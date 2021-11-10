@@ -28,14 +28,11 @@
     <Filter Include="Header Files\Programs">
       <UniqueIdentifier>{08175ba7-6988-486e-a8f6-505999333f94}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Api">
+      <UniqueIdentifier>{8c618933-7998-46c7-884f-ace48af14892}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\api\api.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\api\hal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\user\rtl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -62,6 +59,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\user\Utils\Logging.h">
       <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\api\api.h">
+      <Filter>Header Files\Api</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\api\hal.h">
+      <Filter>Header Files\Api</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
