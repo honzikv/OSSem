@@ -17,12 +17,12 @@ Buildíme popořadě (asi? fungovalo i Kernel -> User -> Boot):
 # Linky
 - Setup pro VSCode: https://code.visualstudio.com/docs/cpp/config-msvc
 - Resharper C++: https://www.jetbrains.com/resharper-cpp/
-- GitHub:
+<!-- - GitHub:
 	- https://github.com/Cajova-Houba/kiv-os-simulator
 	- https://github.com/vairad/zcu-os
 	- https://github.com/johnny-wolf/kiv-os
 	- https://github.com/danisik/OS
-	- https://github.com/topnax/kiv-os-sp
+	- https://github.com/topnax/kiv-os-sp -->
 
 # Todo:
 - Parsing vstupu z konzole
