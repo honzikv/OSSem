@@ -32,5 +32,5 @@ public:
 	/// <summary>
 	/// Zavre soubor
 	/// </summary>
-	virtual void Close();
+	virtual kiv_os::NOS_Error Close();
 };

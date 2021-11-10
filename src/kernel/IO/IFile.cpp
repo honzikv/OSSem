@@ -9,5 +9,6 @@ kiv_os::NOS_Error IFile::Write(const char* source_buffer, size_t buffer_size, si
 	return kiv_os::NOS_Error::Unknown_Error;
 }
 
-void IFile::Close() {
+kiv_os::NOS_Error IFile::Close() {
+	return kiv_os::NOS_Error::Unknown_Error;
 }

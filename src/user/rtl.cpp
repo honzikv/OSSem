@@ -3,7 +3,7 @@
 std::atomic<kiv_os::NOS_Error> kiv_os_rtl::Last_Error;
 
 kiv_hal::TRegisters Prepare_SysCall_Context(kiv_os::NOS_Service_Major major, uint8_t minor) {
-	kiv_hal::TRegisters regs;
+	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<uint8_t>(major);
 	regs.rax.l = minor;
 	return regs;
@@ -34,4 +34,16 @@ bool kiv_os_rtl::Write_File(const kiv_os::THandle file_handle, const char* buffe
 	const bool result = kiv_os::Sys_Call(regs);
 	written = regs.rax.r;
 	return result;
+}
+
+bool kiv_os_rtl::CreatePipe(kiv_os::THandle& input, kiv_os::THandle& output) {
+	auto regs = Prepare_SysCall_Context(kiv_os::NOS_Service_Major::File_System,
+	                                    static_cast<uint8_t>(kiv_os::NOS_File_System::Create_Pipe));
+
+	kiv_os::THandle pipes[] = {input, output};
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(std::addressof(pipes));
+
+	input = pipes[0];
+	output = pipes[1];
+	return kiv_os::Sys_Call(regs);
 }

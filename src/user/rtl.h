@@ -2,6 +2,8 @@
 
 #include "..\api\api.h"
 #include <atomic>
+#include <string>
+#include <utility>
 
 namespace kiv_os_rtl {
 
@@ -17,4 +19,6 @@ namespace kiv_os_rtl {
 	//vraci true, kdyz vse OK
 	//vraci true, kdyz vse OK
 
+
+	bool CreatePipe(kiv_os::THandle& input, kiv_os::THandle& output);
 }

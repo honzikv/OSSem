@@ -142,7 +142,7 @@ public:
 	/// </summary>
 	/// <param name="regs">registry</param>
 	/// <returns>vysledek operace</returns>
-	kiv_os::NOS_Error ProcessSyscall(kiv_hal::TRegisters& regs);
+	void ProcessSyscall(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Spusti
@@ -162,7 +162,6 @@ public:
 	///	se neukonci shell.
 	/// </summary>
 	void CreateInitProcess();
-
 
 	/// <summary>
 	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
@@ -190,15 +189,14 @@ private:
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error CreateProcess(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error CreateNewProcess(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Vytvori nove vlakno pro aktualne bezici proces
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error CreateThread(kiv_hal::TRegisters& regs);
-
+	kiv_os::NOS_Error CreateNewThread(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Odstrani callback pro vzbuzeni

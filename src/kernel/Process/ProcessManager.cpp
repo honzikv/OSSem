@@ -41,37 +41,58 @@ auto ProcessManager::AddThread(const std::shared_ptr<Thread> thread, const kiv_o
 	thread_table[tid - TID_RANGE_START] = thread;
 }
 
-kiv_os::NOS_Error ProcessManager::ProcessSyscall(kiv_hal::TRegisters& regs) {
+void ProcessManager::ProcessSyscall(kiv_hal::TRegisters& regs) {
 	// Spustime jednotlive funkce podle operace
 	auto operation = regs.rax.l;
+	auto operation_result = kiv_os::NOS_Error::Success;
 	switch (static_cast<kiv_os::NOS_Process>(operation)) {
-		case kiv_os::NOS_Process::Clone:
-			return PerformClone(regs);
+		case kiv_os::NOS_Process::Clone: {
+			operation_result = PerformClone(regs);
+			break;
+		}
 
-		case kiv_os::NOS_Process::Wait_For:
-			return PerformWaitFor(regs);
+		case kiv_os::NOS_Process::Wait_For: {
+			operation_result = PerformWaitFor(regs);
+			break;
+		}
 
-		case kiv_os::NOS_Process::Read_Exit_Code:
-			return PerformGetTaskExitCode(regs, false);
+		case kiv_os::NOS_Process::Read_Exit_Code: {
+			operation_result = PerformGetTaskExitCode(regs, false);
+			break;
+		}
 
-		case kiv_os::NOS_Process::Exit:
-			return PerformGetTaskExitCode(regs, true);
+		case kiv_os::NOS_Process::Exit: {
+			operation_result = PerformGetTaskExitCode(regs, true);
+			break;
+		}
 
-		case kiv_os::NOS_Process::Shutdown:
-			return PerformShutdown(regs);
+		case kiv_os::NOS_Process::Shutdown: {
+			operation_result = PerformShutdown(regs);
+			break;
+		}
 
-		case kiv_os::NOS_Process::Register_Signal_Handler:
-			return PerformRegisterSignalHandler(regs);
+		case kiv_os::NOS_Process::Register_Signal_Handler: {
+			operation_result = PerformRegisterSignalHandler(regs);
+			break;
+		}
+		default: {
+			break;
+		}
+	}
+
+	if (operation_result != kiv_os::NOS_Error::Success) {
+		regs.flags.carry = 1;
+		regs.rax.x = static_cast<decltype(regs.rax.x)>(operation_result);
 	}
 }
 
 kiv_os::NOS_Error ProcessManager::PerformClone(kiv_hal::TRegisters& regs) {
 	const auto operationType = static_cast<kiv_os::NClone>(regs.rcx.l);
 	if (operationType == kiv_os::NClone::Create_Process) {
-		return CreateProcess(regs);
+		return CreateNewProcess(regs);
 	}
 	if (operationType == kiv_os::NClone::Create_Thread) {
-		return CreateThread(regs);
+		return CreateNewThread(regs);
 	}
 
 	// Jinak vratime invalid argument
@@ -99,7 +120,7 @@ kiv_os::THandle ProcessManager::GetCurrentTid() {
 }
 
 
-kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Ziskame jmeno programu a argumenty
 	const auto program_name = reinterpret_cast<char*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	const auto program_args = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
@@ -108,8 +129,6 @@ kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
 	const auto program = reinterpret_cast<kiv_os::TThread_Proc>(GetProcAddress(User_Programs, program_name));
 	// Pokud program neexistuje vratime Invalid_Argument
 	if (!program) {
-		regs.flags.carry = 1;
-		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument);
 		return kiv_os::NOS_Error::Invalid_Argument;
 	}
 
@@ -126,8 +145,6 @@ kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
 	const auto tid = GetFreeTid();
 
 	if (pid == NO_FREE_ID || tid == NO_FREE_ID) {
-		regs.flags.carry = 1;
-		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::Out_Of_Memory);
 		return kiv_os::NOS_Error::Out_Of_Memory;
 	}
 
@@ -162,7 +179,7 @@ kiv_os::NOS_Error ProcessManager::CreateProcess(kiv_hal::TRegisters& regs) {
 	return kiv_os::NOS_Error::Success;
 }
 
-kiv_os::NOS_Error ProcessManager::CreateThread(kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 	// Ziskame jmeno programu a argumenty
 	const auto program_name = reinterpret_cast<char*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	const auto program_args = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
@@ -171,8 +188,6 @@ kiv_os::NOS_Error ProcessManager::CreateThread(kiv_hal::TRegisters& regs) {
 	const auto program = reinterpret_cast<kiv_os::TThread_Proc>(GetProcAddress(User_Programs, program_name));
 	// Pokud program neexistuje vratime Invalid_Argument
 	if (!program) {
-		regs.flags.carry = 1;
-		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument);
 		return kiv_os::NOS_Error::Invalid_Argument;
 	}
 
@@ -186,8 +201,6 @@ kiv_os::NOS_Error ProcessManager::CreateThread(kiv_hal::TRegisters& regs) {
 	auto lock = std::scoped_lock(tasks_mutex);
 	auto tid = GetFreeTid();
 	if (tid == NO_FREE_ID) {
-		regs.flags.carry = 1;
-		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::Out_Of_Memory);
 		return kiv_os::NOS_Error::Out_Of_Memory;
 	}
 
@@ -201,16 +214,12 @@ kiv_os::NOS_Error ProcessManager::CreateThread(kiv_hal::TRegisters& regs) {
 	const auto current_thread = GetThread(GetCurrentTid());
 	if (current_thread == nullptr) {
 		// toto by nastat nicmene nemelo
-		regs.flags.carry = 1;
-		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found);
 		return kiv_os::NOS_Error::File_Not_Found;
 	}
 
 	const auto current_process = GetProcess(current_thread->GetPid());
 	if (current_process == nullptr) {
 		// toto by nastat nicmene nemelo
-		regs.flags.carry = 1;
-		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found);
 		return kiv_os::NOS_Error::File_Not_Found;
 	}
 
@@ -425,7 +434,7 @@ void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_
 	}
 }
 
-void ProcessManager::RemoveSuspendCallback(kiv_os::THandle subscriber_handle) {
+void ProcessManager::RemoveSuspendCallback(const kiv_os::THandle subscriber_handle) {
 	auto lock = std::scoped_lock(suspend_callbacks_mutex);
 	suspend_callbacks[subscriber_handle] = nullptr;
 }
