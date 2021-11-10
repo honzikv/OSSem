@@ -24,19 +24,20 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 
 		// Ziskame semafor pro cteni
 		read->Acquire();
+		// Lockneme pristup k bufferu a flagum a precteme z nej
 		{
-			auto lock = std::scoped_lock(flag_access);
+			auto lock = std::scoped_lock(buffer_access, flag_access);
 			if (read_finished || write_finished && Empty()) {
 				bytes_read = bytes_read_from_buffer;
 				write->Release();
 				return kiv_os::NOS_Error::Success;
 			}
-		}
 
-		// Lockneme pristup k bufferu a precteme z nej
-		{
-			auto lock = std::scoped_lock(buffer_access);
 			target_buffer[i] = buffer[read_idx];
+			if (target_buffer[i] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
+				read_finished = true;
+			}
+
 			AdvanceReadIdx(); // Posuneme index pro cteni
 			bytes_read_from_buffer += 1;
 			items -= 1;
@@ -86,15 +87,11 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, size_t buffer_size, siz
 	return kiv_os::NOS_Error::Success;
 }
 
-void Pipe::CloseWriting() {
-	const char eot = static_cast<char>(kiv_hal::NControl_Codes::SUB);
+void Pipe::Close() {
+	constexpr char eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
 	size_t bytes_written = 0;
-	Write(&eot, 1, bytes_written);
+	Write(&eof, 1, bytes_written);
 	auto lock = std::scoped_lock(flag_access);
 	write_finished = true;
-}
-
-void Pipe::CloseReading() {
-	auto lock = std::scoped_lock(flag_access);
-	read_finished = true;
+	read->Release();
 }

@@ -109,15 +109,9 @@ public:
 	/// <param name="bytes_written">Pocet zapsanych bytu</param>
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error Write(const char* source_buffer, size_t buffer_size, size_t& bytes_written) override;
-
+	
 	/// <summary>
-	/// Zavre pipe pro zapis
+	/// Zavre pipu - odesle EOT do bufferu
 	/// </summary>
-	/// <returns></returns>
-	void CloseWriting() override;
-
-	/// <summary>
-	/// Zavre pipe pro cteni
-	/// </summary>
-	void CloseReading() override;
+	void Close();
 };
