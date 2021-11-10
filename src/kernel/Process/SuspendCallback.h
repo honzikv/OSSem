@@ -1,6 +1,6 @@
 #pragma once
 #include "Utils/Semaphore.h"
-#include "../api/api.h"
+#include "../../api/api.h"
 
 /// <summary>
 /// Callback, ktery se spusti pri vzbuzeni vlakna

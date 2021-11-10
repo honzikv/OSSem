@@ -62,16 +62,39 @@ void Shell::RunCommands(const std::vector<Command>& commands) {
 			continue;
 		}
 
+		if (command.command_name == "exit") {
+			Terminate();
+		}
+	}
+}
+
+std::pair<bool, std::string> Shell::PreparePipes(std::vector<Command>& commands) {
+	for (size_t i = 0; i < commands.size() - 1; i += 1) {
+		size_t j = i + 1;
+
+		auto& command = commands[i];
+		// Pokud ma prikaz redirect type pro vstup i vystup a zaroven chceme predat data procesu vyhodime chybu
+		// (nelze zkonstruovat kvuli api)
+		if (command.redirect_type == RedirectType::Both) {
+			return { false, "Error, cannot redirect to a program and file at the same time" };
+		}
+
+		// Pokud mame | program < file.txt vyhodime chybu
+		if (command.redirect_type == RedirectType::FromFile && i != 0) {
+			return { false, "Error, cannot read input from file and program at the same time" };
+		}
+
+		// Pokud mame program > out.txt | another_program vyhodime chybu
+		if (command.redirect_type == RedirectType::ToFile && j != commands.size() - 1) {
+			return { false, "Error, cannot redirect input to file and program at the same time" };
+		}
+
 
 	}
 }
 
-void Shell::PreparePipes(std::vector<Command>& commands) {
-	
-}
-
 void Shell::Run() {
-	while (strcmp(buffer.data(), EXIT_COMMAND) != 0) {
+	while (run) {
 		Write(current_path); // Zapiseme aktualni cestu
 
 		// Vyresetujeme buffer

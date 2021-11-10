@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "Task.h"
-#include "../api/api.h"
+#include "../../api/api.h"
 
 /// <summary>
 /// Reprezentuje proces (resp. PCB)
@@ -67,6 +67,5 @@ public:
 	}
 
 	[[nodiscard]] inline const std::vector<kiv_os::THandle>& GetProcessThreads() const { return threads; }
-	
 
 };

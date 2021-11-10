@@ -4,12 +4,11 @@
 #include <string>
 #include <mutex>
 
-#include "handles.h"
 #include "kernel.h"
 #include "Thread.h"
 #include "Process.h"
 #include "SuspendCallback.h"
-#include "../api/api.h"
+#include "../../api/api.h"
 #include "Utils/Logging.h"
 
 /// <summary>

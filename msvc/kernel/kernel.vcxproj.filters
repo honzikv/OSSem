@@ -41,12 +41,6 @@
     <ClCompile Include="..\..\src\kernel\kernel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\io.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\handles.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\Process\Thread.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
@@ -65,7 +59,7 @@
     <ClCompile Include="..\..\src\kernel\IO\ConsoleIn.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\IO\AbstractFile.cpp">
+    <ClCompile Include="..\..\src\kernel\IO\IFile.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\api\api.cpp">
@@ -80,15 +74,15 @@
     <ClCompile Include="..\..\src\kernel\Process\Task.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\HandleService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kernel\handles.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kernel\io.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\Process.h">
@@ -109,7 +103,7 @@
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\IO\AbstractFile.h">
+    <ClInclude Include="..\..\src\kernel\IO\IFile.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\api\api.h">
@@ -135,6 +129,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\Task.h">
       <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\HandleService.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\IOManager.h">
+      <Filter>Headers\IO</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

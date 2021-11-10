@@ -7,11 +7,8 @@
 #include "rtl.h"
 #include "Utils/Logging.h"
 
-constexpr auto NEWLINE_MESSAGE = "\n";
 constexpr size_t BUFFER_SIZE = 512;
 constexpr auto NEWLINE_SYMBOL = "\n";
-constexpr auto EXIT_COMMAND = "exit";
-
 
 
 extern "C" size_t __stdcall shell(const kiv_hal::TRegisters& regs);
@@ -46,12 +43,37 @@ class Shell {
 	/// </summary>
 	std::array<char, BUFFER_SIZE> buffer = {};
 
-	bool exit_triggered = false;
+	/// <summary>
+	/// Flag pro beh konzole
+	/// </summary>
+	bool run = true;
 
+	/// <summary>
+	/// Zapise do konzole zpravu bez newline
+	/// </summary>
+	/// <param name="message">Reference na zpravu</param>
 	void Write(const std::string& message) const;
 
+	/// <summary>
+	/// Zapise do konzole zpravu a prida jako posledni znak newline
+	/// </summary>
+	/// <param name="message">Reference na zpravu</param>
 	void WriteLine(const std::string& message) const;
 
+	/// <summary>
+	/// Ukonci shell - zavola se pro exit
+	/// </summary>
+	void Terminate() {
+		run = false;
+	}
+
+	/// <summary>
+	/// Provadi seznam prikazu, dokud nenastane chyba
+	/// </summary>
+	/// <param name="commands">Seznam prikazu, ktery se ma provest</param>
+	void RunCommands(const std::vector<Command>& commands);
+
+	std::pair<bool, std::string> PreparePipes(std::vector<Command>& commands);
 
 public:
 	/// <summary>
@@ -68,13 +90,6 @@ public:
 	std::vector<Command> ParseCommands(const std::string& line);
 #endif
 
-	/// <summary>
-	/// Provadi seznam prikazu, dokud nenastane chyba
-	/// </summary>
-	/// <param name="commands">Seznam prikazu, ktery se ma provest</param>
-	void RunCommands(const std::vector<Command>& commands);
-
-	void PreparePipes(std::vector<Command>& commands);
 
 	/// <summary>
 	/// Spusti shell - ten bezi, dokud se nezavola exit nebo shutdown

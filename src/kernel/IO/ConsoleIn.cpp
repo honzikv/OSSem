@@ -1,8 +1,8 @@
 #include "ConsoleIn.h"
-kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t bytes, size_t& bytes_read) {
+kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size, size_t& bytes_read) {
 	auto regs = kiv_hal::TRegisters();
 	auto idx = size_t{0};
-	while (idx < bytes) {
+	while (idx < buffer_size) {
 		// Precteme znak
 		regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Read_Char);
 		kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Keyboard, regs);
@@ -21,7 +21,8 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t bytes, size_
 				// Backspace = smazeme znak z bufferu
 
 				// Pokud je index vetsi nez 1 snizime
-				idx = idx > 0 ? idx - 1 : idx;
+				if (idx > 0)
+					idx -= 1;
 
 				// Zapiseme znak do VGA biosu - tzn smazeme z konzole znak
 				regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NVGA_BIOS::Write_Control_Char);

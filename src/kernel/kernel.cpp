@@ -7,6 +7,7 @@
 
 #include "IO/ConsoleIn.h"
 #include "IO/ConsoleOut.h"
+#include "IO/IOManager.h"
 #include "Process/ProcessManager.h"
 #include "Utils/Config.h"
 
@@ -26,7 +27,7 @@ void Shutdown_Kernel() {
 void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_Service_Major>(regs.rax.h)) {
 		case kiv_os::NOS_Service_Major::File_System:
-			Handle_IO(regs);
+			IOManager::Get().HandleIO(regs);
 			break;
 
 		case kiv_os::NOS_Service_Major::Process:
@@ -79,14 +80,9 @@ void RemoveShellProcess(const kiv_os::THandle shell_pid) {
 
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	Initialize_Kernel();
-
-	// Vytvorime stdin a stdout
-	auto stdIn = ConsoleIn();
-	auto stdOut = ConsoleOut();
-
-	// Vytvorime handle pro stdIn a stdOut
-	const auto std_in_handle = Convert_Native_Handle(&stdIn);
-	const auto std_out_handle = Convert_Native_Handle(&stdOut);
+	
+	// Nechame si vytvorit stdin a stdout
+	const auto [std_in_handle, std_out_handle] = IOManager::Get().CreateStdIO();
 
 	Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
 
