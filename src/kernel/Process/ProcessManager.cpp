@@ -1,5 +1,6 @@
 #include "ProcessManager.h"
 #include "kernel.h"
+#include "IO/IOManager.h"
 
 kiv_os::THandle ProcessManager::GetFreePid() const {
 	for (uint16_t i = 0; i < static_cast<uint16_t>(process_table.size()); i += 1) {
@@ -57,12 +58,12 @@ void ProcessManager::ProcessSyscall(kiv_hal::TRegisters& regs) {
 		}
 
 		case kiv_os::NOS_Process::Read_Exit_Code: {
-			operation_result = PerformGetTaskExitCode(regs, false);
+			operation_result = PerformReadExitCode(regs, false);
 			break;
 		}
 
 		case kiv_os::NOS_Process::Exit: {
-			operation_result = PerformGetTaskExitCode(regs, true);
+			operation_result = PerformReadExitCode(regs, true);
 			break;
 		}
 
@@ -133,10 +134,14 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	}
 
 	// bx.e = (stdin << 16) | stdout
-	auto std_out = static_cast<uint16_t>(regs.rbx.e & 0xffff);
-	// vymaskujeme prvnich 16 msb a pretypujeme na uint16
 	auto std_in = static_cast<uint16_t>(regs.rbx.e >> 16 & 0xffff);
 	// posuneme o 16 bitu a vymaskujeme prvnich 16 lsb
+	auto std_out = static_cast<uint16_t>(regs.rbx.e & 0xffff);
+	// vymaskujeme prvnich 16 msb a pretypujeme na uint16
+
+	const auto [process_std_in, process_std_out] = IOManager::Get().MapProcessStdio(std_in, std_out);
+
+	LogDebug("Creating new process, setting file descriptors stdin=" + std::to_string(process_std_in) + " stdout=" + std::to_string(process_std_out));
 
 	// Vytvorime zamek, protoze ziskame pid a tid, ktere nam nesmi nikdo sebrat
 	auto lock = std::scoped_lock(tasks_mutex);
@@ -151,8 +156,8 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Nastavime stdin a stdout pro proces a predame je hlavnimu vlaknu
 	// Argumenty programu se kopiruji do objektu Thread a ten si je nastavi sam
 	auto process_context = kiv_hal::TRegisters();
-	process_context.rax.x = std_in;
-	process_context.rbx.x = std_out;
+	process_context.rax.x = process_std_in;
+	process_context.rbx.x = process_std_out;
 
 	// Vytvorime vlakno procesu, kde se spusti program
 	const auto main_thread = std::make_shared<Thread>(program, process_context, tid, pid, program_args);
@@ -255,6 +260,11 @@ void ProcessManager::FinishProcess(const kiv_os::THandle pid) {
 	{
 		const auto lock = std::scoped_lock(tasks_mutex);
 		process = GetProcess(pid);
+
+		if (process == nullptr) {
+			return;
+		}
+
 		for (const auto tid : process->GetProcessThreads()) {
 			const auto thread = GetThread(tid);
 			if (thread == nullptr) {
@@ -269,6 +279,8 @@ void ProcessManager::FinishProcess(const kiv_os::THandle pid) {
 
 	// Zavolame vsechny vlakna / procesy cekajici na ukonceni procesu
 	process->Finish(process->GetPid());
+
+	IOManager::Get().CloseProcessStdio(process->GetStdIn(), process->GetStdOut());
 }
 
 HandleType ProcessManager::GetHandleType(const kiv_os::THandle id) {
@@ -372,7 +384,7 @@ void ProcessManager::RemoveThread(std::shared_ptr<Thread> thread) {
 	native_tid_to_kiv_handle.erase(native_tid);
 }
 
-kiv_os::NOS_Error ProcessManager::PerformGetTaskExitCode(kiv_hal::TRegisters& regs, bool remove_task) {
+kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs, bool remove_task) {
 	// Id handlu, ktery se ma precist
 	const auto handle = regs.rdx.x;
 

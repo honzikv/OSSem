@@ -56,3 +56,7 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 	// Pokud jsme dobehli az sem tak vratime success
 	return kiv_os::NOS_Error::Success;
 }
+
+kiv_os::NOS_Error ConsoleIn::Close() {
+	return kiv_os::NOS_Error::Success;
+}

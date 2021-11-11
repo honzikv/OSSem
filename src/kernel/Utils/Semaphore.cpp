@@ -15,3 +15,5 @@ void Semaphore::Release() {
 	count += 1;
 	condition_variable.notify_one();
 }
+
+Semaphore::Semaphore(const uint32_t count): count(count) {}

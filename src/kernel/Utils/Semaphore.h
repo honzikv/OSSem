@@ -43,6 +43,6 @@ public:
 	///	count = 1 - slouzi k blokaci kriticke sekce
 	/// </summary>
 	/// <param name="count">Pocet simultanich vstupu</param>
-	explicit Semaphore(const uint32_t count): count(count) {}
+	explicit Semaphore(const uint32_t count);
 };
 

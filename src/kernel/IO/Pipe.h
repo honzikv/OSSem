@@ -86,6 +86,7 @@ private:
 	}
 
 public:
+
 	/// <summary>
 	/// Konstruktor pro vytvoreni pipe
 	/// </summary>
@@ -113,5 +114,5 @@ public:
 	/// <summary>
 	/// Zavre pipu - odesle EOT do bufferu
 	/// </summary>
-	kiv_os::NOS_Error Close();
+	kiv_os::NOS_Error Close() override;
 };
