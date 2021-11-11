@@ -4,6 +4,9 @@
 
 #include "path.h"
 
+const char kSeparator = '\\';
+const char kDot = '.';
+
 Path::Path(const char *file_path) {
     Create_Path(file_path);
     Create_Name();
@@ -15,8 +18,7 @@ void Path::Create_Path(const char *file_path) {
     char c;
     while (true) {
         c = file_path[pos];
-        //TODO co treba '\'
-        if (c == '/') {
+        if (c == kSeparator) {
             std::string item_string(item.begin(), item.end());
             if (!item_string.empty()) {
                 for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
@@ -47,7 +49,7 @@ void Path::Create_Name() {
     full_name = path_vector.back();
     bool isExtension = false;
     for (char c: full_name) {
-        if (c == '.') { //TODO const
+        if (c == kDot) {
             isExtension = true;
             continue;
         }
@@ -60,7 +62,7 @@ void Path::Create_Name() {
 }
 
 /**
- * Odstani nazev souboru/slozky z cesty
+ * Odstrani nazev souboru/slozky z cesty
  */
 void Path::Delete_Name_From_Path() {
     path_vector.pop_back();

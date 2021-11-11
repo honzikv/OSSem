@@ -198,7 +198,6 @@ kiv_os::NOS_Error Fat12::Read_Dir(Path &path, std::vector<kiv_os::TDir_Entry> &e
     }
     std::vector<int> sectors_indexes = Get_Sectors_Indexes(fat, dir_item.first_cluster);
 
-    //TODO tohle taky nekde asi uz pouzito - do metody
     std::vector<unsigned char> cluster_data;
     std::vector<unsigned char> all_clusters_data;
 
@@ -434,6 +433,15 @@ bool Fat12::File_Exists(Path path, int32_t current_fd, int32_t &target_fd, bool 
  */
 uint32_t Fat12::Get_Root_Fd() {
     return kRootDirSectorStart;
+}
+
+/**
+ * Zavre dany soubor
+ * @param file soubor
+ * @return vysledek operace
+ */
+kiv_os::NOS_Error Fat12::Close(File file) {
+    return kiv_os::NOS_Error::Success;
 }
 
 
