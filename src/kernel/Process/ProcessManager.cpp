@@ -133,9 +133,9 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	}
 
 	// bx.e = (stdin << 16) | stdout
-	const auto std_out = static_cast<uint16_t>(regs.rbx.e & 0xffff);
+	auto std_out = static_cast<uint16_t>(regs.rbx.e & 0xffff);
 	// vymaskujeme prvnich 16 msb a pretypujeme na uint16
-	const auto std_in = static_cast<uint16_t>(regs.rbx.e >> 16 & 0xffff);
+	auto std_in = static_cast<uint16_t>(regs.rbx.e >> 16 & 0xffff);
 	// posuneme o 16 bitu a vymaskujeme prvnich 16 lsb
 
 	// Vytvorime zamek, protoze ziskame pid a tid, ktere nam nesmi nikdo sebrat
@@ -311,7 +311,7 @@ void ProcessManager::AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_
 }
 
 kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
-	const auto handle_array = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r);
+	const auto handle_array = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r);  // NOLINT(performance-no-int-to-ptr)
 	const auto handle_count = regs.rcx.e;
 
 	// Thread id aktualne beziciho vlakna

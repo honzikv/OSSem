@@ -87,11 +87,13 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, size_t buffer_size, siz
 	return kiv_os::NOS_Error::Success;
 }
 
-void Pipe::Close() {
+kiv_os::NOS_Error Pipe::Close() {
 	constexpr char eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
 	size_t bytes_written = 0;
 	Write(&eof, 1, bytes_written);
 	auto lock = std::scoped_lock(flag_access);
 	write_finished = true;
 	read->Release();
+
+	return kiv_os::NOS_Error::Success;
 }

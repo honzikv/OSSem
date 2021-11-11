@@ -43,7 +43,7 @@ void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 /// <param name="shell_regs">reference na registry (pro precteni pidu shellu)</param>
 /// <param name="std_in_handle">reference na stdin</param>
 /// <param name="std_out_handle">reference na stdout</param>
-void CreateShell(kiv_hal::TRegisters& shell_regs, kiv_os::THandle std_in_handle, kiv_os::THandle std_out_handle) {
+void CreateShell(kiv_hal::TRegisters& shell_regs, const kiv_os::THandle std_in_handle, const kiv_os::THandle std_out_handle) {
 	const auto shell_command = "shell";
 	const auto shell_args = "";
 

@@ -4,7 +4,6 @@
 #include <string>
 #include <mutex>
 
-#include "kernel.h"
 #include "Thread.h"
 #include "Process.h"
 #include "SuspendCallback.h"

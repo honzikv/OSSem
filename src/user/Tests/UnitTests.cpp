@@ -3,7 +3,7 @@
 #include <iostream>
 #include "Shell/Shell.h"
 #if IS_DEBUG
-void CompareCommands(Command& actual, Command& expected) {
+void CompareCommands(const Command& actual, const Command& expected) {
 	if (actual != expected) {
 		std::cerr << "Expected: " << expected.ToString() << std::endl;
 		std::cerr << "Actual: " << actual.ToString() << std::endl;
@@ -14,8 +14,8 @@ void CompareCommands(Command& actual, Command& expected) {
 auto ShellTest_SimpleCommand(Shell& shellInterpreter) {
 	const auto input = "ls -a -b -c";
 
-	auto expectedCommand = Command("ls", {"-a", "-b", "-c"});
-	auto commands = shellInterpreter.ParseCommands(input);
+	const auto expectedCommand = Command("ls", {"-a", "-b", "-c"});
+	const auto commands = shellInterpreter.ParseCommands(input);
 
 	if (commands.size() > 1) {
 		std::cerr << "Test failed, parsed: " << commands.size() << " commands instead of 1" << std::endl;

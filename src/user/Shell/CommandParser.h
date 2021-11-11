@@ -33,8 +33,7 @@ class CommandParser {
 
 	static Command CreateCommand(const std::vector<std::string>& command_with_params,
 	                             const RedirectType redirect_type, const std::string& source_file,
-	                             const std::string& target_file,
-	                             const std::string& command_with_params_and_redirect);
+	                             const std::string& target_file);
 
 	/// <summary>
 	/// Rozdeli radek obsahujici prikaz, argumenty a (potencialni) redirecty souboru na trojici:

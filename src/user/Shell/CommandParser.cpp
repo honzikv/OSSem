@@ -6,8 +6,7 @@ const char* ParseException::what() const throw() {
 }
 
 Command CommandParser::CreateCommand(const std::vector<std::string>& command_with_params, const RedirectType redirect_type,
-                                     const std::string& source_file, const std::string& target_file,
-                                     const std::string& command_with_params_and_redirect) {
+                                     const std::string& source_file, const std::string& target_file) {
 	if (command_with_params.empty()) {
 		throw ParseException("Error, could not parse command file_name as it was not present.");
 	}
@@ -70,8 +69,8 @@ auto CommandParser::SplitByFileRedirect(const std::string& command_with_params, 
 
 	// Pokud nastane situace, ze mame oba dva redirecty, nejprve rozdelime podle symbolu <> a nasledne zpracujeme oba stringy
 	if (redirect_type == RedirectType::Both) {
-		auto sourceFileIdx = command_with_params.find_first_of('<');
-		auto targetFileIdx = command_with_params.find_first_of('>');
+		const auto sourceFileIdx = command_with_params.find_first_of('<');
+		const auto targetFileIdx = command_with_params.find_first_of('>');
 		auto targetFile = targetFileIdx > sourceFileIdx
 			                  ? command_with_params.substr(targetFileIdx + 1, command_with_params.size() - targetFileIdx)
 			                  : command_with_params.substr(targetFileIdx + 1, command_with_params.size() - sourceFileIdx);
@@ -155,8 +154,7 @@ std::vector<Command> CommandParser::ParseCommands(const std::string& input) cons
 		auto commandWithParams = StringUtils::SplitByRegex(trimmed, WHITESPACE_REGEX);
 
 		// Vytvorime prikaz
-		auto command = CreateCommand(commandWithParams, redirectType, sourceFile, targetFile,
-		                             commandWithParamsAndRedirect);
+		auto command = CreateCommand(commandWithParams, redirectType, sourceFile, targetFile);
 		result.push_back(command);
 	}
 

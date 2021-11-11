@@ -113,5 +113,5 @@ public:
 	/// <summary>
 	/// Zavre pipu - odesle EOT do bufferu
 	/// </summary>
-	void Close();
+	kiv_os::NOS_Error Close();
 };

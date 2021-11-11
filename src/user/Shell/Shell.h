@@ -1,5 +1,5 @@
 #pragma once
-#include <memory>
+
 #include <unordered_set>
 #include <array>
 #include "../api/api.h"
@@ -36,7 +36,7 @@ class Shell {
 	/// <summary>
 	/// Aktualni cesta, ve ktere se shell nachazi
 	/// </summary>
-	std::string current_path;
+	std::string current_working_dir;
 
 	/// <summary>
 	/// Buffer na IO
@@ -67,13 +67,46 @@ class Shell {
 		run = false;
 	}
 
+	std::pair<bool, std::string> PreparePipes(std::vector<Command>& commands) const;
+
+	/// <summary>
+	/// Zavre file descriptory pro dany prikaz. Pokud jsou file descriptory pro std_in a std_out shellu, metoda je ignoruje
+	/// </summary>
+	/// <param name="command">Reference na prikaz</param>
+	void CloseCommandFileDescriptors(const Command& command) const;
+
+	/// <summary>
+	/// Zavre file descriptory pro dany pocet prikazu z vektoru. Pokud je pocet -1 zavre file descriptory pro vsechny prikazy
+	/// </summary>
+	/// <param name="commands">Reference na vektor s prikazy</param>
+	/// <param name="count">Pocet prvku seznamu, pro ktery se maji file descriptory zavrit</param>
+	void CloseCommandListFileDescriptors(const std::vector<Command>& commands, size_t count = -1) const;
+
+	void CloseCommandListFileDescriptors(const std::vector<Command>& commands, size_t idx_start, size_t idx_end) const;
+
+	std::pair<bool, std::string> PreparePipeForSingleCommand(Command& command) const;
+
+	/// <summary>
+	/// Pripravi pipe pro prvni prikaz
+	/// </summary>
+	/// <param name="command"></param>
+	/// <returns>Vysledek</returns>
+	std::pair<bool, std::string> PreparePipeForFirstCommand(Command& command, bool is_next_command = false) const;
+
+	/// <summary>
+	/// Pripravi pipe pro posledni prikaz
+	/// </summary>
+	/// <param name="second_last">Prikaz, ze ktereho se cte vstup</param>
+	/// <param name="last">Posledni prikaz</param>
+	/// <returns>Vysledek</returns>
+	static std::pair<bool, std::string> PreparePipeForLastCommand(const Command& second_last, Command& last);
+
+
 	/// <summary>
 	/// Provadi seznam prikazu, dokud nenastane chyba
 	/// </summary>
 	/// <param name="commands">Seznam prikazu, ktery se ma provest</param>
-	void RunCommands(const std::vector<Command>& commands);
-
-	std::pair<bool, std::string> PreparePipes(std::vector<Command>& commands);
+	void RunCommands(std::vector<Command>& commands);
 
 public:
 	/// <summary>
@@ -84,10 +117,10 @@ public:
 	/// <param name="std_out">Standardni vystup</param>
 	/// <param name="current_path">Aktualni cesta</param>
 	Shell(const kiv_hal::TRegisters& registers, kiv_os::THandle std_in, kiv_os::THandle std_out,
-	      const std::string& current_path);
+	      std::string current_path);
 
 #if IS_DEBUG
-	std::vector<Command> ParseCommands(const std::string& line);
+	[[nodiscard]] std::vector<Command> ParseCommands(const std::string& line) const;
 #endif
 
 
@@ -95,9 +128,7 @@ public:
 	/// Spusti shell - ten bezi, dokud se nezavola exit nebo shutdown
 	/// </summary>
 	void Run();
-
-	std::pair<bool, std::string> ChangeDirectory(const std::string& path) {
-		return { false, "Not Yet Implemented" };
-	}
+	
+	std::pair<bool, std::string> ChangeDirectory(const Command& command);
 
 };
