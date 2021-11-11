@@ -76,9 +76,6 @@ auto Shell::PreparePipeForSingleCommand(Command& command) const -> std::pair<boo
 
 auto Shell::PreparePipeForFirstCommand(Command& command,
                                        const bool is_next_command) const -> std::pair<bool, std::string> {
-	// File descriptory pro vstup a vystup
-	auto command_fd_in = kiv_os::Invalid_Handle;
-	auto command_fd_out = kiv_os::Invalid_Handle;
 
 	// Pokud neni dalsi prikaz pripravime file descriptory pouze pro jeden
 	if (!is_next_command) {
@@ -89,6 +86,10 @@ auto Shell::PreparePipeForFirstCommand(Command& command,
 	if (command.redirect_type == RedirectType::Both || command.redirect_type == RedirectType::ToFile) {
 		return {false, "Error, command cannot redirect to file and another command at the same time"};
 	}
+
+	// File descriptory pro vstup a vystup
+	auto command_fd_in = kiv_os::Invalid_Handle;
+	auto command_fd_out = kiv_os::Invalid_Handle;
 
 	if (command.redirect_type == RedirectType::FromFile) {
 		// Otevreme soubor a zkusime nastavit file descriptor, pokud nelze vyhodime chybu
@@ -192,7 +193,7 @@ void Shell::CloseCommandFileDescriptors(const Command& command) const {
 	if (command.InputFileDescriptorOpen() && command.GetInputFileDescriptor() != std_in) {
 		kiv_os_rtl::CloseHandle(command.GetInputFileDescriptor());
 	}
-
+	
 	if (command.OutputFileDescriptorOpen() && command.GetOutputFileDescriptor() != std_out) {
 		kiv_os_rtl::CloseHandle(command.GetOutputFileDescriptor());
 	}
@@ -250,16 +251,13 @@ void Shell::Run() {
 }
 
 std::pair<bool, std::string> Shell::ChangeDirectory(const Command& command) {
-	// protoze toto neni proces, musime zavrit file descriptory sami
-	kiv_os_rtl::CloseHandle(command.GetInputFileDescriptor());
-	kiv_os_rtl::CloseHandle(command.GetOutputFileDescriptor());
 
 	// Zavolame sluzbu pro zmenu adresare
 	const auto params = command.GetRtlParams();
 	if (const auto success = kiv_os_rtl::SetWorkingDir(params); !success) {
 		return {false, "Error, could not change directory for cd with arguments: " + params};
 	}
-
+	
 	// Pokud zmena adresare probehla v poradku musime jeste aktualizovat stav v konzoli
 	constexpr auto new_dir_buffer_size = BUFFER_SIZE / 2; // velikost bufferu pro zapsani vysledku
 	auto new_directory_buffer = std::array<char, new_dir_buffer_size>(); // buffer pro zapsani vysledku
@@ -269,7 +267,7 @@ std::pair<bool, std::string> Shell::ChangeDirectory(const Command& command) {
 		Terminate(); // Tento stav asi nikdy nenastane, ale pro jistotu
 		return {false, "Critical error ocurred, cannot get current working directory. Shell will close."};
 	}
-
+	
 	current_working_dir = std::string(new_directory_buffer.begin(), new_directory_buffer.begin() + new_dir_buffer_size);
 	return {true, ""};
 }
@@ -284,7 +282,6 @@ void Shell::RunCommands(std::vector<Command>& commands) {
 	}
 
 	// Jinak zacneme vytvaret procesy pro kazdy prikaz
-
 	auto program_pids = std::vector<kiv_os::THandle>();
 	for (auto i = 0; i < commands.size(); i += 1) {
 		const auto& command = commands[i];
