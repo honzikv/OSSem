@@ -66,13 +66,11 @@ std::vector<unsigned char> Read_Data_From_Cluster(int cluster_count, int start_c
     return bytes;
 }
 
-//TODO komentar
 /**
  * Nacte data z registru
- * @param cluster_count
- * @param sector_size
- * @param start_index
- * @return
+ * @param cluster_count pocet clusteru, ktere se budou cist
+ * @param start_index index prvniho clusteru
+ * @return prectene byty
  */
 std::vector<unsigned char> Read_From_Registers(int cluster_count, int start_index) {
     std::vector<unsigned char> result;
@@ -366,7 +364,7 @@ std::vector<DirItem> Get_Folders_From_Dir(const std::vector<unsigned char> &fat,
 
         std::vector<DirItem> dir_items = Get_Directory_Items(data_clusters, kRootDirSize);
 
-        dir_items.erase(dir_items.begin()); // TODO check jestli tam '.' je
+        dir_items.erase(dir_items.begin());
 
         return dir_items;
 
@@ -381,7 +379,8 @@ std::vector<DirItem> Get_Folders_From_Dir(const std::vector<unsigned char> &fat,
             data_clusters = Read_Data_From_Cluster(1, sectors_indexes.at(i), false); // obsah jednoho clusteru
             std::vector<DirItem> content = Get_Directory_Items(data_clusters, 1);
 
-            dir_items.insert(dir_items.end(), content.begin() + (i == 0 ? 2 : 0), content.end()); // prvni cluster slozky - obsahuje i '.' a '..' - preskocit
+            dir_items.insert(dir_items.end(), content.begin() + (i == 0 ? 2 : 0),
+                             content.end()); // prvni cluster slozky - obsahuje i '.' a '..' - preskocit
 
         }
         return dir_items;
@@ -535,14 +534,12 @@ std::vector<kiv_os::TDir_Entry> Read_Directory(Path path, const std::vector<unsi
     return Get_Directory_Entries(all_clusters_data, clusters_indexes.size(), false);
 }
 
-//TODO check co ma vsechno root
 /**
  * Zapise pro slozku aktualni '.' a nadrazenou slozku '..'
  * @param cur_index index aktualni slozky
  * @param parent_index index nadrazene slozky
- * @param is_root true pokud je root - nema nadrazenou slozku
  */
-void Write_Current_And_Parent_Folder(int cur_index, int parent_index, bool is_root) {
+void Write_Current_And_Parent_Folder(int cur_index, int parent_index) {
     std::vector<char> buffer_to_write;
 
     // vytvoreni aktualni slozky '.'
@@ -572,42 +569,40 @@ void Write_Current_And_Parent_Folder(int cur_index, int parent_index, bool is_ro
         buffer_to_write.push_back(0);
     }
 
-    // vytvoreni nadrazeno slozky '..'
+    // vytvoreni nadrazene slozky '..'
 
-    if (!is_root) {
-        buffer_to_write.push_back(kCurDirChar);
-        buffer_to_write.push_back(kCurDirChar);
+    buffer_to_write.push_back(kCurDirChar);
+    buffer_to_write.push_back(kCurDirChar);
 
-        // zbytek nazvu a pripony
-        for (int i = 0; i < kFileNameSize + kFileExtensionSize - 2; ++i) {
-            buffer_to_write.push_back(kSpaceChar);
-        }
+    // zbytek nazvu a pripony
+    for (int i = 0; i < kFileNameSize + kFileExtensionSize - 2; ++i) {
+        buffer_to_write.push_back(kSpaceChar);
+    }
 
-        buffer_to_write.push_back(static_cast<char>(kiv_os::NFile_Attributes::Directory));
+    buffer_to_write.push_back(static_cast<char>(kiv_os::NFile_Attributes::Directory));
 
-        for (int i = 0; i < kDirItemUnusedBytes; ++i) {
-            buffer_to_write.push_back(kSpaceChar);
-        }
+    for (int i = 0; i < kDirItemUnusedBytes; ++i) {
+        buffer_to_write.push_back(kSpaceChar);
+    }
 
-        if (parent_index == kRootDirSectorStart) { // root je 0
-            parent_index = 0;
-        }
+    if (parent_index == kRootDirSectorStart) { // root je 0
+        parent_index = 0;
+    }
 
-        // cislo clusteru
-        bytes_from_cluster_num = Get_Bytes_From_Int(parent_index);
+    // cislo clusteru
+    bytes_from_cluster_num = Get_Bytes_From_Int(parent_index);
 
-        for (unsigned char &byteFromInt: bytes_from_cluster_num) {
-            buffer_to_write.push_back((char) byteFromInt);
-        }
+    for (unsigned char &byteFromInt: bytes_from_cluster_num) {
+        buffer_to_write.push_back((char) byteFromInt);
+    }
 
-        // velikost souboru - pro slozku 0
-        for (int j = 0; j < kDirItemFileSizeBytes; ++j) {
-            buffer_to_write.push_back(0);
-        }
+    // velikost souboru - pro slozku 0
+    for (int j = 0; j < kDirItemFileSizeBytes; ++j) {
+        buffer_to_write.push_back(0);
+    }
 
-        for (int i = (int) buffer_to_write.size(); i < kSectorSize; ++i) {
-            buffer_to_write.push_back(0);
-        }
+    for (int i = (int) buffer_to_write.size(); i < kSectorSize; ++i) {
+        buffer_to_write.push_back(0);
     }
 
     Write_Data_To_Cluster(buffer_to_write, cur_index, false);
@@ -679,7 +674,7 @@ Get_Directory_Entries(std::vector<unsigned char> content, size_t clusters_count,
         dir_content.push_back(dir_entry);
     }
 
-    if (is_root) { // je root - odstranit odkaz na aktualni polozku // TODO check co ma vsechno root
+    if (is_root) { // je root - odstranit odkaz na aktualni polozku
         dir_content.erase(dir_content.begin());
     } else { // neni root - odstranit odkaz na aktualni a nadrazenou polozku
         dir_content.erase(dir_content.begin());
@@ -802,9 +797,8 @@ kiv_os::NOS_Error Create_File_Or_Dir(Path &path, uint8_t attributes, std::vector
         return kiv_os::NOS_Error::Not_Enough_Disk_Space;
     }
 
-    if (is_dir) { // je slozka tak zapsat jeste '.' a pripadne '..'
-        is_root = path.path_vector.empty(); // je root - nema '..' //TODO check
-        Write_Current_And_Parent_Folder(free_index, start_sector, is_root);
+    if (is_dir) { // je slozka tak zapsat jeste '.' a '..'
+        Write_Current_And_Parent_Folder(free_index, start_sector);
     }
 
     return kiv_os::NOS_Error::Success;
@@ -869,7 +863,8 @@ std::vector<char> Convert_Dir_Entries_To_Char_Vector(std::vector<kiv_os::TDir_En
  * @param read true pokud se ctou atributy, false pokud se nastavuji
  * @return vysledek operace - uspech/neuspech
  */
-kiv_os::NOS_Error Get_Or_Set_Attributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, bool read) {
+kiv_os::NOS_Error
+Get_Or_Set_Attributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, bool read) {
     path.Delete_Name_From_Path(); // smazat jmeno z cesty
 
     std::vector<int> sectors_indexes;
@@ -953,7 +948,7 @@ int Get_Item_Index(const Path &path, int start_sector, const std::vector<unsigne
     }
 
     if (path.path_vector.empty()) {
-        item_index += 1; // pridat '.' //TODO check jestli tam je
+        item_index += 1; // pridat '.'
     } else {
         item_index += 2; // pridat '.' a '..'
     }
@@ -967,7 +962,7 @@ int Get_Item_Index(const Path &path, int start_sector, const std::vector<unsigne
  * @param dir_item polozka adresare
  * @return true pokud se cela jmena rovnaji, jinak false
  */
-bool Check_Name_Matches(const Path &path, const DirItem& dir_item) {
+bool Check_Name_Matches(const Path &path, const DirItem &dir_item) {
     if (dir_item.extension == path.extension && dir_item.file_name == path.name) {
         return true;
     }
