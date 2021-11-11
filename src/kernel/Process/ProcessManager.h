@@ -244,7 +244,7 @@ private:
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <param name="remove_task">Zda-li se ma proces odstranit z tabulky</param>
 	/// <returns></returns>
-	kiv_os::NOS_Error PerformGetTaskExitCode(kiv_hal::TRegisters& regs, bool remove_task);
+	kiv_os::NOS_Error PerformReadExitCode(kiv_hal::TRegisters& regs, bool remove_task);
 
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;

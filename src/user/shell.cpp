@@ -12,7 +12,7 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 
-	const auto shell = std::make_unique<Shell>(regs, std_in, std_out, "C:\\");
+	const auto shell = std::make_unique<Shell>(regs, std_in, std_out, "C:\\>");
 
 	// Spustime shell
 	shell->Run();
