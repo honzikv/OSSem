@@ -24,6 +24,7 @@ enum class HandleType {
 /// Trida, ktera se stara o spravu procesu a vlaken
 /// </summary>
 class ProcessManager {
+	friend class InitProcess;
 	// NOLINT(cppcoreguidelines-special-member-functions)
 public:
 	// Konstanty pro rozsahy pidu a tidu
@@ -173,7 +174,7 @@ public:
 	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
 	///	se neukonci shell.
 	/// </summary>
-	void CreateInitProcess();
+	void RunInitProcess(kiv_os::TThread_Proc program);
 
 	/// <summary>
 	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
@@ -260,6 +261,7 @@ private:
 	kiv_os::NOS_Error PerformReadExitCode(kiv_hal::TRegisters& regs, bool remove_task);
 
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs) {
+		LogDebug("Shutdown performed");
 		return kiv_os::NOS_Error::Success;
 	}
 

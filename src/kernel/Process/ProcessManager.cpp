@@ -379,16 +379,20 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 	return kiv_os::NOS_Error::Success;
 }
 
-void ProcessManager::RemoveProcess(std::shared_ptr<Process> process) {
-	auto lock = std::scoped_lock(tasks_mutex);
-	// Odstranime vlakna procesu
-	for (const auto& tid : process->GetProcessThreads()) {
-		const auto thread = GetThread(tid);
-		if (thread != nullptr) {
-			RemoveThread(thread);
+void ProcessManager::RemoveProcess(const std::shared_ptr<Process> process) {
+	{
+		auto lock = std::scoped_lock(tasks_mutex);
+		// Odstranime vlakna procesu
+		for (const auto& tid : process->GetProcessThreads()) {
+			const auto thread = GetThread(tid);
+			if (thread != nullptr) {
+				RemoveThread(thread);
+			}
 		}
+		process_table[process->GetPid() - PID_RANGE_START] = nullptr; // odstranime proces z tabulky
 	}
-	process_table[process->GetPid() - PID_RANGE_START] = nullptr; // odstranime proces z tabulky
+
+	// zavreme stdin a stdout
 }
 
 void ProcessManager::RemoveThread(std::shared_ptr<Thread> thread) {
@@ -437,31 +441,31 @@ kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs,
 	return kiv_os::NOS_Error::Success;
 }
 
-void ProcessManager::CreateInitProcess() {
+void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
+	LogDebug("Creating init process");
 	const auto pid = GetFreePid();
 	const auto tid = GetFreeTid();
 
 	const auto process = std::make_shared<Process>(pid, tid, kiv_os::Invalid_Handle, kiv_os::Invalid_Handle,
 	                                               kiv_os::Invalid_Handle);
 	// "Funkce", ktera se ma spustit
-	auto func = [](const kiv_hal::TRegisters& _) -> size_t { return 0; };
 	const auto args = "";
-	const auto thread = std::make_shared<Thread>(func, kiv_hal::TRegisters(), tid, pid, args);
+	const auto thread = std::make_shared<Thread>(program, kiv_hal::TRegisters(), tid, pid, args);
 
+	auto lock = std::scoped_lock(tasks_mutex);
+	auto [native_handle, native_tid] = thread->Dispatch();
 	// Pridame do tabulky
 	AddProcess(process, pid);
 	AddThread(thread, tid);
-	const auto native_handle = GetCurrentThread();
-	const auto native_tid = GetCurrentThreadId();
-	LogDebug("Created init process with native handle: " + std::to_string(reinterpret_cast<size_t>(native_handle)));
 	thread_id_to_kiv_handle[native_tid] = tid;
 	kiv_handle_to_thread_id[tid] = native_tid;
 	native_thread_id_to_native_handle[native_tid] = native_handle;
+
 }
 
 void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_handle) {
 	auto lock = std::scoped_lock(suspend_callbacks_mutex);
-	if (suspend_callbacks[subscriber_handle] == nullptr) {
+	if (suspend_callbacks.count(subscriber_handle) == 0) {
 		suspend_callbacks[subscriber_handle] = std::make_shared<SuspendCallback>();
 	}
 }

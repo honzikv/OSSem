@@ -38,7 +38,6 @@ public:
 	/// Vzbudi vlakno a nastavi notifier_id, handle_type a triggered flag
 	/// </summary>
 	/// <param name="notifier_id">id vlakna/procesu, ktere vzbudilo vlakno</param>
-	/// <param name="handle_type">typ handle - proces nebo vlakno</param>
 	void Notify(kiv_os::THandle notifier_id);
 
 	bool Triggered();
