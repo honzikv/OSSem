@@ -19,7 +19,6 @@ public:
 
     Fat12();
 
-    //TODO doimplementovat
     kiv_os::NOS_Error Open(Path &path, kiv_os::NOpen_File flags, File &file, uint8_t attributes) override;
 
     kiv_os::NOS_Error Close(File file) override;

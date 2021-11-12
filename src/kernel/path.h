@@ -14,6 +14,6 @@ public:
     std::string full_name;
     std::string name;
     std::string extension;
-    Path(const char *file_path);
+    explicit Path(const char *file_path);
     void Delete_Name_From_Path();
 };
