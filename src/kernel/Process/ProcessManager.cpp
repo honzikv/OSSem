@@ -237,12 +237,15 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 		// toto by nastat nicmene nemelo
 		return kiv_os::NOS_Error::File_Not_Found;
 	}
+	
 
 	const auto thread = std::make_shared<Thread>(program, thread_context, tid, current_process->GetPid(),
 	                                             program_args, false);
 
 	// Pridame vlakno do tabulky a spustime
+	LogDebug("New thread created with tid: " + std::to_string(tid));
 	AddThread(thread, tid);
+	current_process->AddThread(tid); // Pridame vlakno k procesu
 	const auto [native_handle, native_tid] = thread->Dispatch();
 
 	// Namapujeme nativni tid na THandle
@@ -284,10 +287,10 @@ void ProcessManager::FinishProcess(const kiv_os::THandle pid) {
 			}
 
 			// Notifikujeme cekajici tasky na toto vlakno
-			thread->SignalSubscribers(thread->GetTid());
+			thread->SignalSubscribers(thread->GetTid(), false);
 
 			// Pokud vlakno stale bezi ukoncime ho
-			// thread->TerminateIfRunning()
+			thread->Terminate(GetThreadNativeHandle(thread->GetTid()));
 		}
 	}
 

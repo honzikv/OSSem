@@ -110,6 +110,23 @@ bool kiv_os_rtl::CreateProcess(const std::string& program_name, const std::strin
 	return true;
 }
 
+bool kiv_os_rtl::CreateThread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in,
+	kiv_os::THandle std_out) {
+	auto regs = kiv_hal::TRegisters();
+	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
+	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Clone);
+	regs.rcx.l = static_cast<decltype(regs.rcx.l)>(kiv_os::NClone::Create_Thread);
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(program_name.c_str());
+	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(params.c_str());
+	regs.rbx.r = static_cast<decltype(regs.rbx.r)>(std_in << 16 | std_out);
+
+	if (!kiv_os::Sys_Call(regs)) {
+		return false;
+	}
+	
+	return true;
+}
+
 bool kiv_os_rtl::WaitFor(const std::vector<kiv_os::THandle>& handles) {
 	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::Process,
 		static_cast<uint8_t>(kiv_os::NOS_Process::Wait_For));

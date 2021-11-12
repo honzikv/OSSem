@@ -71,6 +71,8 @@ namespace kiv_os_rtl {
 	bool CreateProcess(const std::string& program_name, const std::string& params, kiv_os::THandle std_in,
 	                   kiv_os::THandle std_out, kiv_os::THandle& pid);
 
+	bool CreateThread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in, kiv_os::THandle std_out);
+
 	/// <summary>
 	/// Aktualni vlakno vycka, dokud dany handle nedobehne
 	/// </summary>

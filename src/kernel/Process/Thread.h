@@ -1,10 +1,12 @@
 #pragma once
 
+#include <string>
 #include <windows.h>
 
 #include "Task.h"
 #include "TaskState.h"
 #include "../../api/api.h"
+#include "Utils/Logging.h"
 #include "Utils/Semaphore.h"
 
 
@@ -43,8 +45,6 @@ class Thread : public Task {
 	/// </summary>
 	const kiv_os::THandle pid;
 
-
-
 public:
 
 	/// <summary>
@@ -60,9 +60,22 @@ public:
 		bool is_main_thread = true);
 	
 	/// <summary>
-	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho id
+	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho handle a thread id
 	/// </summary>
 	std::pair<HANDLE, DWORD> Dispatch();
+
+	/// <summary>
+	/// Ukonci vlakno. Pokud vlakno stale bezi nasilne ho ukonci
+	/// </summary>
+	/// <param name="handle"></param>
+	void Terminate(const HANDLE handle) {
+		auto lock = std::scoped_lock(mutex);
+		if (task_state != TaskState::Finished) {
+			const auto result = TerminateThread(handle, 1);
+			LogDebug("Thread killed: " + std::to_string(result));
+		}
+		task_state = TaskState::Finished;
+	}
 
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne
@@ -73,4 +86,5 @@ public:
 	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }
 
 	[[nodiscard]] TaskState GetState();
+
 };
