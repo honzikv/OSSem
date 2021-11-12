@@ -3,7 +3,7 @@
 #include <string>
 #include <sstream>
 
-#include "Utils/Config.h"
+#include "Config.h"
 
 inline void LogDebug(const std::string& str) {
 #if IS_DEBUG

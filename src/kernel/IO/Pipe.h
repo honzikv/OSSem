@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "IFile.h"
-#include "Utils/Semaphore.h"
+#include "../Utils/Semaphore.h"
 
 /// <summary>
 /// Reprezentuje Pipe pro IPC

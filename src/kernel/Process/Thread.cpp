@@ -13,7 +13,7 @@ void Thread::ThreadFunc() {
 
 	// Pokud je toto vlakno main, ukoncime i proces
 	if (is_main_thread) {
-		ProcessManager::Get().FinishProcess(pid);
+		ProcessManager::Get().TerminateProcess(pid);
 	}
 
 }

@@ -8,7 +8,7 @@
 #include "Process.h"
 #include "SuspendCallback.h"
 #include "../../api/api.h"
-#include "Utils/Logging.h"
+#include "../Utils/Logging.h"
 #include <winnt.h>
 
 /// <summary>
@@ -168,7 +168,7 @@ public:
 	/// Prevede proces ze stavu Running do stavu Finished
 	/// </summary>
 	/// <param name="pid"></param>
-	void FinishProcess(kiv_os::THandle pid);
+	void TerminateProcess(kiv_os::THandle pid);
 
 	/// <summary>
 	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
@@ -260,10 +260,7 @@ private:
 	/// <returns></returns>
 	kiv_os::NOS_Error PerformReadExitCode(kiv_hal::TRegisters& regs, bool remove_task);
 
-	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs) {
-		LogDebug("Shutdown performed");
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;

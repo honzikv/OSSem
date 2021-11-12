@@ -21,7 +21,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h" />
     <ClInclude Include="..\..\src\api\hal.h" />
-    <ClInclude Include="..\..\src\user\Freq.h" />
+    <ClInclude Include="..\..\src\user\Programs\Freq.h" />
+    <ClInclude Include="..\..\src\user\Programs\Shutdown.h" />
     <ClInclude Include="..\..\src\user\rtl.h" />
     <ClInclude Include="..\..\src\user\Shell\Command.h" />
     <ClInclude Include="..\..\src\user\shell_commands.h" />
@@ -33,7 +34,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
-    <ClCompile Include="..\..\src\user\Freq.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Freq.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Shutdown.cpp" />
     <ClCompile Include="..\..\src\user\rtl.cpp" />
     <ClCompile Include="..\..\src\user\Shell.cpp" />
     <ClCompile Include="..\..\src\user\Shell\Command.cpp" />

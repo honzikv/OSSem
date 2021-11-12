@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Semaphore.h"
+#include "../Utils/Semaphore.h"
 #include "../../api/api.h"
 
 /// <summary>

@@ -6,8 +6,8 @@
 #include "Task.h"
 #include "TaskState.h"
 #include "../../api/api.h"
-#include "Utils/Logging.h"
-#include "Utils/Semaphore.h"
+#include "../Utils/Logging.h"
+#include "../Utils/Semaphore.h"
 
 
 /// <summary>

@@ -1,6 +1,6 @@
 #include "ProcessManager.h"
-#include "kernel.h"
-#include "IO/IOManager.h"
+#include "../kernel.h"
+#include "../IO/IOManager.h"
 
 kiv_os::THandle ProcessManager::GetFreePid() const {
 	for (uint16_t i = 0; i < static_cast<uint16_t>(process_table.size()); i += 1) {
@@ -269,7 +269,7 @@ void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_han
 	callback->Notify(notifier_handle);
 }
 
-void ProcessManager::FinishProcess(const kiv_os::THandle pid) {
+void ProcessManager::TerminateProcess(const kiv_os::THandle pid) {
 	std::shared_ptr<Process> process;
 	{
 		const auto lock = std::scoped_lock(tasks_mutex);
@@ -441,9 +441,27 @@ kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs,
 	return kiv_os::NOS_Error::Success;
 }
 
+kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& regs) {
+	LogDebug("Shutdown performed");
+	auto lock = std::scoped_lock(tasks_mutex);
+
+	// Init proces se ukonci sam a vzdy ma pid 1
+	for (auto pid = 1; pid < PID_RANGE_END; pid += 1) {
+		auto process = process_table[pid];
+		if (process == nullptr) {
+			continue;
+		}
+
+		TerminateProcess(pid);
+		RemoveProcess(std::static_pointer_cast<Process>(process));
+	}
+
+	return kiv_os::NOS_Error::Success;
+}
+
 void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 	LogDebug("Creating init process");
-	const auto pid = GetFreePid();
+	const auto pid = PID_RANGE_START;
 	const auto tid = GetFreeTid();
 
 	const auto process = std::make_shared<Process>(pid, tid, kiv_os::Invalid_Handle, kiv_os::Invalid_Handle,
@@ -460,7 +478,6 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 	thread_id_to_kiv_handle[native_tid] = tid;
 	kiv_handle_to_thread_id[tid] = native_tid;
 	native_thread_id_to_native_handle[native_tid] = native_handle;
-
 }
 
 void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_handle) {
