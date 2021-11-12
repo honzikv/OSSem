@@ -1,9 +1,7 @@
 //
 // Created by Kuba on 09.10.2021.
 //
-
-#ifndef OS_FAT12_H
-#define OS_FAT12_H
+#pragma once
 
 
 #include <string>
@@ -45,5 +43,3 @@ public:
 
 };
 
-
-#endif //OS_FAT12_H

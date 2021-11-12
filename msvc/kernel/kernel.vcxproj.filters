@@ -36,6 +36,12 @@
     <Filter Include="Source Files\Api">
       <UniqueIdentifier>{e51a0ddb-e707-4776-a534-f823b529ea6f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\FatFS">
+      <UniqueIdentifier>{a1dfbb3f-f008-437a-8829-a292352d3fea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FatFS">
+      <UniqueIdentifier>{d0343b0b-f481-4665-80cb-40d4da587fa9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\kernel.cpp">
@@ -79,6 +85,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp">
       <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fat_helper.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fat12.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\path.cpp">
+      <Filter>Source Files\FatFS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -135,6 +150,18 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\IOManager.h">
       <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\fat_helper.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\fat12.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\path.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\vfs.h">
+      <Filter>Headers\FatFS</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

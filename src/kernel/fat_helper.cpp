@@ -78,11 +78,14 @@ std::vector<unsigned char> Read_From_Registers(int cluster_count, int start_inde
     kiv_hal::TRegisters registers;
     kiv_hal::TDisk_Address_Packet addressPacket;
 
-    int size = cluster_count * kSectorSize;
+    const int size = cluster_count * kSectorSize;
 
-    unsigned char sector[size]; //TODO size a typ
+    // unsigned char sector[size]; //TODO size a typ
+
+    auto sector_vec = std::vector<unsigned char>();
+    auto sector = sector_vec.data();
     addressPacket.count = cluster_count;
-    addressPacket.sectors = (void *) sector;
+    addressPacket.sectors = static_cast<void*>(sector);
     addressPacket.lba_index = start_index;
 
     registers.rdx.l = kDiskNum;

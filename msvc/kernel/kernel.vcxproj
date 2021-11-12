@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
+    <ClCompile Include="..\..\src\kernel\fat12.cpp" />
+    <ClCompile Include="..\..\src\kernel\fat_helper.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ConsoleIn.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ConsoleOut.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\HandleService.cpp" />
@@ -27,6 +29,7 @@
     <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp" />
     <ClCompile Include="..\..\src\kernel\kernel.cpp" />
+    <ClCompile Include="..\..\src\kernel\path.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\SuspendCallback.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Process.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp" />
@@ -37,6 +40,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h" />
     <ClInclude Include="..\..\src\api\hal.h" />
+    <ClInclude Include="..\..\src\kernel\fat12.h" />
+    <ClInclude Include="..\..\src\kernel\fat_helper.h" />
     <ClInclude Include="..\..\src\kernel\IO\ConsoleIn.h" />
     <ClInclude Include="..\..\src\kernel\IO\ConsoleOut.h" />
     <ClInclude Include="..\..\src\kernel\IO\HandleService.h" />
@@ -44,6 +49,7 @@
     <ClInclude Include="..\..\src\kernel\IO\IOManager.h" />
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h" />
     <ClInclude Include="..\..\src\kernel\kernel.h" />
+    <ClInclude Include="..\..\src\kernel\path.h" />
     <ClInclude Include="..\..\src\kernel\Process\Task.h" />
     <ClInclude Include="..\..\src\kernel\Process\SuspendCallback.h" />
     <ClInclude Include="..\..\src\kernel\Process\Process.h" />
@@ -53,6 +59,7 @@
     <ClInclude Include="..\..\src\kernel\Utils\Config.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Logging.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h" />
+    <ClInclude Include="..\..\src\kernel\vfs.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B4305463-59C5-40C3-9A1A-92976A40562D}</ProjectGuid>

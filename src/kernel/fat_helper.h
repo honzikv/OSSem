@@ -2,8 +2,7 @@
 // Created by Kuba on 10.10.2021.
 //
 
-#ifndef OS_FAT_HELPER_H
-#define OS_FAT_HELPER_H
+#pragma once
 
 #include "../api/api.h"
 #include "path.h"
@@ -100,5 +99,3 @@ int Get_Start_Sector(const Path& path, const std::vector<unsigned char> &fat, bo
 int Get_Item_Index(const Path &path, int start_sector, const std::vector<unsigned char> &fat);
 
 bool Check_Name_Matches(const Path &path, const DirItem& dir_item);
-
-#endif //OS_FAT_HELPER_H
