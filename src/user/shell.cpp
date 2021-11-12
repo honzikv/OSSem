@@ -193,7 +193,7 @@ void Shell::CloseCommandFileDescriptors(const Command& command) const {
 	if (command.InputFileDescriptorOpen() && command.GetInputFileDescriptor() != std_in) {
 		kiv_os_rtl::CloseHandle(command.GetInputFileDescriptor());
 	}
-	
+
 	if (command.OutputFileDescriptorOpen() && command.GetOutputFileDescriptor() != std_out) {
 		kiv_os_rtl::CloseHandle(command.GetOutputFileDescriptor());
 	}
@@ -257,7 +257,7 @@ std::pair<bool, std::string> Shell::ChangeDirectory(const Command& command) {
 	if (const auto success = kiv_os_rtl::SetWorkingDir(params); !success) {
 		return {false, "Error, could not change directory for cd with arguments: " + params};
 	}
-	
+
 	// Pokud zmena adresare probehla v poradku musime jeste aktualizovat stav v konzoli
 	constexpr auto new_dir_buffer_size = BUFFER_SIZE / 2; // velikost bufferu pro zapsani vysledku
 	auto new_directory_buffer = std::array<char, new_dir_buffer_size>(); // buffer pro zapsani vysledku
@@ -267,7 +267,7 @@ std::pair<bool, std::string> Shell::ChangeDirectory(const Command& command) {
 		Terminate(); // Tento stav asi nikdy nenastane, ale pro jistotu
 		return {false, "Critical error ocurred, cannot get current working directory. Shell will close."};
 	}
-	
+
 	current_working_dir = std::string(new_directory_buffer.begin(), new_directory_buffer.begin() + new_dir_buffer_size);
 	return {true, ""};
 }
@@ -305,25 +305,25 @@ void Shell::RunCommands(std::vector<Command>& commands) {
 		// Jinak vytvorime novy proces
 		auto pid = kiv_os::Invalid_Handle; // pid pro cekani
 		const auto success = kiv_os_rtl::CreateProcess(command.command_name, command.GetRtlParams(),
-			command.GetInputFileDescriptor(),
-			command.GetOutputFileDescriptor(), pid);
+		                                               command.GetInputFileDescriptor(),
+		                                               command.GetOutputFileDescriptor(), pid);
 
 		if (!success) {
 			switch (kiv_os_rtl::GetLastError()) {
-			case kiv_os::NOS_Error::Out_Of_Memory: {
-				WriteLine("Error, OS does not have enough memory for next process.");
-				break;
-			}
+				case kiv_os::NOS_Error::Out_Of_Memory: {
+					WriteLine("Error, OS does not have enough memory for next process.");
+					break;
+				}
 
-			case kiv_os::NOS_Error::Invalid_Argument: {
-				WriteLine("Error specified program: " + command.command_name + " does not exist!");
-				break;
-			}
+				case kiv_os::NOS_Error::Invalid_Argument: {
+					WriteLine("Error specified program: " + command.command_name + " does not exist!");
+					break;
+				}
 
-			default: {
-				WriteLine("An unknown OS error has occurred.");
-				break;
-			}
+				default: {
+					WriteLine("An unknown OS error has occurred.");
+					break;
+				}
 			}
 
 			// Protoze nastala chyba, nebudeme vykonavat dalsi procesy a zavreme jejich file descriptory
@@ -336,7 +336,7 @@ void Shell::RunCommands(std::vector<Command>& commands) {
 
 	// Shell pocka na dokonceni vsech procesu
 	for (const auto& pid : program_pids) {
-		kiv_os_rtl::WaitFor({ pid });
+		kiv_os_rtl::WaitFor({pid});
 		auto exit_code = kiv_os::NOS_Error::Success;
 		kiv_os_rtl::ReadExitCode(pid, exit_code); // Precteme exit code pro odstraneni z tabulky
 	}

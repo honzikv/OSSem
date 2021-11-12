@@ -1,10 +1,14 @@
 #pragma once
+#include <mutex>
+
 #include "IFile.h"
 
 /// <summary>
 /// Zapis do konzole
 /// </summary>
 class ConsoleOut final : public IFile {
+
+
 public:
 	/// <summary>
 	/// Zapis do konzole

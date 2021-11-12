@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <windows.h>
 
 #include "Task.h"
 #include "TaskState.h"
@@ -43,10 +43,6 @@ class Thread : public Task {
 	/// </summary>
 	const kiv_os::THandle pid;
 
-	/// <summary>
-	/// Funkce, ktera se vykonava ve vlakne
-	/// </summary>
-	void ThreadFunc();
 
 
 public:
@@ -66,7 +62,12 @@ public:
 	/// <summary>
 	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho id
 	/// </summary>
-	std::thread::id Dispatch();
+	std::pair<HANDLE, DWORD> Dispatch();
+
+	/// <summary>
+	/// Funkce, ktera se vykonava ve vlakne
+	/// </summary>
+	void ThreadFunc();
 
 	[[nodiscard]] inline kiv_os::THandle GetTid() const { return tid; }
 	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }

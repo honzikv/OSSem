@@ -9,6 +9,7 @@
 #include "SuspendCallback.h"
 #include "../../api/api.h"
 #include "Utils/Logging.h"
+#include <winnt.h>
 
 /// <summary>
 /// Typ handle pro wait for funkcionalitu
@@ -61,13 +62,18 @@ private:
 	/// <summary>
 	/// TID -> Handle
 	/// </summary>
-	std::unordered_map<std::thread::id, kiv_os::THandle> native_tid_to_kiv_handle = {};
+	std::unordered_map<DWORD, kiv_os::THandle> thread_id_to_kiv_handle = {};
 
 	/// <summary>
 	/// Handle -> Tid
 	///	Pro mazani
 	/// </summary>
-	std::unordered_map<kiv_os::THandle, std::thread::id> kiv_handle_to_native_tid = {};
+	std::unordered_map<kiv_os::THandle, DWORD> kiv_handle_to_thread_id = {};
+
+	/// <summary>
+	/// Thread id -> Handle pro ukonceni vlakna
+	/// </summary>
+	std::unordered_map<DWORD, HANDLE> native_thread_id_to_native_handle = {};
 
 	/// <summary>
 	/// Hashmapa s callbacky pro probouzeni vlaken
@@ -134,6 +140,13 @@ private:
 	/// </summary>
 	/// <returns>Tid aktualne beziciho vlakna</returns>
 	kiv_os::THandle GetCurrentTid();
+
+	/// <summary>
+	/// Vrati nativni handle k tidu - tid musi existovat
+	/// </summary>
+	/// <param name="tid"></param>
+	/// <returns></returns>
+	HANDLE GetThreadNativeHandle(kiv_os::THandle tid);
 
 public:
 	/// <summary>
