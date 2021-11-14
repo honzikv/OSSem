@@ -50,6 +50,7 @@ public:
 	}
 
 private:
+	std::atomic<bool> shutdown_triggered = false;
 	/// <summary>
 	/// Tabulka procesu
 	/// </summary>
@@ -61,6 +62,21 @@ private:
 	std::array<std::shared_ptr<Thread>, TID_RANGE_END - TID_RANGE_START> thread_table = {};
 
 	/// <summary>
+	/// Pocet bezicich procesu
+	/// </summary>
+	size_t running_processes = 0;
+
+	/// <summary>
+	/// Pocet bezicich vlaken
+	/// </summary>
+	size_t running_threads = 0;
+
+	/// <summary>
+	/// Init proces ceka na tento semafor aby mohl spravne ukoncit vlakno
+	/// </summary>
+	std::shared_ptr<Semaphore> init_process_semaphore = std::make_shared<Semaphore>();
+
+	/// <summary>
 	/// TID -> Handle
 	/// </summary>
 	std::unordered_map<DWORD, kiv_os::THandle> thread_id_to_kiv_handle = {};
@@ -69,7 +85,7 @@ private:
 	/// Handle -> Tid
 	///	Pro mazani
 	/// </summary>
-	std::unordered_map<kiv_os::THandle, DWORD> kiv_handle_to_thread_id = {};
+	std::unordered_map<kiv_os::THandle, DWORD> kiv_handle_to_native_thread_id = {};
 
 	/// <summary>
 	/// Thread id -> Handle pro ukonceni vlakna
@@ -147,7 +163,7 @@ private:
 	/// </summary>
 	/// <param name="tid"></param>
 	/// <returns></returns>
-	HANDLE GetThreadNativeHandle(kiv_os::THandle tid);
+	HANDLE GetNativeThreadHandle(kiv_os::THandle tid);
 
 public:
 	/// <summary>
@@ -168,7 +184,10 @@ public:
 	/// Prevede proces ze stavu Running do stavu Finished
 	/// </summary>
 	/// <param name="pid"></param>
-	void TerminateProcess(kiv_os::THandle pid);
+	/// <param name="terminated_forcefully">Zda-li se proces ukoncil nasilim</param>
+	void TerminateProcess(kiv_os::THandle pid, bool terminated_forcefully = false);
+
+	void TerminateThread(kiv_os::THandle tid, bool terminated_forcefully = false);
 
 	/// <summary>
 	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
@@ -259,6 +278,7 @@ private:
 	/// <param name="remove_task">Zda-li se ma proces odstranit z tabulky</param>
 	/// <returns></returns>
 	kiv_os::NOS_Error PerformReadExitCode(kiv_hal::TRegisters& regs, bool remove_task);
+	
 
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs);
 

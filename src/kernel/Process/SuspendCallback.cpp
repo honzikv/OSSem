@@ -16,6 +16,6 @@ bool SuspendCallback::Triggered() {
 	return triggered;
 }
 
-kiv_os::THandle SuspendCallback::Get_Notifier_Id() const {
+kiv_os::THandle SuspendCallback::GetNotifierId() const {
 	return notifier_id;
 }

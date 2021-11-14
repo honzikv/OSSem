@@ -8,7 +8,7 @@
 #include "IO/ConsoleIn.h"
 #include "IO/ConsoleOut.h"
 #include "IO/IOManager.h"
-#include "Process/InitProcess.h"
+#include "Process/Init.h"
 #include "Process/ProcessManager.h"
 #include "Utils/Config.h"
 

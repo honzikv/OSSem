@@ -13,7 +13,7 @@
 /// <summary>
 /// Reprezentuje vlakno
 /// </summary>
-class Thread : public Task {
+class Thread final : public Task {
 
 	/// <summary>
 	/// Program, ktery bude vlakno vykonavat
@@ -28,7 +28,7 @@ class Thread : public Task {
 	/// <summary>
 	/// Zda-li se jedna o hlavni vlakno v procesu - pokud ano, proces se ukonci po dobehnuti
 	/// </summary>
-	bool is_main_thread;
+	bool main_thread;
 
 	/// <summary>
 	/// Argumenty programu
@@ -65,17 +65,10 @@ public:
 	std::pair<HANDLE, DWORD> Dispatch();
 
 	/// <summary>
-	/// Ukonci vlakno. Pokud vlakno stale bezi nasilne ho ukonci
+	/// Nasilne ukonci vlakno. Tato funkce nic nedela, pokud se vlakno ukoncilo samo
 	/// </summary>
 	/// <param name="handle"></param>
-	void Terminate(const HANDLE handle) {
-		auto lock = std::scoped_lock(mutex);
-		if (task_state != TaskState::Finished) {
-			const auto result = TerminateThread(handle, 1);
-			LogDebug("Thread killed: " + std::to_string(result));
-		}
-		task_state = TaskState::Finished;
-	}
+	void TerminateIfRunning(HANDLE handle);
 
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne
@@ -84,7 +77,8 @@ public:
 
 	[[nodiscard]] inline kiv_os::THandle GetTid() const { return tid; }
 	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }
+	[[nodiscard]] inline bool IsMainThread() const { return main_thread; }
 
-	[[nodiscard]] TaskState GetState();
+	[[nodiscard]] TaskState GetState() const;
 
 };
