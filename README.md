@@ -25,6 +25,7 @@ Buildíme popořadě (asi? fungovalo i Kernel -> User -> Boot):
 	- https://github.com/topnax/kiv-os-sp
 
 # Todo:
+- Spravne ukoncovani vsech procesu - deadlock pri shutdown 
 - Signaly pro proces - ctrl + c pro ukonceni apod
 - Testovani pipe - implementovane ale tezko rict jestli fungujou
 - Propojit FAT12 se syscally
