@@ -33,5 +33,11 @@ public:
 	/// </summary>
 	virtual kiv_os::NOS_Error Close();
 
+	/// <summary>
+	/// Vyhledavani v souboru
+	/// </summary>
+	/// <param name="position">Presun na pozici</param>
+	/// <param name="seek_type">Typ seeku</param>
+	/// <returns></returns>
 	virtual kiv_os::NOS_Error Seek(size_t position, kiv_os::NFile_Seek seek_type);
 };

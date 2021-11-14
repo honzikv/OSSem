@@ -129,7 +129,9 @@ kiv_os::THandle ProcessManager::FindParentPid() {
 kiv_os::THandle ProcessManager::GetCurrentTid() {
 	const auto current_thread = GetCurrentThreadId();
 	const auto lock = std::scoped_lock(tasks_mutex);
-	return thread_id_to_kiv_handle[current_thread];
+	return thread_id_to_kiv_handle.count(current_thread) == 0
+		       ? kiv_os::Invalid_Handle
+		       : thread_id_to_kiv_handle[current_thread];
 }
 
 HANDLE ProcessManager::GetNativeThreadHandle(const kiv_os::THandle tid) {
@@ -407,6 +409,9 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 
 	// Thread id aktualne beziciho vlakna
 	const auto current_tid = GetCurrentTid();
+	if (current_tid == kiv_os::Invalid_Handle) {
+		return kiv_os::NOS_Error::Invalid_Argument;
+	}
 
 	// Pridame vlakno do vsech existujicich procesu/vlaken v handle_array
 	AddCurrentThreadAsSubscriber(handle_array, handle_count, current_tid);
@@ -474,6 +479,7 @@ kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs)
 	std::shared_ptr<Task> task = nullptr;
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	if (handle_type == HandleType::Process) {
+		// NOLINT(bugprone-branch-clone)
 		task = GetProcess(handle);
 		RemoveProcessFromTable(std::static_pointer_cast<Process>(task)); // pretypovani Task na Process shared ptr
 	}
@@ -506,6 +512,9 @@ kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& reg
 	LogDebug("Shutdown performed from tid: " + std::to_string(GetCurrentTid()));
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	const auto current_tid = GetCurrentTid();
+	if (current_tid == kiv_os::Invalid_Handle) { // kadzopadne tento check je useless
+		return kiv_os::NOS_Error::Permission_Denied;
+	}
 	const auto current_pid = GetThread(current_tid)->GetPid();
 	shutdown_triggered = {true};
 	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
@@ -545,6 +554,7 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void ProcessManager::WaitForShutdown() {
 	suspend_callbacks[PID_RANGE_START]->Suspend();
 }

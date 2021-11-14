@@ -28,6 +28,7 @@
     <ClCompile Include="..\..\src\kernel\IO\IFile.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp" />
+    <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp" />
     <ClCompile Include="..\..\src\kernel\kernel.cpp" />
     <ClCompile Include="..\..\src\kernel\path.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Init.cpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="..\..\src\kernel\IO\IFile.h" />
     <ClInclude Include="..\..\src\kernel\IO\IOManager.h" />
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h" />
+    <ClInclude Include="..\..\src\kernel\IO\ProcFS.h" />
     <ClInclude Include="..\..\src\kernel\kernel.h" />
     <ClInclude Include="..\..\src\kernel\path.h" />
     <ClInclude Include="..\..\src\kernel\Process\Init.h" />
@@ -58,7 +60,7 @@
     <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h" />
     <ClInclude Include="..\..\src\kernel\Process\TaskState.h" />
     <ClInclude Include="..\..\src\kernel\Process\Thread.h" />
-    <ClInclude Include="..\..\src\kernel\Utils\Config.h" />
+    <ClInclude Include="..\..\src\kernel\Utils\Debug.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Logging.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h" />
     <ClInclude Include="..\..\src\kernel\vfs.h" />

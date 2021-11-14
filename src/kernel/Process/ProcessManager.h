@@ -317,6 +317,17 @@ private:
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
+		const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
+		const auto callback = reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r); // funkce pro signal
+
+		const auto current_tid = GetCurrentTid();
+		if (current_tid == kiv_os::Invalid_Handle) {
+			return kiv_os::NOS_Error::Permission_Denied;
+		}
+
+		auto lock = std::scoped_lock(tasks_mutex);
+		const auto thread = GetThread(current_tid);
+		const auto process = GetProcess(thread->GetPid());
+		process->SetSignalCallback(signal, callback);
 	}
 };

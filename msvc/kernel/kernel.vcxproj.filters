@@ -98,6 +98,9 @@
     <ClCompile Include="..\..\src\kernel\Process\Init.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -133,7 +136,7 @@
     <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h">
       <Filter>Headers\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Utils\Config.h">
+    <ClInclude Include="..\..\src\kernel\Utils\Debug.h">
       <Filter>Headers\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Utils\Logging.h">
@@ -168,6 +171,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\Init.h">
       <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
+      <Filter>Headers\IO</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -10,7 +10,7 @@
 #include "IO/IOManager.h"
 #include "Process/Init.h"
 #include "Process/ProcessManager.h"
-#include "Utils/Config.h"
+#include "Utils/Debug.h"
 
 
 void Initialize_Kernel() {
