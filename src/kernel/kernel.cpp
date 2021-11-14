@@ -32,8 +32,8 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	
 	// TODO remove this debug
 #if IS_DEBUG
-	LogDebug("DEBUG: Init process killed. Stopped before Kernel Shutdown");
-	while (true) { }
+	LogDebug("DEBUG: Init process killed. The Kernel will shutdown in 5s");
+	std::this_thread::sleep_for(std::chrono::seconds(5));
 #endif
 
 	Shutdown_Kernel();

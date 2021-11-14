@@ -16,7 +16,7 @@ class SuspendCallback {
 	/// Semafor pro synchronizaci - vlakno, ktere na callback ceka zavola semafor.acquire().
 	/// Semafor je shared_ptr, protoze jinak by se objekt prekopiroval pri ziskani z hashmapy
 	/// </summary>
-	std::shared_ptr<Semaphore> semaphore = std::make_shared<Semaphore>();
+	const std::unique_ptr<Semaphore> semaphore = std::make_unique<Semaphore>();
 
 	/// <summary>
 	/// Id entity, ktera vzbudila spici vlakno
@@ -26,14 +26,14 @@ class SuspendCallback {
 	/// <summary>
 	/// Zda-li se callback provedl
 	/// </summary>
-	std::atomic<bool> triggered = { false };
+	std::atomic<bool> triggered = {false};
 
 public:
 	/// <summary>
 	/// Uspi vlakno pomoci semaforu
 	/// </summary>
 	void Suspend() const;
-	
+
 	/// <summary>
 	/// Vzbudi vlakno a nastavi notifier_id, handle_type a triggered flag
 	/// </summary>

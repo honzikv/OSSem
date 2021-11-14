@@ -68,7 +68,8 @@ public:
 	/// Nasilne ukonci vlakno. Tato funkce nic nedela, pokud se vlakno ukoncilo samo
 	/// </summary>
 	/// <param name="handle"></param>
-	void TerminateIfRunning(HANDLE handle);
+	/// <param name="exit_code">Exit code, ktery se nastavi po ukonceni</param>
+	void TerminateIfRunning(HANDLE handle, uint16_t exit_code);
 
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne

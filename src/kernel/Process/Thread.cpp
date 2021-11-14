@@ -4,13 +4,15 @@
 
 void Thread::ThreadFunc() {
 	SetRunning();
-	task_exit_code = static_cast<kiv_os::NOS_Error>(program(regs)); // ziskame exit code z programu
 
+	auto task_exit_code = program(regs); // ziskame exit code z programu
+	SetExitCode(task_exit_code); // nastavime ho
+	
 	// Program dobehl, rekneme process managerovi at ho ukonci
-	ProcessManager::Get().TerminateThread(tid);
+	ProcessManager::Get().NotifyThreadFinished(tid);
 
 	if (main_thread) {
-		ProcessManager::Get().TerminateProcess(pid, false);
+		ProcessManager::Get().NotifyProcessFinished(pid, task_exit_code);
 	}
 }
 
@@ -29,7 +31,7 @@ Thread::Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os
 DWORD WINAPI WinThreadFunc(const LPVOID params) {
 	auto& thread = *static_cast<Thread*>(params);
 	thread.ThreadFunc();
-	return static_cast<DWORD>(thread.GetExitCode());
+	return thread.GetExitCode();
 }
 
 
@@ -39,11 +41,11 @@ std::pair<HANDLE, DWORD> Thread::Dispatch() {
 	return { thread_handle, thread_id };
 }
 
-void Thread::TerminateIfRunning(const HANDLE handle) {
+void Thread::TerminateIfRunning(const HANDLE handle, const uint16_t exit_code) {
 	auto lock = std::scoped_lock(mutex);
 	if (task_state != TaskState::Finished) {
-		const auto result = TerminateThread(handle, 1);
-		task_exit_code = kiv_os::NOS_Error::Unknown_Error;
+		const auto result = TerminateThread(handle, exit_code);
+		task_exit_code = exit_code;
 	}
 	task_state = TaskState::Finished;
 }

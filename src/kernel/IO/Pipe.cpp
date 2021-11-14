@@ -1,9 +1,8 @@
 #include "Pipe.h"
 
-Pipe::Pipe(const size_t buffer_size) {
+Pipe::Pipe(const size_t buffer_size): write(std::make_shared<Semaphore>(buffer_size)),
+                                      read(std::make_shared<Semaphore>()) {
 	buffer.reserve(buffer_size);
-	write = std::make_shared<Semaphore>(buffer_size);
-	read = std::make_shared<Semaphore>(0);
 }
 
 bool Pipe::Empty() const {

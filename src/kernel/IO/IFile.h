@@ -27,10 +27,11 @@ public:
 	/// <param name="bytes_written">Pocet zapsanych bytu po operaci</param>
 	/// <returns></returns>
 	virtual kiv_os::NOS_Error Write(const char* source_buffer, size_t buffer_size, size_t& bytes_written);
-	
 
 	/// <summary>
 	/// Zavre soubor
 	/// </summary>
 	virtual kiv_os::NOS_Error Close();
+
+	virtual kiv_os::NOS_Error Seek(size_t position, kiv_os::NFile_Seek seek_type);
 };

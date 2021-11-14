@@ -20,6 +20,8 @@ enum class HandleType {
 	Process
 };
 
+static constexpr uint16_t ForcefullyEndedTaskExitCode = -1;
+
 /// <summary>
 /// Trida, ktera se stara o spravu procesu a vlaken
 /// </summary>
@@ -50,7 +52,13 @@ public:
 	}
 
 private:
-	std::atomic<bool> shutdown_triggered = false;
+	/// <summary>
+	/// Flag pro shutdown
+	/// </summary>
+	std::atomic<bool> shutdown_triggered = { false };
+
+	const std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
+
 	/// <summary>
 	/// Tabulka procesu
 	/// </summary>
@@ -70,11 +78,6 @@ private:
 	/// Pocet bezicich vlaken
 	/// </summary>
 	size_t running_threads = 0;
-
-	/// <summary>
-	/// Init proces ceka na tento semafor aby mohl spravne ukoncit vlakno
-	/// </summary>
-	std::shared_ptr<Semaphore> init_process_semaphore = std::make_shared<Semaphore>();
 
 	/// <summary>
 	/// TID -> Handle
@@ -131,6 +134,13 @@ private:
 	void AddThread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
 
 	/// <summary>
+	/// Zjisti, zda-li task existuje
+	/// </summary>
+	/// <param name="task_handle"></param>
+	/// <returns></returns>
+	bool TaskNotifiable(kiv_os::THandle task_handle);
+
+	/// <summary>
 	/// Slouzi k zamykani kriticke sekce pro procesy a vlakna (tabulky)
 	/// </summary>
 	std::recursive_mutex tasks_mutex;
@@ -138,7 +148,7 @@ private:
 	/// <summary>
 	/// Mutex pro callbacky pro vzbuzeni
 	/// </summary>
-	std::mutex suspend_callbacks_mutex;
+	std::recursive_mutex suspend_callbacks_mutex;
 
 	ProcessManager() = default;
 	~ProcessManager() = default;
@@ -181,14 +191,24 @@ public:
 	void TriggerSuspendCallback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
 
 	/// <summary>
-	/// Prevede proces ze stavu Running do stavu Finished
+	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
 	/// </summary>
-	/// <param name="pid"></param>
-	/// <param name="terminated_forcefully">Zda-li se proces ukoncil nasilim</param>
-	void TerminateProcess(kiv_os::THandle pid, bool terminated_forcefully = false);
+	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
+	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
 
-	void TerminateThread(kiv_os::THandle tid, bool terminated_forcefully = false);
+	/// <summary>
+	/// Tuto metodu pouziva hlavni vlakno po uspesnem skonceni sveho lifecyclu - ukonci tim svuj proces
+	/// </summary>
+	/// <param name="pid">Pid procesu, ktery se ma ukoncit</param>
+	/// <param name="exit_code">Exit code procesu</param>
+	void NotifyProcessFinished(kiv_os::THandle pid, uint16_t exit_code);
 
+	/// <summary>
+	/// Tuto metodu pouziva vlakno, aby oznamilo process manageru, ze skoncilo
+	/// </summary>
+	void NotifyThreadFinished(kiv_os::THandle tid);
+
+private:
 	/// <summary>
 	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
 	///	se neukonci shell.
@@ -196,12 +216,26 @@ public:
 	void RunInitProcess(kiv_os::TThread_Proc program);
 
 	/// <summary>
-	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
+	/// Init vlakno pocka, dokud se vsechny vlakna neukonci
 	/// </summary>
-	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
-	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
+	void WaitForShutdown();
 
-private:
+	/// <summary>
+	/// Ukonci proces
+	/// </summary>
+	/// <param name="pid"></param>
+	/// <param name="terminated_forcefully">Zda-li se proces ukoncil nasilim</param>
+	/// <param name="thread_exit_code">Exit code hlavniho vlakna</param>
+	void TerminateProcess(kiv_os::THandle pid, bool terminated_forcefully = false, uint16_t thread_exit_code = 0);
+
+	/// <summary>
+	/// Ukonci vlakno
+	/// </summary>
+	/// <param name="tid"></param>
+	/// <param name="terminated_forcefully"></param>
+	/// <param name="exit_code">Exit code vlakna</param>
+	void TerminateThread(kiv_os::THandle tid, bool terminated_forcefully = false, size_t exit_code = 0);
+
 	/// <summary>
 	/// Provede klonovani procesu nebo vlakna
 	/// </summary>
@@ -214,7 +248,7 @@ private:
 	/// </summary>
 	/// <param name="tid">tid</param>
 	/// <returns>Pointer na vlakno</returns>
-	std::shared_ptr<Thread> GetThread(const kiv_os::THandle tid);
+	std::shared_ptr<Thread> GetThread(kiv_os::THandle tid);
 
 	/// <summary>
 	/// Vytvori proces s hlavnim vlaknem a prida je do tabulek
@@ -241,7 +275,7 @@ private:
 	/// </summary>
 	/// <param name="id">id, pro ktere chceme typ handle dostat</param>
 	/// <returns>typ handle</returns>
-	static HandleType GetHandleType(const kiv_os::THandle id);
+	static HandleType GetHandleType(kiv_os::THandle id);
 
 	/// <summary>
 	/// Prida proces pro ostatni handles (proces/vlakno) jako subscribera, ktereho musi handles po dokonceni vzbudit
@@ -263,22 +297,22 @@ private:
 	/// Odstrani proces z tabulky
 	/// </summary>
 	/// <param name="process">Reference na proces</param>
-	void RemoveProcess(std::shared_ptr<Process> process);
+	void RemoveProcessFromTable(std::shared_ptr<Process> process);
 
 	/// <summary>
 	/// Odstrani vlakno z tabulky a lookup map
 	/// </summary>
 	/// <param name="thread">Reference na vlakno</param>
-	void RemoveThread(std::shared_ptr<Thread> thread);
+	void RemoveThreadFromTable(std::shared_ptr<Thread> thread);
 
 	/// <summary>
 	/// Provede cteni exit codu
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
-	/// <param name="remove_task">Zda-li se ma proces odstranit z tabulky</param>
 	/// <returns></returns>
-	kiv_os::NOS_Error PerformReadExitCode(kiv_hal::TRegisters& regs, bool remove_task);
-	
+	kiv_os::NOS_Error PerformReadExitCode(kiv_hal::TRegisters& regs);
+
+	kiv_os::NOS_Error ExitTask(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs);
 
