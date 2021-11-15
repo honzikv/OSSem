@@ -101,6 +101,12 @@
     <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ReadablePipe.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\WritablePipe.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -173,6 +179,12 @@
       <Filter>Headers\Process</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
+      <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ReadablePipe.h">
+      <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\WritablePipe.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
   </ItemGroup>

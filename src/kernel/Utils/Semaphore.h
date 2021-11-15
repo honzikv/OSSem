@@ -1,6 +1,6 @@
 #pragma once
 #include <mutex>
-
+#include "../Utils/Debug.h"
 /// <summary>
 /// Implementace semaforu, protoze C++ to ma az od C++20 ...
 /// </summary>
@@ -44,5 +44,12 @@ public:
 	/// </summary>
 	/// <param name="count">Pocet simultanich vstupu</param>
 	explicit Semaphore(const size_t count);
+
+#if IS_DEBUG
+	inline size_t GetCount() {
+		auto lock = std::scoped_lock(mutex);
+		return count;
+	}
+#endif
 };
 

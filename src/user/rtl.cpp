@@ -28,21 +28,16 @@ bool kiv_os_rtl::ReadFile(const kiv_os::THandle file_handle, char* const buffer,
 	return result;
 }
 
-bool kiv_os_rtl::ReadIntoBuffer(kiv_os::THandle std_in, std::vector<char>& buffer) {
+void kiv_os_rtl::ReadIntoBuffer(const kiv_os::THandle std_in, std::vector<char>& buffer) {
 	static constexpr auto internal_buffer_size = 2048;
 	auto internal_buffer = std::array<char, internal_buffer_size>();
 	auto bytes_read = size_t{ 0 };
 
-	while (true) {
-		// Pokud nastala chyba vratime false - soubor je poskozeny a nelze z nej cist
-		if (!ReadFile(std_in, internal_buffer.data(), buffer.size(), bytes_read)) {
-			return false;
-		}
-
+	while (ReadFile(std_in, internal_buffer.data(), buffer.size(), bytes_read)) {
 		// Jinak cteme dokud nedostaneme EOF
 		for (size_t i = 0; i < bytes_read; i += 1) {
 			if (internal_buffer[i] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
-				return true;
+				return;
 			}
 			buffer.push_back(internal_buffer[i]);
 		}
@@ -70,9 +65,11 @@ bool kiv_os_rtl::CreatePipe(kiv_os::THandle& input, kiv_os::THandle& output) {
 	kiv_os::THandle pipes[] = {input, output};
 	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(std::addressof(pipes));
 
+	auto success = kiv_os::Sys_Call(regs);
 	input = pipes[0];
 	output = pipes[1];
-	return kiv_os::Sys_Call(regs);
+
+	return success;
 }
 
 bool kiv_os_rtl::OpenFsFile(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode) {
@@ -133,8 +130,8 @@ bool kiv_os_rtl::CreateProcess(const std::string& program_name, const std::strin
 	return true;
 }
 
-bool kiv_os_rtl::CreateThread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in,
-	kiv_os::THandle std_out) {
+bool kiv_os_rtl::CreateThread(const std::string& program_name, const std::string& params, const kiv_os::THandle std_in,
+                              const kiv_os::THandle std_out) {
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Clone);

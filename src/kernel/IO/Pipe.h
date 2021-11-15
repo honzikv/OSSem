@@ -7,7 +7,7 @@
 /// <summary>
 /// Reprezentuje Pipe pro IPC
 /// </summary>
-class Pipe final : public IFile {
+class Pipe final {
 
 public:
 	/// <summary>
@@ -16,39 +16,34 @@ public:
 	static constexpr size_t DEFAULT_PIPE_BUFFER_SIZE = 1024; // 1 K
 private:
 	/// <summary>
-	/// Semafor pro synchronizaci prazdnych polozek
+	/// Semafor pro pristup k polozkam na zapis
 	/// </summary>
 	std::shared_ptr<Semaphore> write;
 
 	/// <summary>
-	/// Semafor pro synchronizaci plnych polozek
+	/// Semafor pro pristup k polozkam na cteni
 	/// </summary>
 	std::shared_ptr<Semaphore> read;
 
 	/// <summary>
 	/// Index pro cteni
 	/// </summary>
-	size_t read_idx = {};
+	size_t reading_idx = 0;
 
 	/// <summary>
-	/// Index pro psani
+	/// Index pro zapis
 	/// </summary>
-	size_t write_idx = {};
+	size_t writing_idx = 0;
 
 	/// <summary>
 	/// Pocet polozek v bufferu. Tento field se musi editovat/cist pomoci buffer_access mutexu
 	/// </summary>
-	size_t items = {};
+	size_t items = 0;
 
 	/// <summary>
-	/// Mutex pro pristup k bufferu
+	/// Mutex pro pristup k bufferu a flagum
 	/// </summary>
-	std::mutex buffer_access;
-
-	/// <summary>
-	/// Mutex pro pristup k flagum pro cteni/zapis
-	/// </summary>
-	std::recursive_mutex flag_access;
+	std::mutex pipe_access;
 
 	/// <summary>
 	/// Buffer pro data
@@ -56,14 +51,15 @@ private:
 	std::vector<char> buffer;
 
 	/// <summary>
-	/// Zda-li se do pipe zapsalo vsechno potrebne
+	/// Zapis je zavreny
 	/// </summary>
-	bool write_finished = false;
+	bool writing_closed = false;
 
 	/// <summary>
-	/// Zda-li se z pipe vsechno potrebne precetlo
+	/// Ctnei je zavrene
 	/// </summary>
-	bool read_finished = false;
+	bool reading_closed = false;
+	
 
 	/// <summary>
 	/// Vrati, zda-li je pipe prazdna
@@ -72,21 +68,22 @@ private:
 	[[nodiscard]] bool Empty() const;
 
 	/// <summary>
+	/// Vrati, zda-li je pipe plna. Musi se synchronizovat mutexem
+	/// </summary>
+	/// <returns>True pokud ano, jinak false</returns>
+	[[nodiscard]] bool Full() const;
+
+	/// <summary>
 	/// Posune read index o 1 dopredu. Pokud prekroci max index vrati se na zacatek
 	/// </summary>
-	void AdvanceReadIdx() {
-		read_idx = (read_idx + 1) % buffer.size();
-	}
+	void AdvanceReadingIdx();
 
 	/// <summary>
 	/// Posune write index o 1 dopredu. Pokud prekroci max index vrati se na zacatek
 	/// </summary>
-	void AdvanceWriteIdx() {
-		write_idx = (write_idx = 1) % buffer.size();
-	}
+	void AdvanceWritingIdx();
 
 public:
-
 	/// <summary>
 	/// Konstruktor pro vytvoreni pipe
 	/// </summary>
@@ -100,7 +97,7 @@ public:
 	/// <param name="buffer_size">Velikost bufferu</param>
 	/// <param name="bytes_read">Pocet prectenych bytu</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error Read(char* target_buffer, size_t buffer_size, size_t& bytes_read) override;
+	kiv_os::NOS_Error Read(char* target_buffer, size_t buffer_size, size_t& bytes_read);
 
 	/// <summary>
 	/// Zapise do bufferu data z bufferu
@@ -109,10 +106,9 @@ public:
 	/// <param name="buffer_size">Velikost zdrojoveho bufferu - kolik bytu se ma zapsat</param>
 	/// <param name="bytes_written">Pocet zapsanych bytu</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error Write(const char* source_buffer, size_t buffer_size, size_t& bytes_written) override;
-	
-	/// <summary>
-	/// Zavre pipu - odesle EOT do bufferu
-	/// </summary>
-	kiv_os::NOS_Error Close() override;
+	kiv_os::NOS_Error Write(const char* source_buffer, size_t buffer_size, size_t& bytes_written);
+
+	void CloseForReading();
+	void CloseForWriting();
+
 };

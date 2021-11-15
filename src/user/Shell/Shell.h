@@ -99,7 +99,7 @@ class Shell {
 	/// <param name="second_last">Prikaz, ze ktereho se cte vstup</param>
 	/// <param name="last">Posledni prikaz</param>
 	/// <returns>Vysledek</returns>
-	static std::pair<bool, std::string> PreparePipeForLastCommand(const Command& second_last, Command& last);
+	std::pair<bool, std::string> PreparePipeForLastCommand(const Command& second_last, Command& last) const;
 
 
 	/// <summary>

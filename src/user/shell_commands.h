@@ -13,7 +13,7 @@ extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	// Debug zavirani vlakna
 	//
 	// const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
-	// const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
+	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 	// while (true) {
 	// 	std::this_thread::sleep_for(std::chrono::seconds(1));
 	// 	std::cout << "Hello Thread" << std::endl;
@@ -21,7 +21,21 @@ extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	//
 	// return 0;
 
+	// Debug pipy
+	LogDebug("Type std_out is : " + std::to_string(std_out));
+	auto string_stream = std::stringstream();
+	for (size_t i = 0; i < 1024; i += 1) {
+		string_stream << "Pipe Test";
+	}
 
+	auto buffer = string_stream.str();
+	auto written = size_t{0};
+	auto success = kiv_os_rtl::WriteFile(std_out, buffer.data(), buffer.size(), written);
+	if (!success) {
+		return 1;
+	}
+
+	return 0;
 };
 
 // TODO zmenit
@@ -38,35 +52,26 @@ extern "C" size_t __stdcall md(const kiv_hal::TRegisters& regs) {
 	// std::this_thread::sleep_for(std::chrono::seconds(8));
 	//
 	// return 0;
-
 	// Debug pipy
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
-	auto text = std::vector<char>();
-	auto buffer = std::array<char, 2048>();
-	auto bytes_read = size_t{ 0 };
-	auto keep_reading = true;
-	while (keep_reading) {
-		if (!kiv_os_rtl::ReadFile(std_in, buffer.data(), buffer.size(), bytes_read)) {
-			return 1; // Vratime chybu, protoze ze vstupu nejde cist
-		}
+	auto written = size_t{0};
+	const auto message_md = std::string{"MD start"};
 
-		// Vse co slo precist jsme precetli
-		if (bytes_read == 0) {
-			break;
-		}
+	kiv_os_rtl::WriteFile(std_out, message_md.data(), message_md.size(), written);
 
-		// Jinak cteme data z bufferu a kontrolujeme, zda-li neni EOF
-		for (size_t i = 0; i < bytes_read; i += 1) {
-			if (buffer[i] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
-				break;
-			}
-			text.push_back(buffer[i]);
-		}
+	LogDebug("md std_in is : " + std::to_string(std_in) + " std_out is " + std::to_string(std_out));
+	auto buffer = std::vector<char>();
+	kiv_os_rtl::ReadIntoBuffer(std_in, buffer);
+
+	auto success = kiv_os_rtl::WriteFile(std_out, buffer.data(), buffer.size(), written);
+	if (!success) {
+		return 1;
 	}
-	
 
+	return 0;
 }
+
 extern "C" size_t __stdcall rd(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall dir(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall echo(const kiv_hal::TRegisters& regs) { return 0; }
@@ -75,5 +80,3 @@ extern "C" size_t __stdcall sort(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall rgen(const kiv_hal::TRegisters& regs) { return 0; }
 
 extern "C" size_t __stdcall tasklist(const kiv_hal::TRegisters& regs) { return 0; }
-
-

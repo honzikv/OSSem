@@ -115,7 +115,7 @@ auto Shell::PreparePipeForFirstCommand(Command& command,
 }
 
 
-std::pair<bool, std::string> Shell::PreparePipeForLastCommand(const Command& second_last, Command& last) {
+std::pair<bool, std::string> Shell::PreparePipeForLastCommand(const Command& second_last, Command& last) const {
 	if (last.redirect_type == RedirectType::Both || last.redirect_type == RedirectType::FromFile) {
 		return {false, "Error, command cannot read output from another command and file at the same time"};
 	}
@@ -128,6 +128,9 @@ std::pair<bool, std::string> Shell::PreparePipeForLastCommand(const Command& sec
 		                                                kiv_os::NOpen_File::fmOpen_Always); !success) {
 			return {false, "Error, could not open output file for command: " + last.command_name};
 		}
+	}
+	else {
+		command_fd_out = std_out;
 	}
 
 	last.SetPipeFileDescriptors(command_fd_in, command_fd_out);
@@ -304,6 +307,7 @@ void Shell::RunCommands(std::vector<Command>& commands) {
 
 		// Jinak vytvorime novy proces
 		auto pid = kiv_os::Invalid_Handle; // pid pro cekani
+		// ReSharper disable once CppTooWideScopeInitStatement
 		const auto success = kiv_os_rtl::CreateProcess(command.command_name, command.GetRtlParams(),
 		                                               command.GetInputFileDescriptor(),
 		                                               command.GetOutputFileDescriptor(), pid);
@@ -333,6 +337,7 @@ void Shell::RunCommands(std::vector<Command>& commands) {
 
 		program_pids.push_back(pid);
 	}
+	
 
 	// Shell pocka na dokonceni vsech procesu
 	for (const auto& pid : program_pids) {
