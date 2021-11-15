@@ -24,8 +24,8 @@ extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	// Debug pipy
 	LogDebug("Type std_out is : " + std::to_string(std_out));
 	auto string_stream = std::stringstream();
-	for (size_t i = 0; i < 1; i += 1) {
-		string_stream << "1";
+	for (size_t i = 0; i < 1000; i += 1) {
+		string_stream << "hahahahahaah\n";
 	}
 
 	auto buffer = string_stream.str();
