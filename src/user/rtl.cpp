@@ -1,4 +1,5 @@
 #include "rtl.h"
+#include <array>
 
 std::atomic<kiv_os::NOS_Error> kiv_os_rtl::Last_Error;
 
@@ -25,6 +26,28 @@ bool kiv_os_rtl::ReadFile(const kiv_os::THandle file_handle, char* const buffer,
 	const bool result = kiv_os::Sys_Call(regs);
 	read = regs.rax.r;
 	return result;
+}
+
+bool kiv_os_rtl::ReadIntoBuffer(kiv_os::THandle std_in, std::vector<char>& buffer) {
+	static constexpr auto internal_buffer_size = 2048;
+	auto internal_buffer = std::array<char, internal_buffer_size>();
+	auto bytes_read = size_t{ 0 };
+
+	while (true) {
+		// Pokud nastala chyba vratime false - soubor je poskozeny a nelze z nej cist
+		if (!ReadFile(std_in, internal_buffer.data(), buffer.size(), bytes_read)) {
+			return false;
+		}
+
+		// Jinak cteme dokud nedostaneme EOF
+		for (size_t i = 0; i < bytes_read; i += 1) {
+			if (internal_buffer[i] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
+				return true;
+			}
+			buffer.push_back(internal_buffer[i]);
+		}
+	}
+	
 }
 
 bool kiv_os_rtl::WriteFile(const kiv_os::THandle file_handle, const char* buffer, const size_t buffer_size,

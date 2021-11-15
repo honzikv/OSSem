@@ -24,6 +24,14 @@ namespace kiv_os_rtl {
 	//vraci true, kdyz vse OK
 	//vraci true, kdyz vse OK
 
+	/// <summary>
+	/// Cte data ze vstupu, dokud nenarazi na EOF a nebo dokud nedostane chybu
+	/// </summary>
+	/// <param name="file_handle"></param>
+	/// <param name="buffer"></param>
+	/// <returns></returns>
+	bool ReadIntoBuffer(kiv_os::THandle file_handle, std::vector<char>& buffer);
+
 	bool WriteFile(kiv_os::THandle file_handle, const char* buffer, size_t buffer_size, size_t& written);
 	//zapise do souboru identifikovaneho deskriptor data z buffer o velikosti BUFFER_SIZE a vrati pocet zapsanych dat ve written
 	//vraci true, kdyz vse OK

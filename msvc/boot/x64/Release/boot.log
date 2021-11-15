@@ -1,0 +1,12 @@
+﻿  api.cpp
+  cmos.cpp
+  disk.cpp
+  idt.cpp
+  keyboard.cpp
+  main.cpp
+  vga.cpp
+  Generating code
+  Previous IPDB was built with incompatible compiler, fall back to full compilation.
+  All 943 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  boot.vcxproj -> C:\Users\nvk\source\repos\honzikv\OSSem\compiled\boot.exe

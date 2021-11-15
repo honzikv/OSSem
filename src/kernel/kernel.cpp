@@ -2,12 +2,8 @@
 
 #include "kernel.h"
 
-#include "io.h"
 #include <Windows.h>
 
-#include "IO/ConsoleIn.h"
-#include "IO/ConsoleOut.h"
-#include "IO/IOManager.h"
 #include "Process/Init.h"
 #include "Process/ProcessManager.h"
 #include "Utils/Debug.h"
@@ -22,15 +18,13 @@ void Shutdown_Kernel() {
 }
 
 
-
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	Initialize_Kernel();
 	Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
 
 	// Spustime init proces
-	InitProcess::Dispatch();
-	
-	// TODO remove this debug
+	InitProcess::Start();
+
 #if IS_DEBUG
 	LogDebug("DEBUG: Init process killed. The Kernel will shutdown in 5s");
 	std::this_thread::sleep_for(std::chrono::seconds(5));
