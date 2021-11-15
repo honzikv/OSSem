@@ -14,8 +14,6 @@ public:
 
 	explicit WritablePipe(std::shared_ptr<Pipe> pipe);
 
-	kiv_os::NOS_Error Read(char* target_buffer, size_t buffer_size, size_t& bytes_read) override;
-
 	kiv_os::NOS_Error Write(const char* source_buffer, size_t buffer_size, size_t& bytes_written) override;
 
 	kiv_os::NOS_Error Close() override;

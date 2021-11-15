@@ -87,7 +87,7 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 
 		// Zkusime zamknout pristup k bufferu a flagum
 		auto lock = std::scoped_lock(pipe_access);
-		if (writing_closed) {
+		if (reading_closed || writing_closed) {
 			bytes_written = bytes_written_to_buffer;
 			return kiv_os::NOS_Error::Success;
 		}
@@ -119,6 +119,7 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 void Pipe::CloseForReading() {
 	auto lock = std::scoped_lock(pipe_access);
 	reading_closed = true;
+	write->Release();
 }
 
 void Pipe::CloseForWriting() {

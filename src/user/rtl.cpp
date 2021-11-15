@@ -33,7 +33,7 @@ void kiv_os_rtl::ReadIntoBuffer(const kiv_os::THandle std_in, std::vector<char>&
 	auto internal_buffer = std::array<char, internal_buffer_size>();
 	auto bytes_read = size_t{ 0 };
 
-	while (ReadFile(std_in, internal_buffer.data(), buffer.size(), bytes_read)) {
+	while (ReadFile(std_in, internal_buffer.data(), internal_buffer.size(), bytes_read)) {
 		// Jinak cteme dokud nedostaneme EOF
 		for (size_t i = 0; i < bytes_read; i += 1) {
 			if (internal_buffer[i] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
