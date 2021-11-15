@@ -62,22 +62,23 @@ bool kiv_os_rtl::WriteFile(const kiv_os::THandle file_handle, const char* buffer
 	return result;
 }
 
-bool kiv_os_rtl::CreatePipe(kiv_os::THandle& input, kiv_os::THandle& output) {
+bool kiv_os_rtl::CreatePipe(kiv_os::THandle& writing_process_output, kiv_os::THandle& reading_process_input) {
 	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System,
 	                                  static_cast<uint8_t>(kiv_os::NOS_File_System::Create_Pipe));
 
-	kiv_os::THandle pipes[] = {input, output};
+	kiv_os::THandle pipes[] = {writing_process_output, reading_process_input};
 	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(std::addressof(pipes));
 
-	auto success = kiv_os::Sys_Call(regs);
-	input = pipes[0];
-	output = pipes[1];
+	const auto success = kiv_os::Sys_Call(regs);
+	writing_process_output = pipes[0];
+	reading_process_input = pipes[1];
 
 	return success;
 }
 
 bool kiv_os_rtl::OpenFsFile(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode) {
 	// TODO impl
+	// TODO file descriptor se za zadnou cenu nesmi nastavit, pokud selze cteni souboru
 	return false;
 }
 

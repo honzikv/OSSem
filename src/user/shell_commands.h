@@ -24,8 +24,8 @@ extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	// Debug pipy
 	LogDebug("Type std_out is : " + std::to_string(std_out));
 	auto string_stream = std::stringstream();
-	for (size_t i = 0; i < 15; i += 1) {
-		string_stream << "Pipe Test";
+	for (size_t i = 0; i < 1; i += 1) {
+		string_stream << "1";
 	}
 
 	auto buffer = string_stream.str();
@@ -62,7 +62,6 @@ extern "C" size_t __stdcall md(const kiv_hal::TRegisters& regs) {
 
 	LogDebug("md std_in is : " + std::to_string(std_in) + " std_out is " + std::to_string(std_out));
 	auto buffer = std::vector<char>();
-	std::this_thread::sleep_for(std::chrono::seconds(10));
 	kiv_os_rtl::ReadIntoBuffer(std_in, buffer);
 
 	auto success = kiv_os_rtl::WriteFile(std_out, buffer.data(), buffer.size(), written);

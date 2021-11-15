@@ -39,10 +39,10 @@ namespace kiv_os_rtl {
 	/// <summary>
 	/// Vytvori pipe pro vstup a vystup. Pokud je vstup/vystup jako kiv_os::Invalid_Value vygeneruje novy file descriptor
 	/// </summary>
-	/// <param name="input">Reference na promennou se vstupem - sem se zapise zaroven vysledek po vytvoreni</param>
-	/// <param name="output">Reference na promennou s vystupem - sem se zapise zaroven vysledek po vytvoreni</param>
+	/// <param name="writing_process_output">Reference na promennou se vstupem - sem se zapise zaroven vysledek po vytvoreni</param>
+	/// <param name="reading_process_input">Reference na promennou s vystupem - sem se zapise zaroven vysledek po vytvoreni</param>
 	/// <returns>Vysledek operace</returns>
-	bool CreatePipe(kiv_os::THandle& input, kiv_os::THandle& output);
+	bool CreatePipe(kiv_os::THandle& writing_process_output, kiv_os::THandle& reading_process_input);
 
 	/// <summary>
 	/// Otevre file z filesystemu

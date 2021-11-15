@@ -159,12 +159,18 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	auto std_out = static_cast<uint16_t>(regs.rbx.e & 0xffff);
 	// vymaskujeme prvnich 16 msb a pretypujeme na uint16
 
-	const auto [process_std_in, process_std_out] = IOManager::Get().MapProcessStdio(std_in, std_out);
+	// Provedeme "registraci" stdio pro proces - toto zvysi pocet referenci na dany soubor
+	// Jinak by se mohlo pri zavirani handlu stat, ze proces 
+	// Pokud nelze stdin a stdout najit vyhodime chybu
+	if (IOManager::Get().RegisterProcessStdIO(std_in, std_out) != kiv_os::NOS_Error::Success) {
+		return kiv_os::NOS_Error::IO_Error;
+	}
+	
 	// Nastavime stdin a stdout pro proces a predame je hlavnimu vlaknu
 	// Argumenty programu se kopiruji do objektu Thread a ten si je nastavi sam
 	auto process_context = kiv_hal::TRegisters();
-	process_context.rax.x = process_std_in;
-	process_context.rbx.x = process_std_out;
+	process_context.rax.x = std_in;
+	process_context.rbx.x = std_out;
 
 	// Vytvorime zamek, protoze ziskame pid a tid, ktere nam nesmi nikdo sebrat
 	auto lock = std::scoped_lock(tasks_mutex);
@@ -182,7 +188,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Zjistime, zda-li vlakno, ve kterem se proces vytvari ma nejakeho rodice a nastavime ho (pokud existuje
 	// jinak se nastavi invalid value)
 	const auto parent_process_pid = FindParentPid();
-	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, process_std_in, process_std_out);
+	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out);
 
 	// Pridame proces a vlakno do tabulky
 	AddProcess(process, pid);
@@ -230,6 +236,8 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 	// vymaskujeme prvnich 16 msb a pretypujeme na uint16
 	const auto std_in = static_cast<uint16_t>(regs.rbx.e >> 16 & 0xffff);
 	// posuneme o 16 bitu a vymaskujeme prvnich 16 lsb
+
+	// Vlakno nezajima registrace stdin a stdout protoze handly ani nezavira - to dela proces
 
 	// Vytvorime zamek, protoze ziskame tid, ktery by nikdo nemel sebrat
 	auto lock = std::scoped_lock(tasks_mutex);
@@ -328,8 +336,8 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 		"Terminating process with pid: " + std::to_string(pid) + " which terminated_forcefully=" + std::to_string(
 			terminated_forcefully));
 
-	// Zavreme pro dany proces stdin a stdout
-	IOManager::Get().CloseProcessStdio(process->GetStdIn(), process->GetStdOut());
+	// Rekneme IOManageru aby odstranil referenci na handle z naseho procesu
+	IOManager::Get().UnregisterProcessStdIO(process->GetStdIn(), process->GetStdOut());
 
 	// Toto znamena, ze bezi jenom Init proces, takze doslo k shutdownu nebo exitu
 	if (shutdown_triggered && running_processes == 1 && running_threads == 1) {

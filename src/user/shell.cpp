@@ -30,6 +30,10 @@ void Shell::WriteLine(const std::string& message) const {
 	Write(message + NEWLINE_SYMBOL);
 }
 
+void Shell::Terminate() {
+	run = false;
+}
+
 Shell::Shell(const kiv_hal::TRegisters& registers, const kiv_os::THandle std_in, const kiv_os::THandle std_out,
              std::string current_path):
 	registers(registers),
@@ -41,7 +45,7 @@ std::vector<Command> Shell::ParseCommands(const std::string& line) const {
 	return command_parser.ParseCommands(line);
 }
 
-auto Shell::PreparePipeForSingleCommand(Command& command) const -> std::pair<bool, std::string> {
+auto Shell::PrepareStdIOForSingleCommand(Command& command) const -> std::pair<bool, std::string> {
 	// File descriptory pro vstup a vystup
 	auto command_fd_in = kiv_os::Invalid_Handle;
 	auto command_fd_out = kiv_os::Invalid_Handle;
@@ -74,87 +78,68 @@ auto Shell::PreparePipeForSingleCommand(Command& command) const -> std::pair<boo
 }
 
 
-auto Shell::PreparePipeForFirstCommand(Command& command,
-                                       const bool is_next_command) const -> std::pair<bool, std::string> {
-
-	// Pokud neni dalsi prikaz pripravime file descriptory pouze pro jeden
-	if (!is_next_command) {
-		return PreparePipeForSingleCommand(command);
-	}
+auto Shell::PrepareStdIOForFirstCommand(Command& command, kiv_os::THandle& next_std_in) const -> std::pair<bool, std::string> {
 
 	// Jinak tento prikaz bude mit vystup do dalsiho a tim padem nemuze mit vystup zaroven do prikazu a souboru
 	if (command.redirect_type == RedirectType::Both || command.redirect_type == RedirectType::ToFile) {
 		return {false, "Error, command cannot redirect to file and another command at the same time"};
 	}
 
-	// File descriptory pro vstup a vystup
-	auto command_fd_in = kiv_os::Invalid_Handle;
-	auto command_fd_out = kiv_os::Invalid_Handle;
+	// File descriptor pro stdin pro tento prikaz
+	auto command_std_in = kiv_os::Invalid_Handle;
 
+	// Pokud aktualni prikaz bude cist data ze souboru musime ho otevrit
 	if (command.redirect_type == RedirectType::FromFile) {
-		// Otevreme soubor a zkusime nastavit file descriptor, pokud nelze vyhodime chybu
-		if (const auto success = kiv_os_rtl::OpenFsFile(command_fd_in, command.source_file,
+		// Pokud operace selze, vyhodime chybu, jinak se std_in nastavi spravne
+		if (const auto success = kiv_os_rtl::OpenFsFile(command_std_in, command.source_file,
 		                                                kiv_os::NOpen_File::fmOpen_Always); !success) {
 			return {false, "Error, could not open input file for command: " + command.command_name};
 		}
 	}
 	else {
-		// Jinak nastavime jako vstup stdin
-		command_fd_in = std_in;
+		// V pripade ze se ctou data z konzole nastavime std_in
+		command_std_in = std_in;
 	}
 
-	// Pro vystupni file descriptor musime vytvorit pipe
-	if (const auto success = kiv_os_rtl::CreatePipe(command_fd_in, command_fd_out); !success) {
+	// Nyni musime vytvorit pipu, ktera bude mit stdout pro tento prikaz a stdin pro nasledujici
+	auto command_std_out = kiv_os::Invalid_Handle; // std_out pro tento prikaz
+	auto next_command_std_in = kiv_os::Invalid_Handle; // std_in pro dalsi prikaz
+	// Oba file descriptory museji byt nevalidni, aby je za nas vytvoril OS
+	if (const auto success = kiv_os_rtl::CreatePipe(command_std_out, next_command_std_in); !success) {
 		CloseCommandFileDescriptors(command); // Zavreme file descriptory, protoze selhalo
 		return {false, "Error, could not create output for command: " + command.command_name};
 	}
 
 	// Jinak vse probehlo v poradku a nastavime file descriptory
-	command.SetPipeFileDescriptors(command_fd_in, command_fd_out);
+	command.SetPipeFileDescriptors(command_std_in, command_std_out);
+
+	// A na referenci nastavime ziskany std_in pro nasledujici proces
+	next_std_in = next_command_std_in;
 	return {true, ""};
 }
 
 
-std::pair<bool, std::string> Shell::PreparePipeForLastCommand(const Command& second_last, Command& last) const {
-	if (last.redirect_type == RedirectType::Both || last.redirect_type == RedirectType::FromFile) {
-		return {false, "Error, command cannot read output from another command and file at the same time"};
-	}
 
-	const auto command_fd_in = second_last.GetOutputFileDescriptor();
-	auto command_fd_out = kiv_os::Invalid_Handle;
-
-	if (last.redirect_type == RedirectType::ToFile) {
-		if (const auto success = kiv_os_rtl::OpenFsFile(command_fd_out, last.target_file,
-		                                                kiv_os::NOpen_File::fmOpen_Always); !success) {
-			return {false, "Error, could not open output file for command: " + last.command_name};
-		}
-	}
-	else {
-		command_fd_out = std_out;
-	}
-
-	last.SetPipeFileDescriptors(command_fd_in, command_fd_out);
-	return {true, ""};
-}
-
-
-auto Shell::PreparePipes(std::vector<Command>& commands) const -> std::pair<bool, std::string> {
+auto Shell::PrepareStdIOForCommands(std::vector<Command>& commands) const -> std::pair<bool, std::string> {
 	if (commands.empty()) {
 		return {true, ""};
 	}
 
+	// Pokud je prikaz pouze jeden, zadne pipy vytvaret nebudeme
 	if (commands.size() == 1) {
-		return PreparePipeForFirstCommand(commands[0], false);
+		return PrepareStdIOForSingleCommand(commands[0]);
 	}
 
-	// Zkusime vytvorit pipe pro prvni soubor, pokud selze vratime chybovou hlasku
-	if (auto [first_command_result, err_message] = PreparePipeForFirstCommand(commands[0], true);
-		!first_command_result) {
-		return {first_command_result, err_message};
+	// Tento std_in se bude pouzivat jako std_in pro "dalsi" proces v 1 .. n - 2
+	auto command_fd_in = kiv_os::Invalid_Handle;
+	// Jinak zacneme vytvaret pro kazdy prikaz pipy
+	if (auto [success, err_message] = PrepareStdIOForFirstCommand(commands[0], command_fd_in);
+		!success) {
+		return { success, err_message };
 	}
 
+	// Nyni jedeme od 1 az do n - 1 prikazu (index n - 2) a vytvarime pro ne pipy. Zaroven kontrolujeme nevalidni vstupy
 	for (size_t i = 1; i < commands.size() - 2; i += 1) {
-		auto& previous_command = commands[i - 1]; // reference na predchozi prikaz, ze ktereho potrebujeme vystupni fd
 		// Ziskame aktualni prikaz, tzn i-ty prvek
 		auto& command = commands[i];
 
@@ -162,31 +147,46 @@ auto Shell::PreparePipes(std::vector<Command>& commands) const -> std::pair<bool
 		// do souboru a zaroven do pipy, coz podle api nejde
 		if (command.redirect_type != RedirectType::None) {
 			CloseCommandListFileDescriptors(commands, i); // Zavreme vsechny file descriptory predchozich prikazu
+			kiv_os_rtl::CloseHandle(command_fd_in); // zavreme std_in, ktery mel byt pro tento proces
 			return {false, "Cannot redirect to file and another command at the same time"};
 		}
 
-		// File descriptor pro vstup ziskame z predchoziho prikazu jako jeho vystup
-		auto command_fd_in = previous_command.GetInputFileDescriptor();
+		// Vstupni file descriptor se vytvoril v minulem prikazu, takze ho staci pouzit a musime vytvorit
+		// novou pipe
 		auto command_fd_out = kiv_os::Invalid_Handle; // Tento fd chceme vygenerovat
+		auto next_command_fd_in = kiv_os::Invalid_Handle;
 
 		// Zkusime vytvorit pipe, pokud nejde vratime chybovou hlasku
-		if (const auto success = kiv_os_rtl::CreatePipe(command_fd_in, command_fd_out); !success) {
+		if (const auto success = kiv_os_rtl::CreatePipe(command_fd_out, next_command_fd_in); 
+			!success) {
 			CloseCommandListFileDescriptors(commands, i); // Zavreme vsechny file descriptory predchozich prikazu
+			kiv_os_rtl::CloseHandle(command_fd_in); // zavreme std_in, ktery mel byt pro tento proces
 			return {false, "Could not create output for command: " + command.command_name};
 		}
 
+		// Nastavime prikazu file descriptory
 		command.SetPipeFileDescriptors(command_fd_in, command_fd_out);
+		command_fd_in = next_command_fd_in;
 	}
 
-	// Zkusime vytvorit pipe pro posledni soubor, pokud selze vyhodime chybovou hlasku
-	const auto& second_last_command = commands[commands.size() - 2];
+	// Pro posledni prikaz se pipe vytvorila jiz ve for cyklu a jeho std_in je nastaveny v command_fd_in
+	// Takze staci zkontrolovat, jestli prikaz nepresmerovava spatne a nastavime mu bud std_out shellu a nebo soubor
 	auto& last_command = commands[commands.size() - 1];
-	if (auto [last_command_result, err_message] = PreparePipeForLastCommand(second_last_command, last_command);
-		!last_command_result) {
-		// Pro posledni prikaz nastala chyba a nenastavily se file descriptory, takze zavreme vsechny ostatni
-		CloseCommandListFileDescriptors(commands, commands.size() - 1);
-		return {last_command_result, err_message};
+	if (last_command.redirect_type == RedirectType::Both || last_command.redirect_type == RedirectType::FromFile) {
+		CloseCommandListFileDescriptors(commands, commands.size() - 1); // Zavreme predchozim souborum file descriptory
+		kiv_os_rtl::CloseHandle(command_fd_in); // zavreme std_in, ktery mel byt pro tento proces
+		return {false, "Error, command cannot read output from another command and file at the same time"};
 	}
+
+	// Pokud je vystup do souboru zkusime ho otevrit, jinak zustane std_out
+	auto command_fd_out = std_out;
+	if (last_command.redirect_type == RedirectType::ToFile) {
+		if (const auto success = kiv_os_rtl::OpenFsFile(command_fd_out, last_command.target_file,
+			kiv_os::NOpen_File::fmOpen_Always); !success) {
+			return { false, "Error, could not open output file for command: " + last_command.command_name };
+		}
+	}
+	last_command.SetPipeFileDescriptors(command_fd_in, command_fd_out); // Nastavime poslednimu souboru file descriptory
 
 	return {true, ""};
 }
@@ -279,7 +279,7 @@ std::pair<bool, std::string> Shell::ChangeDirectory(const Command& command) {
 void Shell::RunCommands(std::vector<Command>& commands) {
 
 	// Pokud doslo k chybe vypiseme ji a prikazy nespustime
-	if (auto [success, err_message] = PreparePipes(commands); !success) {
+	if (auto [success, err_message] = PrepareStdIOForCommands(commands); !success) {
 		WriteLine(err_message);
 		return;
 	}
@@ -341,7 +341,7 @@ void Shell::RunCommands(std::vector<Command>& commands) {
 
 	// Shell pocka na dokonceni vsech procesu
 	for (const auto pid : program_pids) {
-		auto wait_for_list = { pid };
+		const auto wait_for_list = { pid };
 		kiv_os_rtl::WaitFor(wait_for_list);
 		auto exit_code = kiv_os::NOS_Error::Success;
 		kiv_os_rtl::ReadExitCode(pid, exit_code); // Precteme exit code pro odstraneni z tabulky

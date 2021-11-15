@@ -63,11 +63,9 @@ class Shell {
 	/// <summary>
 	/// Ukonci shell - zavola se pro exit
 	/// </summary>
-	void Terminate() {
-		run = false;
-	}
+	void Terminate();
 
-	std::pair<bool, std::string> PreparePipes(std::vector<Command>& commands) const;
+	std::pair<bool, std::string> PrepareStdIOForCommands(std::vector<Command>& commands) const;
 
 	/// <summary>
 	/// Zavre file descriptory pro dany prikaz. Pokud jsou file descriptory pro std_in a std_out shellu, metoda je ignoruje
@@ -84,22 +82,15 @@ class Shell {
 
 	void CloseCommandListFileDescriptors(const std::vector<Command>& commands, size_t idx_start, size_t idx_end) const;
 
-	std::pair<bool, std::string> PreparePipeForSingleCommand(Command& command) const;
+	std::pair<bool, std::string> PrepareStdIOForSingleCommand(Command& command) const;
 
 	/// <summary>
 	/// Pripravi pipe pro prvni prikaz
 	/// </summary>
 	/// <param name="command"></param>
+	/// <param name="next_std_in"></param>
 	/// <returns>Vysledek</returns>
-	std::pair<bool, std::string> PreparePipeForFirstCommand(Command& command, bool is_next_command = false) const;
-
-	/// <summary>
-	/// Pripravi pipe pro posledni prikaz
-	/// </summary>
-	/// <param name="second_last">Prikaz, ze ktereho se cte vstup</param>
-	/// <param name="last">Posledni prikaz</param>
-	/// <returns>Vysledek</returns>
-	std::pair<bool, std::string> PreparePipeForLastCommand(const Command& second_last, Command& last) const;
+	std::pair<bool, std::string> PrepareStdIOForFirstCommand(Command& command, kiv_os::THandle& next_std_in) const;
 
 
 	/// <summary>
