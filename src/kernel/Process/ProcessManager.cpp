@@ -44,7 +44,7 @@ auto ProcessManager::AddThread(const std::shared_ptr<Thread> thread, const kiv_o
 	thread_table[tid - TID_RANGE_START] = thread;
 }
 
-bool ProcessManager::TaskNotifiable(kiv_os::THandle task_handle) {
+bool ProcessManager::TaskNotifiable(const kiv_os::THandle task_handle) {
 	const auto handle_type = GetHandleType(task_handle);
 	if (handle_type == HandleType::Process) {
 		return GetProcess(task_handle) != nullptr;
@@ -182,7 +182,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Zjistime, zda-li vlakno, ve kterem se proces vytvari ma nejakeho rodice a nastavime ho (pokud existuje
 	// jinak se nastavi invalid value)
 	const auto parent_process_pid = FindParentPid();
-	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out);
+	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, process_std_in, process_std_out);
 
 	// Pridame proces a vlakno do tabulky
 	AddProcess(process, pid);
@@ -200,6 +200,8 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	thread_id_to_kiv_handle[native_id] = tid;
 	kiv_handle_to_native_thread_id[tid] = native_id;
 	native_thread_id_to_native_handle[native_id] = native_handle;
+
+	// Spustime proces a predame pid uzivateli
 	process->SetRunning();
 	regs.rax.x = pid;
 
@@ -454,7 +456,7 @@ void ProcessManager::RemoveProcessFromTable(const std::shared_ptr<Process> proce
 		}
 	}
 	process_table[process->GetPid() - PID_RANGE_START] = nullptr; // odstranime proces z tabulky
-	suspend_callbacks[process->GetPid()] = nullptr;
+	suspend_callbacks.erase(process->GetPid());
 }
 
 void ProcessManager::RemoveThreadFromTable(const std::shared_ptr<Thread> thread) {
@@ -465,7 +467,7 @@ void ProcessManager::RemoveThreadFromTable(const std::shared_ptr<Thread> thread)
 	kiv_handle_to_native_thread_id.erase(tid);
 	thread_id_to_kiv_handle.erase(native_tid);
 	native_thread_id_to_native_handle.erase(native_tid);
-	suspend_callbacks[thread->GetTid()] = nullptr;
+	suspend_callbacks.erase(thread->GetTid());
 }
 
 kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs) {
@@ -561,12 +563,12 @@ void ProcessManager::WaitForShutdown() {
 
 void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_handle) {
 	auto lock = std::scoped_lock(suspend_callbacks_mutex);
-	if (suspend_callbacks.count(subscriber_handle) == 0) {
+	if (suspend_callbacks.count(subscriber_handle) == 0 || suspend_callbacks[subscriber_handle] == nullptr) {
 		suspend_callbacks[subscriber_handle] = std::make_shared<SuspendCallback>();
 	}
 }
 
 
 void ProcessManager::RemoveSuspendCallback(const kiv_os::THandle subscriber_handle) {
-	suspend_callbacks[subscriber_handle] = nullptr;
+	suspend_callbacks.erase(subscriber_handle);
 }

@@ -17,12 +17,12 @@ bool Pipe::Full() const {
 }
 
 void Pipe::AdvanceReadingIdx() {
-	LogDebug("Reading index moved from: " + std::to_string(reading_idx) + " to: " + std::to_string((reading_idx + 1 )% buffer.size()));
+	// LogDebug("Reading index moved from: " + std::to_string(reading_idx) + " to: " + std::to_string((reading_idx + 1 )% buffer.size()));
 	reading_idx = (reading_idx + 1) % buffer.size();
 }
 
 void Pipe::AdvanceWritingIdx() {
-	LogDebug("Writing index moved from: " + std::to_string(writing_idx) + " to: " + std::to_string((writing_idx + 1) % buffer.size()));
+	// LogDebug("Writing index moved from: " + std::to_string(writing_idx) + " to: " + std::to_string((writing_idx + 1) % buffer.size()));
 	writing_idx = (writing_idx + 1) % buffer.size();
 }
 

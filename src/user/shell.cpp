@@ -340,8 +340,9 @@ void Shell::RunCommands(std::vector<Command>& commands) {
 	
 
 	// Shell pocka na dokonceni vsech procesu
-	for (const auto& pid : program_pids) {
-		kiv_os_rtl::WaitFor({pid});
+	for (const auto pid : program_pids) {
+		auto wait_for_list = { pid };
+		kiv_os_rtl::WaitFor(wait_for_list);
 		auto exit_code = kiv_os::NOS_Error::Success;
 		kiv_os_rtl::ReadExitCode(pid, exit_code); // Precteme exit code pro odstraneni z tabulky
 	}

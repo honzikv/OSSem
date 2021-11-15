@@ -12,10 +12,10 @@ kiv_os::NOS_Error ConsoleOut::Write(const char* source_buffer, size_t bytes, siz
 	regs.rcx.r = bytes;
 
 	// Zavolame stdout
-	Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, regs);
+	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, regs);
 
 	// Kontrola jestli jsme zapsali vsechny znaky, pokud ne doslo k chybe zapisu
-	if (!(regs.rax.r == 0)) {
+ 	if (!(regs.rax.r == 0)) {
 		// Doslo k chybe
 		bytes_written = -1;
 
@@ -25,5 +25,9 @@ kiv_os::NOS_Error ConsoleOut::Write(const char* source_buffer, size_t bytes, siz
 
 	// Jinak vratime pocet zapsanych bytu (Pro VGA bios bereme ze se zapsaly byty vsechny)
 	bytes_written = bytes;
+	return kiv_os::NOS_Error::Success;
+}
+
+kiv_os::NOS_Error ConsoleOut::Close() {
 	return kiv_os::NOS_Error::Success;
 }

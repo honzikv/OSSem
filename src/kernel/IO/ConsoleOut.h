@@ -23,7 +23,5 @@ public:
 	/// Close konzole moc smysl nedava, takze se pouze vrati success
 	/// </summary>
 	/// <returns></returns>
-	kiv_os::NOS_Error Close() override {
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error Close() override;
 };

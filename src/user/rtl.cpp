@@ -41,6 +41,10 @@ void kiv_os_rtl::ReadIntoBuffer(const kiv_os::THandle std_in, std::vector<char>&
 			}
 			buffer.push_back(internal_buffer[i]);
 		}
+
+		if (bytes_read == 0) {
+			return;
+		}
 	}
 	
 }
