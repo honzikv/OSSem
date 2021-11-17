@@ -68,3 +68,10 @@ void Path::Delete_Name_From_Path() {
     path_vector.pop_back();
 }
 
+/**
+ * Vrati nazev zpet do cesty
+ */
+void Path::Add_Name_To_Path() {
+    path_vector.push_back(full_name);
+}
+

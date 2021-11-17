@@ -39,6 +39,8 @@ public:
 
     bool File_Exists(Path path, int32_t current_fd, int32_t &target_fd, bool root) override;
 
+    kiv_os::NOS_Error Set_Size(File file, size_t new_size) override;
+
     uint32_t Get_Root_Fd() override;
 
 };

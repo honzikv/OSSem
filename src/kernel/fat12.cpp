@@ -3,7 +3,6 @@
 //
 
 #include "fat12.h"
-#include "path.h"
 
 std::vector<unsigned char> fat;
 std::vector<unsigned char> second_fat;
@@ -31,13 +30,20 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
 
     std::vector<std::string> pathCopy(path.path_vector);
 
-    //TODO jenom na konci - to by mela byt chyba '.'
+    // odstrani ".", pokud je posledni
+    if(!path.full_name.empty() && path.full_name == std::string(1, Fat_Helper::kCurDirChar)) {
+        path.Delete_Name_From_Path();
+    }
     Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path, fat);
 
     int32_t target_cluster = dir_item.first_cluster;
 
     kiv_os::NOS_Error res;
 
+    // pokud byl "." posledni, vrati jej do cesty
+    if(!path.full_name.empty() && path.full_name == std::string(1, Fat_Helper::kCurDirChar)) {
+        path.Add_Name_To_Path();
+    }
     if (target_cluster == -1) { // nenalezen - tzn. neexistuje
         if (flags == kiv_os::NOpen_File::fmOpen_Always) { // musi existovat, aby byl otevren => chyba
             return kiv_os::NOS_Error::File_Not_Found;
@@ -393,7 +399,7 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffe
  * @param new_size nova velikost
  * @return vysledek operace - uspech/neuspech
  */
-kiv_os::NOS_Error Set_Size(File file, size_t new_size) {
+kiv_os::NOS_Error Fat12::Set_Size(File file, size_t new_size) {
     std::vector<int> sector_indexes = Fat_Helper::Get_Sectors_Indexes(fat, file.handle);
     size_t sector_to_write_index = (new_size / Fat_Helper::kSectorSize); // relativni v ramci sektoru
     if (new_size < file.size) {

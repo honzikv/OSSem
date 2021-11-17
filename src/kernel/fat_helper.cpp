@@ -77,8 +77,8 @@ namespace Fat_Helper {
     std::vector<unsigned char> Read_From_Registers(int cluster_count, int start_index) {
         std::vector<unsigned char> result;
 
-        kiv_hal::TRegisters registers;
-        kiv_hal::TDisk_Address_Packet addressPacket;
+        kiv_hal::TRegisters registers{};
+        kiv_hal::TDisk_Address_Packet addressPacket{};
 
         int size = cluster_count * kSectorSize;
 
@@ -119,8 +119,8 @@ namespace Fat_Helper {
  * @param start_index index, kam se ma zapsat
  */
     void Write_To_Registers(std::vector<char> buffer, int start_index) {
-        kiv_hal::TRegisters registers;
-        kiv_hal::TDisk_Address_Packet address_packet;
+        kiv_hal::TRegisters registers{};
+        kiv_hal::TDisk_Address_Packet address_packet{};
 
         address_packet.count = buffer.size() / kSectorSize + (buffer.size() % kSectorSize);
         address_packet.lba_index = start_index;
@@ -214,7 +214,7 @@ namespace Fat_Helper {
  * @return index prvniho volneho clusteru, -1 pokud nenalezen
  */
     uint16_t Get_Free_Index(std::vector<unsigned char> fat) {
-        for (int i = 0; i < fat.size(); i += 2) {
+        for (int i = 0; i < fat.size(); i += 3) {
             uint16_t cluster_num = 0;
             cluster_num |= ((uint16_t) fat.at(i + 1) & 0x0F) << kBitsInBytes;
             cluster_num |= (uint16_t) fat.at(i);
@@ -826,7 +826,7 @@ namespace Fat_Helper {
 
         int item_index = Get_Item_Index(path, start_sector, fat);
 
-        std::vector<unsigned char> file_size_bytes = Get_Bytes_From_Int_4(new_size);
+        std::vector<unsigned char> file_size_bytes = Get_Bytes_From_Int_4(static_cast<int>(new_size));
 
         size_t cluster_pos = item_index / kMaxItemsPerCluster; // poradi slozky
         size_t item_pos = item_index % kMaxItemsPerCluster; // poradi v ramci clusteru
