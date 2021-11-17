@@ -1,5 +1,7 @@
 #include "SuspendCallback.h"
 
+#include "Utils/Logging.h"
+
 void SuspendCallback::Suspend() const {
 	semaphore->Acquire();
 }
@@ -16,6 +18,6 @@ bool SuspendCallback::Triggered() {
 	return triggered;
 }
 
-kiv_os::THandle SuspendCallback::Get_Notifier_Id() const {
+kiv_os::THandle SuspendCallback::GetNotifierId() const {
 	return notifier_id;
 }

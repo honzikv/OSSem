@@ -24,6 +24,13 @@ namespace kiv_os_rtl {
 	//vraci true, kdyz vse OK
 	//vraci true, kdyz vse OK
 
+	/// <summary>
+	/// Cte data ze vstupu, dokud nenarazi na EOF
+	/// </summary>
+	/// <param name="std_in">Vstup</param>
+	/// <param name="buffer">Buffer, kam se data zapisuji</param>
+	void ReadIntoBuffer(kiv_os::THandle std_in, std::vector<char>& buffer);
+
 	bool WriteFile(kiv_os::THandle file_handle, const char* buffer, size_t buffer_size, size_t& written);
 	//zapise do souboru identifikovaneho deskriptor data z buffer o velikosti BUFFER_SIZE a vrati pocet zapsanych dat ve written
 	//vraci true, kdyz vse OK
@@ -32,10 +39,10 @@ namespace kiv_os_rtl {
 	/// <summary>
 	/// Vytvori pipe pro vstup a vystup. Pokud je vstup/vystup jako kiv_os::Invalid_Value vygeneruje novy file descriptor
 	/// </summary>
-	/// <param name="input">Reference na promennou se vstupem - sem se zapise zaroven vysledek po vytvoreni</param>
-	/// <param name="output">Reference na promennou s vystupem - sem se zapise zaroven vysledek po vytvoreni</param>
+	/// <param name="writing_process_output">Reference na promennou se vstupem - sem se zapise zaroven vysledek po vytvoreni</param>
+	/// <param name="reading_process_input">Reference na promennou s vystupem - sem se zapise zaroven vysledek po vytvoreni</param>
 	/// <returns>Vysledek operace</returns>
-	bool CreatePipe(kiv_os::THandle& input, kiv_os::THandle& output);
+	bool CreatePipe(kiv_os::THandle& writing_process_output, kiv_os::THandle& reading_process_input);
 
 	/// <summary>
 	/// Otevre file z filesystemu
@@ -70,6 +77,8 @@ namespace kiv_os_rtl {
 
 	bool CreateProcess(const std::string& program_name, const std::string& params, kiv_os::THandle std_in,
 	                   kiv_os::THandle std_out, kiv_os::THandle& pid);
+
+	bool CreateThread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in, kiv_os::THandle std_out);
 
 	/// <summary>
 	/// Aktualni vlakno vycka, dokud dany handle nedobehne

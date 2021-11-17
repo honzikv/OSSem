@@ -48,7 +48,7 @@ void Path::Create_Path(const char *file_path) {
 void Path::Create_Name() {
     full_name = path_vector.back();
     bool isExtension = false;
-    for (char c: full_name) {
+    for (const char c: full_name) {
         if (c == kDot) {
             isExtension = true;
             continue;

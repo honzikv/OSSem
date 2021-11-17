@@ -36,6 +36,12 @@
     <Filter Include="Source Files\Api">
       <UniqueIdentifier>{e51a0ddb-e707-4776-a534-f823b529ea6f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\FatFS">
+      <UniqueIdentifier>{a1dfbb3f-f008-437a-8829-a292352d3fea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FatFS">
+      <UniqueIdentifier>{d0343b0b-f481-4665-80cb-40d4da587fa9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\kernel.cpp">
@@ -80,6 +86,27 @@
     <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fat_helper.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\fat12.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\path.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Process\Init.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ReadablePipe.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\WritablePipe.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -115,7 +142,7 @@
     <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h">
       <Filter>Headers\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Utils\Config.h">
+    <ClInclude Include="..\..\src\kernel\Utils\Debug.h">
       <Filter>Headers\Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Utils\Logging.h">
@@ -134,6 +161,30 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\IOManager.h">
+      <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\fat_helper.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\fat12.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\path.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\vfs.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\Init.h">
+      <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
+      <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ReadablePipe.h">
+      <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\WritablePipe.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
   </ItemGroup>

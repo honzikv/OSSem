@@ -1,4 +1,5 @@
 #include "rtl.h"
+#include <array>
 
 std::atomic<kiv_os::NOS_Error> kiv_os_rtl::Last_Error;
 
@@ -27,6 +28,27 @@ bool kiv_os_rtl::ReadFile(const kiv_os::THandle file_handle, char* const buffer,
 	return result;
 }
 
+void kiv_os_rtl::ReadIntoBuffer(const kiv_os::THandle std_in, std::vector<char>& buffer) {
+	static constexpr auto internal_buffer_size = 2048;
+	auto internal_buffer = std::array<char, internal_buffer_size>();
+	auto bytes_read = size_t{ 0 };
+
+	while (ReadFile(std_in, internal_buffer.data(), internal_buffer.size(), bytes_read)) {
+		// Jinak cteme dokud nedostaneme EOF
+		for (size_t i = 0; i < bytes_read; i += 1) {
+			if (internal_buffer[i] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
+				return;
+			}
+			buffer.push_back(internal_buffer[i]);
+		}
+
+		if (bytes_read == 0) {
+			return;
+		}
+	}
+	
+}
+
 bool kiv_os_rtl::WriteFile(const kiv_os::THandle file_handle, const char* buffer, const size_t buffer_size,
                            size_t& written) {
 	kiv_hal::TRegisters regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System,
@@ -40,20 +62,23 @@ bool kiv_os_rtl::WriteFile(const kiv_os::THandle file_handle, const char* buffer
 	return result;
 }
 
-bool kiv_os_rtl::CreatePipe(kiv_os::THandle& input, kiv_os::THandle& output) {
+bool kiv_os_rtl::CreatePipe(kiv_os::THandle& writing_process_output, kiv_os::THandle& reading_process_input) {
 	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System,
 	                                  static_cast<uint8_t>(kiv_os::NOS_File_System::Create_Pipe));
 
-	kiv_os::THandle pipes[] = {input, output};
+	kiv_os::THandle pipes[] = {writing_process_output, reading_process_input};
 	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(std::addressof(pipes));
 
-	input = pipes[0];
-	output = pipes[1];
-	return kiv_os::Sys_Call(regs);
+	const auto success = kiv_os::Sys_Call(regs);
+	writing_process_output = pipes[0];
+	reading_process_input = pipes[1];
+
+	return success;
 }
 
 bool kiv_os_rtl::OpenFsFile(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode) {
 	// TODO impl
+	// TODO file descriptor se za zadnou cenu nesmi nastavit, pokud selze cteni souboru
 	return false;
 }
 
@@ -107,6 +132,23 @@ bool kiv_os_rtl::CreateProcess(const std::string& program_name, const std::strin
 	}
 
 	pid = regs.rax.x;
+	return true;
+}
+
+bool kiv_os_rtl::CreateThread(const std::string& program_name, const std::string& params, const kiv_os::THandle std_in,
+                              const kiv_os::THandle std_out) {
+	auto regs = kiv_hal::TRegisters();
+	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
+	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Clone);
+	regs.rcx.l = static_cast<decltype(regs.rcx.l)>(kiv_os::NClone::Create_Thread);
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(program_name.c_str());
+	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(params.c_str());
+	regs.rbx.r = static_cast<decltype(regs.rbx.r)>(std_in << 16 | std_out);
+
+	if (!kiv_os::Sys_Call(regs)) {
+		return false;
+	}
+	
 	return true;
 }
 

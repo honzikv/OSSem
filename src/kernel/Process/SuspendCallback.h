@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Semaphore.h"
+#include "../Utils/Semaphore.h"
 #include "../../api/api.h"
 
 /// <summary>
@@ -16,7 +16,7 @@ class SuspendCallback {
 	/// Semafor pro synchronizaci - vlakno, ktere na callback ceka zavola semafor.acquire().
 	/// Semafor je shared_ptr, protoze jinak by se objekt prekopiroval pri ziskani z hashmapy
 	/// </summary>
-	std::shared_ptr<Semaphore> semaphore = std::make_shared<Semaphore>();
+	const std::unique_ptr<Semaphore> semaphore = std::make_unique<Semaphore>();
 
 	/// <summary>
 	/// Id entity, ktera vzbudila spici vlakno
@@ -26,19 +26,18 @@ class SuspendCallback {
 	/// <summary>
 	/// Zda-li se callback provedl
 	/// </summary>
-	std::atomic<bool> triggered = { false };
+	std::atomic<bool> triggered = {false};
 
 public:
 	/// <summary>
 	/// Uspi vlakno pomoci semaforu
 	/// </summary>
 	void Suspend() const;
-	
+
 	/// <summary>
 	/// Vzbudi vlakno a nastavi notifier_id, handle_type a triggered flag
 	/// </summary>
 	/// <param name="notifier_id">id vlakna/procesu, ktere vzbudilo vlakno</param>
-	/// <param name="handle_type">typ handle - proces nebo vlakno</param>
 	void Notify(kiv_os::THandle notifier_id);
 
 	bool Triggered();
@@ -48,5 +47,5 @@ public:
 	///	Vrati id vlakna/procesu, ktere triggernulo tento callback
 	/// </summary>
 	/// <returns></returns>
-	[[nodiscard]] kiv_os::THandle Get_Notifier_Id() const;
+	[[nodiscard]] kiv_os::THandle GetNotifierId() const;
 };

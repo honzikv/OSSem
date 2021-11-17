@@ -3,7 +3,7 @@
 #include "Logging.h"
 
 void Semaphore::Acquire() {
-	std::unique_lock lock(mutex);
+	auto lock = std::unique_lock(mutex);
 	while (count == 0) {
 		condition_variable.wait(lock);
 	}
@@ -11,9 +11,9 @@ void Semaphore::Acquire() {
 }
 
 void Semaphore::Release() {
-	std::scoped_lock lock(mutex);
+	auto lock = std::scoped_lock(mutex);
 	count += 1;
 	condition_variable.notify_one();
 }
 
-Semaphore::Semaphore(const uint32_t count): count(count) {}
+Semaphore::Semaphore(const size_t count): count(count) {}

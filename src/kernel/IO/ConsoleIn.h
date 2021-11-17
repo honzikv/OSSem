@@ -6,6 +6,7 @@
 /// </summary>
 class ConsoleIn final : public IFile  {
 
+
 public:
 	/// <summary>
 	/// Cteni z klavesnice

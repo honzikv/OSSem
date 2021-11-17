@@ -3,7 +3,9 @@
 #include <string>
 #include <sstream>
 
-#include "Utils/Config.h"
+#include "Debug.h"
+
+/// Jednoduche funkce pro logovani. Pokud je debug vypnuty, funkce nic nedelaji (resp. compiler by ani nemel funkce vytvorit)
 
 inline void LogDebug(const std::string& str) {
 #if IS_DEBUG

@@ -1,5 +1,4 @@
 #pragma once
-#include <mutex>
 #include <string>
 #include <unordered_map>
 
@@ -56,15 +55,29 @@ public:
 	/// <param name="tid">tid vlakna</param>
 	void AddThread(kiv_os::THandle tid);
 
-	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }
-	[[nodiscard]] inline kiv_os::THandle GetParentPid() const { return parent_pid; }
-	[[nodiscard]] inline kiv_os::THandle GetStdIn() const { return std_in; }
-	[[nodiscard]] inline kiv_os::THandle GetStdOut() const { return std_out; }
-	[[nodiscard]] inline std::string& GetWorkingDir() { return working_dir; }
+	
+	[[nodiscard]] kiv_os::THandle GetPid() const;
+	[[nodiscard]] kiv_os::THandle GetParentPid() const;
+	[[nodiscard]] kiv_os::THandle GetStdIn() const;
+	[[nodiscard]] kiv_os::THandle GetStdOut() const;
+	[[nodiscard]] std::string& GetWorkingDir();
 
-	[[nodiscard]] inline const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() const {
+	/// <summary>
+	/// Nastavi pracovni adresar pro proces
+	/// </summary>
+	/// <param name="dir"></param>
+	void SetWorkingDir(std::string dir);
+
+	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() const {
 		return signal_callbacks;
 	}
+
+	/// <summary>
+	/// Nastavi pro dany signal dany callback
+	/// </summary>
+	/// <param name="signal">Signal, ktery ma callback spoustet</param>
+	/// <param name="callback">Callback, ktery se ma provest</param>
+	void SetSignalCallback(kiv_os::NSignal_Id signal, kiv_os::TThread_Proc callback);
 
 	[[nodiscard]] inline const std::vector<kiv_os::THandle>& GetProcessThreads() const { return threads; }
 

@@ -1,6 +1,6 @@
 #pragma once
 #include <mutex>
-
+#include "../Utils/Debug.h"
 /// <summary>
 /// Implementace semaforu, protoze C++ to ma az od C++20 ...
 /// </summary>
@@ -14,12 +14,12 @@ class Semaphore {
 	/// <summary>
 	/// Condition variable pro uspani vlakna
 	/// </summary>
-	std::condition_variable condition_variable;
+	std::condition_variable condition_variable = {};
 
 	/// <summary>
 	/// Pocet vstupu soucasne
 	/// </summary>
-	uint32_t count = 0;
+	size_t count = 0;
 
 public:
 
@@ -43,6 +43,13 @@ public:
 	///	count = 1 - slouzi k blokaci kriticke sekce
 	/// </summary>
 	/// <param name="count">Pocet simultanich vstupu</param>
-	explicit Semaphore(const uint32_t count);
+	explicit Semaphore(const size_t count);
+
+#if IS_DEBUG
+	inline size_t GetCount() {
+		auto lock = std::scoped_lock(mutex);
+		return count;
+	}
+#endif
 };
 

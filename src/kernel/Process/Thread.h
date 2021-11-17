@@ -1,17 +1,19 @@
 #pragma once
 
-#include <vector>
+#include <string>
+#include <windows.h>
 
 #include "Task.h"
 #include "TaskState.h"
 #include "../../api/api.h"
-#include "Utils/Semaphore.h"
+#include "../Utils/Logging.h"
+#include "../Utils/Semaphore.h"
 
 
 /// <summary>
 /// Reprezentuje vlakno
 /// </summary>
-class Thread : public Task {
+class Thread final : public Task {
 
 	/// <summary>
 	/// Program, ktery bude vlakno vykonavat
@@ -26,7 +28,7 @@ class Thread : public Task {
 	/// <summary>
 	/// Zda-li se jedna o hlavni vlakno v procesu - pokud ano, proces se ukonci po dobehnuti
 	/// </summary>
-	bool is_main_thread;
+	bool main_thread;
 
 	/// <summary>
 	/// Argumenty programu
@@ -43,12 +45,6 @@ class Thread : public Task {
 	/// </summary>
 	const kiv_os::THandle pid;
 
-	/// <summary>
-	/// Funkce, ktera se vykonava ve vlakne
-	/// </summary>
-	void ThreadFunc();
-
-
 public:
 
 	/// <summary>
@@ -64,12 +60,26 @@ public:
 		bool is_main_thread = true);
 	
 	/// <summary>
-	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho id
+	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho handle a thread id
 	/// </summary>
-	std::thread::id Dispatch();
+	std::pair<HANDLE, DWORD> Dispatch();
+
+	/// <summary>
+	/// Nasilne ukonci vlakno. Tato funkce nic nedela, pokud se vlakno ukoncilo samo
+	/// </summary>
+	/// <param name="handle"></param>
+	/// <param name="exit_code">Exit code, ktery se nastavi po ukonceni</param>
+	void TerminateIfRunning(HANDLE handle, uint16_t exit_code);
+
+	/// <summary>
+	/// Funkce, ktera se vykonava ve vlakne
+	/// </summary>
+	void ThreadFunc();
 
 	[[nodiscard]] inline kiv_os::THandle GetTid() const { return tid; }
 	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }
+	[[nodiscard]] inline bool IsMainThread() const { return main_thread; }
 
-	[[nodiscard]] TaskState GetState();
+	[[nodiscard]] TaskState GetState() const;
+
 };
