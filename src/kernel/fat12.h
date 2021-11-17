@@ -2,8 +2,7 @@
 // Created by Kuba on 09.10.2021.
 //
 
-#ifndef OS_FAT12_H
-#define OS_FAT12_H
+#pragma once
 
 
 #include <string>
@@ -39,11 +38,10 @@ public:
 
     kiv_os::NOS_Error Get_Attributes(Path path, uint8_t &attributes) override;
 
+    kiv_os::NOS_Error Set_Size(File file, size_t new_size) override;
+
     bool File_Exists(Path path, int32_t current_fd, int32_t &target_fd, bool root) override;
 
     uint32_t Get_Root_Fd() override;
 
 };
-
-
-#endif //OS_FAT12_H

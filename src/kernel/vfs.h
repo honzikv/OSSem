@@ -42,6 +42,8 @@ public:
 
     virtual uint32_t Get_Root_Fd() = 0;
 
+    virtual kiv_os::NOS_Error Set_Size(File file, size_t new_size) = 0;
+
 
     virtual ~VFS() = default;
 
