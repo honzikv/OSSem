@@ -139,7 +139,7 @@ auto Shell::PrepareStdIOForCommands(std::vector<Command>& commands) const -> std
 	}
 
 	// Nyni jedeme od 1 az do n - 1 prikazu (index n - 2) a vytvarime pro ne pipy. Zaroven kontrolujeme nevalidni vstupy
-	for (size_t i = 1; i < commands.size() - 2; i += 1) {
+	for (size_t i = 1; i < commands.size() - 1; i += 1) {
 		// Ziskame aktualni prikaz, tzn i-ty prvek
 		auto& command = commands[i];
 
