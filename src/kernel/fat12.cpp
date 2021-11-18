@@ -3,7 +3,6 @@
 //
 
 #include "fat12.h"
-#include "path.h"
 
 std::vector<unsigned char> fat;
 std::vector<unsigned char> second_fat;
@@ -12,8 +11,8 @@ std::vector<unsigned char> second_fat;
  * Nacte FAT 1 a FAT 2
  */
 Fat12::Fat12() {
-    fat = Load_Fat_Table(1);
-    second_fat = Load_Fat_Table(1 + kFatTableSectorCount);
+    fat = Fat_Helper::Load_Fat_Table(1);
+    second_fat = Fat_Helper::Load_Fat_Table(1 + Fat_Helper::kFatTableSectorCount);
 }
 
 /**
@@ -31,13 +30,20 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
 
     std::vector<std::string> pathCopy(path.path_vector);
 
-    //TODO jenom na konci - to by mela byt chyba '.'
-    DirItem dir_item = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat);
+    // odstrani ".", pokud je posledni
+    if(!path.full_name.empty() && path.full_name == std::string(1, Fat_Helper::kCurDirChar)) {
+        path.Delete_Name_From_Path();
+    }
+    Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path, fat);
 
     int32_t target_cluster = dir_item.first_cluster;
 
     kiv_os::NOS_Error res;
 
+    // pokud byl "." posledni, vrati jej do cesty
+    if(!path.full_name.empty() && path.full_name == std::string(1, Fat_Helper::kCurDirChar)) {
+        path.Add_Name_To_Path();
+    }
     if (target_cluster == -1) { // nenalezen - tzn. neexistuje
         if (flags == kiv_os::NOpen_File::fmOpen_Always) { // musi existovat, aby byl otevren => chyba
             return kiv_os::NOS_Error::File_Not_Found;
@@ -48,12 +54,12 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
             // slozka
             if (attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory) ||
                 attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID)) {
-                if (fileName.size() > kFileNameSize) { // nazev max 8 znaku
+                if (fileName.size() > Fat_Helper::kFileNameSize) { // nazev max 8 znaku
                     return kiv_os::NOS_Error::Invalid_Argument;
                 }
                 res = Mk_Dir(path, attributes);
             } else { // soubor
-                if (!Validate_File_Name(fileName)) {
+                if (!Fat_Helper::Validate_File_Name(fileName)) {
                     return kiv_os::NOS_Error::Invalid_Argument;
                 }
 
@@ -64,7 +70,8 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
             if (res == kiv_os::NOS_Error::Not_Enough_Disk_Space) {
                 return res;
             } else {
-                target_cluster = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat).first_cluster;
+                target_cluster = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path,
+                                                                  fat).first_cluster;
             }
         }
     } else if (((attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory)) &&
@@ -80,7 +87,7 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
     // zjistenu, jestli je to slozka
     if (dir_item.attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory) ||
         dir_item.attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID)) {
-        std::vector<kiv_os::TDir_Entry> directory_entries = Read_Directory(path, fat);
+        std::vector<kiv_os::TDir_Entry> directory_entries = Fat_Helper::Read_Directory(path, fat);
         dir_item.file_size = directory_entries.size() * sizeof(kiv_os::TDir_Entry);
     }
     file.size = dir_item.file_size;
@@ -95,7 +102,7 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
  * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Create_File(Path &path, uint8_t attributes) {
-    return Create_File_Or_Dir(path, attributes, fat, false);
+    return Fat_Helper::Create_File_Or_Dir(path, attributes, fat, false);
 }
 
 /**
@@ -105,7 +112,7 @@ kiv_os::NOS_Error Fat12::Create_File(Path &path, uint8_t attributes) {
  * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Mk_Dir(Path &path, uint8_t attributes) {
-    return Create_File_Or_Dir(path, attributes, fat, true);
+    return Fat_Helper::Create_File_Or_Dir(path, attributes, fat, true);
 }
 
 /**
@@ -114,60 +121,62 @@ kiv_os::NOS_Error Fat12::Mk_Dir(Path &path, uint8_t attributes) {
  * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Rm_Dir(Path &path) {
-    DirItem dir_item = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat); // cilova polozka
+    Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path,
+                                                                    fat); // cilova polozka
 
     if (dir_item.file_size == -1) { // nenalezeno
         return kiv_os::NOS_Error::File_Not_Found;
     }
 
-    std::vector<int> sector_indexes = Get_Sectors_Indexes(fat, dir_item.first_cluster);
-    std::vector<DirItem> directory_items = Get_Folders_From_Dir(fat, dir_item.first_cluster);
+    std::vector<int> sector_indexes = Fat_Helper::Get_Sectors_Indexes(fat, dir_item.first_cluster);
+    std::vector<Fat_Helper::DirItem> directory_items = Fat_Helper::Get_Folders_From_Dir(fat, dir_item.first_cluster);
 
     if (!directory_items.empty()) { // nelze smazat - neni prazdna slozka
         return kiv_os::NOS_Error::Directory_Not_Empty;
     }
 
-    std::vector<char> buffer_to_clear(kSectorSize, 0);
+    std::vector<char> buffer_to_clear(Fat_Helper::kSectorSize, 0);
 
     for (int sector_index: sector_indexes) {
-        Write_Value_To_Fat(fat, sector_index, 0); // uvolni misto
+        Fat_Helper::Write_Value_To_Fat(fat, sector_index, 0); // uvolni misto
     }
 
-    Save_Fat(fat);
+    Fat_Helper::Save_Fat(fat);
 
     // odstraneni odkazu z nadrazene slozky
     path.Delete_Name_From_Path();
 
     std::vector<int> sector_indexes_parent_folder;
     bool is_parent_folder_root = true;
-    int start_sector = Get_Start_Sector(path, fat, is_parent_folder_root, sector_indexes_parent_folder);
+    int start_sector = Fat_Helper::Get_Start_Sector(path, fat, is_parent_folder_root, sector_indexes_parent_folder);
 
-    int index_to_delete = Get_Item_Index(path, start_sector, fat);
+    int index_to_delete = Fat_Helper::Get_Item_Index(path, start_sector, fat);
 
 
     std::vector<char> folder_content;
     for (int sector_index: sector_indexes_parent_folder) {
         std::vector<unsigned char> cluster_data;
-        cluster_data = Read_Data_From_Cluster(1, sector_index, is_parent_folder_root);
+        cluster_data = Fat_Helper::Read_Data_From_Cluster(1, sector_index, is_parent_folder_root);
         folder_content.insert(folder_content.end(), cluster_data.begin(), cluster_data.end());
     }
 
     // odstranit nechteny a doplnit 0
-    folder_content.erase(folder_content.begin() + index_to_delete * kDirItemSize,
-                         folder_content.begin() + index_to_delete * kDirItemSize + kDirItemSize);
+    folder_content.erase(folder_content.begin() + index_to_delete * Fat_Helper::kDirItemSize,
+                         folder_content.begin() + index_to_delete * Fat_Helper::kDirItemSize +
+                         Fat_Helper::kDirItemSize);
 
-    for (int i = 0; i < kDirItemSize; ++i) {
+    for (int i = 0; i < Fat_Helper::kDirItemSize; ++i) {
         folder_content.push_back(0);
     }
 
     // nejprve vynuluje a pote doplni data do clusteru
     for (int i = 0; i < sector_indexes_parent_folder.size(); ++i) {
-        std::vector<char> data_to_write;
-        for (int j = 0; j < kSectorSize; ++j) {
-            data_to_write.push_back(folder_content.at(i * kSectorSize + j));
+        std::vector<char> data_to_write(Fat_Helper::kSectorSize);
+        for (int j = 0; j < Fat_Helper::kSectorSize; ++j) {
+            data_to_write.push_back(folder_content.at(i * Fat_Helper::kSectorSize + j));
         }
-        Write_Data_To_Cluster(buffer_to_clear, sector_indexes_parent_folder.at(i), is_parent_folder_root);
-        Write_Data_To_Cluster(data_to_write, sector_indexes_parent_folder.at(i), is_parent_folder_root);
+        Fat_Helper::Write_Data_To_Cluster(buffer_to_clear, sector_indexes_parent_folder.at(i), is_parent_folder_root);
+        Fat_Helper::Write_Data_To_Cluster(data_to_write, sector_indexes_parent_folder.at(i), is_parent_folder_root);
 
     }
     return kiv_os::NOS_Error::Success;
@@ -180,33 +189,34 @@ kiv_os::NOS_Error Fat12::Rm_Dir(Path &path) {
  * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Read_Dir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) {
-    if (path.path_vector.back() == std::string(1, kCurDirChar)) {
+    if (path.path_vector.back() == std::string(1, Fat_Helper::kCurDirChar)) {
         path.Delete_Name_From_Path(); // pokud jmeno pouze '.', tak odstranit
     }
 
     if (path.path_vector.empty()) { // root
-        std::vector<unsigned char> root_directory_content = Read_Data_From_Cluster(kRootDirSize, kRootDirSectorStart,
-                                                                                   true);
-        entries = Get_Directory_Entries(root_directory_content, kRootDirSize, true);
+        std::vector<unsigned char> root_directory_content = Fat_Helper::Read_Data_From_Cluster(Fat_Helper::kRootDirSize,
+                                                                                               Fat_Helper::kRootDirSectorStart,
+                                                                                               true);
+        entries = Fat_Helper::Get_Directory_Entries(root_directory_content, Fat_Helper::kRootDirSize, true);
         return kiv_os::NOS_Error::Success;
     }
     // ne root
 
-    DirItem dir_item = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat);
+    Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path, fat);
     if (dir_item.first_cluster == -1) { // nenalezen
         return kiv_os::NOS_Error::File_Not_Found;
     }
-    std::vector<int> sectors_indexes = Get_Sectors_Indexes(fat, dir_item.first_cluster);
+    std::vector<int> sectors_indexes = Fat_Helper::Get_Sectors_Indexes(fat, dir_item.first_cluster);
 
     std::vector<unsigned char> cluster_data;
     std::vector<unsigned char> all_clusters_data;
 
     for (int sectors_index: sectors_indexes) {
-        cluster_data = Read_Data_From_Cluster(1, sectors_index, false);
+        cluster_data = Fat_Helper::Read_Data_From_Cluster(1, sectors_index, false);
         all_clusters_data.insert(all_clusters_data.end(), cluster_data.begin(), cluster_data.end());
     }
 
-    entries = Get_Directory_Entries(all_clusters_data, sectors_indexes.size(), false);
+    entries = Fat_Helper::Get_Directory_Entries(all_clusters_data, sectors_indexes.size(), false);
 
     return kiv_os::NOS_Error::Success;
     //TODO mozna check jestli vubec existuje, nebo si to udela volajici
@@ -227,15 +237,16 @@ kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, st
             return kiv_os::NOS_Error::IO_Error;
         }
 
-        std::vector<int> sectors_indexes = Get_Sectors_Indexes(fat, file.handle);
+        std::vector<int> sectors_indexes = Fat_Helper::Get_Sectors_Indexes(fat, file.handle);
 
-        size_t cluster_index = offset / kSectorSize;  // prvni sektor pro cteni
+        size_t cluster_index = offset / Fat_Helper::kSectorSize;  // prvni sektor pro cteni
         size_t bytes_to_skip =
-                offset % kSectorSize; // cast bytu v sektoru, ze ktereho se bude cist, ktere budou preskoceny
+                offset %
+                Fat_Helper::kSectorSize; // cast bytu v sektoru, ze ktereho se bude cist, ktere budou preskoceny
         std::vector<unsigned char> sector_data;
 
-        sector_data = Read_Data_From_Cluster(1, sectors_indexes.at(cluster_index), false);
-        for (int i = (int) bytes_to_skip; i < kSectorSize; ++i) {
+        sector_data = Fat_Helper::Read_Data_From_Cluster(1, sectors_indexes.at(cluster_index), false);
+        for (int i = (int) bytes_to_skip; i < Fat_Helper::kSectorSize; ++i) {
             if (bytes_to_read == buffer.size()) { // precten pocet bytu, jaky mel byt
                 return kiv_os::NOS_Error::Success;
             }
@@ -245,7 +256,7 @@ kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, st
         // cteni dokud neni dosazen pozadovany pocet bytu
         while (bytes_to_read > buffer.size()) {
             cluster_index++; // zvyseni indexu na dalsi cluster
-            sector_data = Read_Data_From_Cluster(1, sectors_indexes.at(cluster_index), false);
+            sector_data = Fat_Helper::Read_Data_From_Cluster(1, sectors_indexes.at(cluster_index), false);
 
             for (unsigned char byte: sector_data) {
                 if (bytes_to_read == buffer.size()) { // precten pocet bytu, jaky mel byt
@@ -262,7 +273,7 @@ kiv_os::NOS_Error Fat12::Read(File file, size_t bytes_to_read, size_t offset, st
 
         std::vector<char> dir_entries_bytes;
         if (res == kiv_os::NOS_Error::Success) {
-            dir_entries_bytes = Convert_Dir_Entries_To_Char_Vector(dir_entries);
+            dir_entries_bytes = Fat_Helper::Convert_Dir_Entries_To_Char_Vector(dir_entries);
         }
 
         if ((dir_entries_bytes.size() * sizeof(kiv_os::TDir_Entry)) >=
@@ -291,16 +302,16 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffe
         return kiv_os::NOS_Error::IO_Error;
     }
 
-    std::vector<int> sector_indexes = Get_Sectors_Indexes(fat, file.handle);
+    std::vector<int> sector_indexes = Fat_Helper::Get_Sectors_Indexes(fat, file.handle);
 
-    size_t sector_to_write_index = 1; // sektor, kam se budou zapisovat data
+    size_t sector_to_write_index = 0; // sektor, kam se budou zapisovat data
 
     if (offset > 0) {
-        sector_to_write_index = (offset / kSectorSize) + 1;
+        sector_to_write_index = (offset / Fat_Helper::kSectorSize);
     }
 
-    if (sector_to_write_index > sector_indexes.size()) { // musime najit novy cluster
-        int new_cluster_pos = Allocate_New_Cluster(sector_indexes.at(0), fat);
+    if (sector_to_write_index >= sector_indexes.size()) { // musime najit novy cluster
+        int new_cluster_pos = Fat_Helper::Allocate_New_Cluster(sector_indexes.at(0), fat);
         if (new_cluster_pos == -1) { // nevejde se
             return kiv_os::NOS_Error::Not_Enough_Disk_Space;
         }
@@ -308,10 +319,11 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffe
     }
 
     int data_to_remain_last_cluster =
-            static_cast<int>(offset) % kSectorSize; // tolik dat bude uchovano z posledniho clusteru
+            static_cast<int>(offset) % Fat_Helper::kSectorSize; // tolik dat bude uchovano z posledniho clusteru
 
-    std::vector<unsigned char> last_cluster_data = Read_Data_From_Cluster(1, sector_indexes.back(),
-                                                                          false); // data posledniho clusteru
+    std::vector<unsigned char> last_cluster_data = Fat_Helper::Read_Data_From_Cluster(1, sector_indexes.at(
+                                                                                              sector_to_write_index),
+                                                                                      false); // data posledniho clusteru
     std::vector<unsigned char> buffer_to_write;
 
     // puvodni data clusteru
@@ -322,54 +334,113 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffe
 
     size_t bytes_written = 0 - static_cast<size_t>(data_to_remain_last_cluster);
 
-    size_t clusters_to_write_count = buffer_to_write.size() / kSectorSize + (buffer_to_write.size() % kSectorSize >
-                                                                             0); // pocet clusteru, kam se bude zapisovat
+    size_t clusters_to_write_count =
+            buffer_to_write.size() / Fat_Helper::kSectorSize + (buffer_to_write.size() % Fat_Helper::kSectorSize >
+                                                                0); // pocet clusteru, kam se bude zapisovat
 
     std::vector<char> cluster_data_to_write;
 
     for (int i = 0; i < clusters_to_write_count; ++i) {
         if (i == clusters_to_write_count - 1) { // cast clusteru
-            cluster_data_to_write.insert(cluster_data_to_write.end(), buffer_to_write.begin() + i * kSectorSize,
-                                         buffer_to_write.begin() + i * kSectorSize +
-                                         (buffer_to_write.size() - i * kSectorSize));
+            cluster_data_to_write.insert(cluster_data_to_write.end(),
+                                         buffer_to_write.begin() + i * Fat_Helper::kSectorSize,
+                                         buffer_to_write.begin() + i * Fat_Helper::kSectorSize +
+                                         (buffer_to_write.size() - i * Fat_Helper::kSectorSize));
         } else { // cely cluster
-            cluster_data_to_write.insert(cluster_data_to_write.end(), buffer_to_write.begin() + i * kSectorSize,
-                                         buffer_to_write.begin() + i * kSectorSize + kSectorSize);
+            cluster_data_to_write.insert(cluster_data_to_write.end(),
+                                         buffer_to_write.begin() + i * Fat_Helper::kSectorSize,
+                                         buffer_to_write.begin() + i * Fat_Helper::kSectorSize +
+                                         Fat_Helper::kSectorSize);
         }
 
-        if (sector_to_write_index + i - 1 < sector_indexes.size()) {
-            Write_Data_To_Cluster(cluster_data_to_write, sector_indexes.at(sector_to_write_index + i - 1), false);
+        if (sector_to_write_index + i < sector_indexes.size()) {
+            Fat_Helper::Write_Data_To_Cluster(cluster_data_to_write, sector_indexes.at(sector_to_write_index + i),
+                                              false);
             bytes_written += cluster_data_to_write.size();
         } else { // alokovat novy cluster
-            int free_index = Get_Free_Index(fat);
+            int free_index = Fat_Helper::Get_Free_Index(fat);
             if (free_index == -1) { // nenalezen volny cluster
-                Save_Fat(fat);
+                Fat_Helper::Save_Fat(fat);
                 // pocet nove pridanych bytu - pokud offset nebyl na konci, nemuselo se pridat nic
                 size_t added_bytes = (offset + bytes_written) - file.size;
                 if (added_bytes > 0) {
-                    Change_File_Size(file.name, file.size + added_bytes, fat);
+                    Fat_Helper::Change_File_Size(file.name, file.size + added_bytes, fat);
                     file.size += added_bytes;
                 }
                 written = bytes_written;
                 return kiv_os::NOS_Error::Not_Enough_Disk_Space; // nebyl zapsan cely buffer
             }
 
-            Write_Value_To_Fat(fat, sector_indexes.back(), free_index); // na posledni zapsat cislo dalsiho clusteru
-            Write_Value_To_Fat(fat, free_index, kEndClusterInt); // posledni, oznacit konec
-            Write_Data_To_Cluster(cluster_data_to_write, free_index, false); // zapsat data
+            Fat_Helper::Write_Value_To_Fat(fat, sector_indexes.back(),
+                                           free_index); // na posledni zapsat cislo dalsiho clusteru
+            Fat_Helper::Write_Value_To_Fat(fat, free_index, Fat_Helper::kEndClusterInt); // posledni, oznacit konec
+            Fat_Helper::Write_Data_To_Cluster(cluster_data_to_write, free_index, false); // zapsat data
+            bytes_written += cluster_data_to_write.size();
+            sector_indexes.push_back(free_index); // pridat ondex do indexu sektoru
         }
         cluster_data_to_write.clear();
     }
 
-    Save_Fat(fat);
+    Fat_Helper::Save_Fat(fat);
 
     // pocet nove pridanych bytu - pokud offset nebyl na konci, nemuselo se pridat nic
     size_t added_bytes = (offset + bytes_written) - file.size;
     if (added_bytes > 0) {
-        Change_File_Size(file.name, file.size + added_bytes, fat);
+        Fat_Helper::Change_File_Size(file.name, file.size + added_bytes, fat);
         file.size += added_bytes;
     }
     written = bytes_written;
+    return kiv_os::NOS_Error::Success;
+}
+
+/**
+ * Zmeni velikost danemu na pozadovanou
+ * @param file soubor
+ * @param new_size nova velikost
+ * @return vysledek operace - uspech/neuspech
+ */
+kiv_os::NOS_Error Fat12::Set_Size(File file, size_t new_size) {
+    std::vector<int> sector_indexes = Fat_Helper::Get_Sectors_Indexes(fat, file.handle);
+    size_t sector_to_write_index = (new_size / Fat_Helper::kSectorSize); // relativni v ramci sektoru
+    if (new_size < file.size) {
+        int data_to_remain_last_cluster =
+                static_cast<int>(new_size) % Fat_Helper::kSectorSize; // tolik uchovat
+        std::vector<unsigned char> last_cluster_data = Fat_Helper::Read_Data_From_Cluster(1, sector_indexes.at(
+                                                                                                  sector_to_write_index),
+                                                                                          false); // data posledniho clusteru
+        // puvodni data clusteru
+        std::vector<char> buffer_to_write(Fat_Helper::kSectorSize);
+        for (int i = 0; i < static_cast<int>(data_to_remain_last_cluster); ++i) {
+            buffer_to_write.push_back(static_cast<char>(last_cluster_data.at(i)));
+        }
+        for (int i = static_cast<int>(data_to_remain_last_cluster); i < Fat_Helper::kSectorSize; ++i) {
+            buffer_to_write.push_back(0);
+        }
+        Fat_Helper::Write_Data_To_Cluster(buffer_to_write, sector_indexes.at(sector_to_write_index), false);
+        Fat_Helper::Write_Value_To_Fat(fat, sector_indexes.at(sector_to_write_index), Fat_Helper::kEndClusterInt);
+        // vynulovat cely
+        for (int i = 0; i < static_cast<int>(data_to_remain_last_cluster); ++i) {
+            buffer_to_write.at(i) = 0;
+        }
+        // vynulovat clustery a data ve FAT
+        for (int i = static_cast<int>(sector_to_write_index) + 1; i < sector_indexes.size(); ++i) {
+            Fat_Helper::Write_Data_To_Cluster(buffer_to_write, sector_indexes.at(i), false);
+            Fat_Helper::Write_Value_To_Fat(fat, sector_indexes.at(i), 0);
+        }
+    } else {
+        while (sector_to_write_index + 1 >= sector_indexes.size()) {
+            int free_index = Fat_Helper::Get_Free_Index(fat); // ziska novy index
+            if (free_index == -1) { // neni misto - chyba
+                return kiv_os::NOS_Error::Not_Enough_Disk_Space;
+            }
+            Fat_Helper::Write_Value_To_Fat(fat, sector_indexes.back(),
+                                           free_index); // na index zapise cislo dalsiho clusteru
+            sector_indexes.push_back(free_index); // prida index do indexu
+        }
+        Fat_Helper::Write_Value_To_Fat(fat, sector_indexes.back(), Fat_Helper::kEndClusterInt); // zapise konec clusteru
+    }
+    Fat_Helper::Change_File_Size(file.name, new_size, fat);
+    Fat_Helper::Save_Fat(fat); // ulozit FAT
     return kiv_os::NOS_Error::Success;
 }
 
@@ -380,7 +451,7 @@ kiv_os::NOS_Error Fat12::Write(File file, size_t offset, std::vector<char> buffe
  * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Get_Attributes(Path path, uint8_t &attributes) {
-    return Get_Or_Set_Attributes(path, attributes, fat, true);
+    return Fat_Helper::Get_Or_Set_Attributes(path, attributes, fat, true);
 }
 
 /**
@@ -390,7 +461,7 @@ kiv_os::NOS_Error Fat12::Get_Attributes(Path path, uint8_t &attributes) {
  * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Set_Attributes(Path path, uint8_t attributes) {
-    return Get_Or_Set_Attributes(path, attributes, fat, false);
+    return Fat_Helper::Get_Or_Set_Attributes(path, attributes, fat, false);
 }
 
 /**
@@ -402,27 +473,29 @@ kiv_os::NOS_Error Fat12::Set_Attributes(Path path, uint8_t attributes) {
  * @return true pokud hledana polozka nalezena, jinak false
  */
 bool Fat12::File_Exists(Path path, int32_t current_fd, int32_t &target_fd, bool root) {
-    if (path.full_name == std::string(1, kCurDirChar)) { // aktualni slozka - vzdy existuje
+    if (path.full_name == std::string(1, Fat_Helper::kCurDirChar)) { // aktualni slozka - vzdy existuje
         target_fd = current_fd;
         return true;
     }
 
-    if (path.full_name == (std::string() + kCurDirChar + kCurDirChar)) { // nadrazeny adresar
+    if (path.full_name == (std::string() + Fat_Helper::kCurDirChar + Fat_Helper::kCurDirChar)) { // nadrazeny adresar
         if (root) { // root nema nadrazenou slozku
             return false;
         }
-        std::vector<unsigned char> first_cluster_data = Read_Data_From_Cluster(1, current_fd, false);
+        std::vector<unsigned char> first_cluster_data = Fat_Helper::Read_Data_From_Cluster(1, current_fd, false);
         std::vector<unsigned char> first_cluster;
         // prvni je '.', druhy je '..', preskocit na spravnou pozici
-        first_cluster.insert(first_cluster.end(), first_cluster_data.begin() + kDirItemSize + kDirItemClusterPos,
-                             first_cluster_data.begin() + kDirItemSize + kDirItemClusterPos + kDirItemClusterBytes);
+        first_cluster.insert(first_cluster.end(),
+                             first_cluster_data.begin() + Fat_Helper::kDirItemSize + Fat_Helper::kDirItemClusterPos,
+                             first_cluster_data.begin() + Fat_Helper::kDirItemSize + Fat_Helper::kDirItemClusterPos +
+                             Fat_Helper::kDirItemClusterBytes);
 
-        target_fd = Get_Int_From_Char_Vector(first_cluster); // prvni cluster nadrazene slozky
+        target_fd = Fat_Helper::Get_Int_From_Char_Vector(first_cluster); // prvni cluster nadrazene slozky
         return true;
     }
 
-    int start_sector = root ? kRootDirSectorStart : current_fd; // zacatek - root nebo soucasny
-    DirItem dir_item = Get_Dir_Item_Cluster(start_sector, path, fat);
+    int start_sector = root ? Fat_Helper::kRootDirSectorStart : current_fd; // zacatek - root nebo soucasny
+    Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(start_sector, path, fat);
     target_fd = dir_item.first_cluster;
     return dir_item.first_cluster != -1; // vysledek, jestli naleze nebo ne
 }
@@ -432,7 +505,7 @@ bool Fat12::File_Exists(Path path, int32_t current_fd, int32_t &target_fd, bool 
  * @return adresa prvniho clusteru root sektoru
  */
 uint32_t Fat12::Get_Root_Fd() {
-    return kRootDirSectorStart;
+    return Fat_Helper::kRootDirSectorStart;
 }
 
 /**
