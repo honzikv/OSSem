@@ -356,7 +356,7 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 	IOManager::Get().UnregisterProcessStdIO(process->GetStdIn(), process->GetStdOut());
 
 	// Toto znamena, ze bezi jenom Init proces, takze doslo k shutdownu nebo exitu
-	if (shutdown_triggered && running_processes == 0 && running_threads == 0) {
+	if (shutdown_triggered && running_processes == 1 && running_threads == 1) {
 		LogDebug("Proc deinit notifying init process");
 		// Vzbudime init proces
 		shutdown_semaphore->Release();
@@ -383,7 +383,7 @@ void ProcessManager::TerminateThread(const kiv_os::THandle tid, const bool termi
 	running_threads -= 1; // snizime pocet vlaken o 1
 
 	// Pokud bezi pouze jedno vlakno a proces, znamena to, ze doslo k shutdownu a muzeme ukoncit i init proces
-	if (shutdown_triggered && running_processes == 0 && running_threads == 0) {
+	if (shutdown_triggered && running_processes == 1 && running_threads == 1) {
 		LogDebug("Thread deinit notifying init process");
 		// Vzbudime init proces
 		shutdown_semaphore->Release();
