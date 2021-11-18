@@ -1,13 +1,18 @@
 #include "Thread.h"
 #include "ProcessManager.h"
+#include <csignal>
 
+void OnReceiveSignal(const int signal) {
+	ProcessManager::Get().HandleSignalForCurrentThread(signal);
+}
 
 void Thread::ThreadFunc() {
+	signal(SIGINT, OnReceiveSignal);
 	SetRunning();
 
-	auto task_exit_code = program(regs); // ziskame exit code z programu
+	const auto task_exit_code = program(regs); // ziskame exit code z programu
 	SetExitCode(task_exit_code); // nastavime ho
-	
+
 	// Program dobehl, rekneme process managerovi at ho ukonci
 	ProcessManager::Get().NotifyThreadFinished(tid);
 
@@ -38,10 +43,10 @@ DWORD WINAPI WinThreadFunc(const LPVOID params) {
 std::pair<HANDLE, DWORD> Thread::Dispatch() {
 	DWORD thread_id;
 	auto thread_handle = CreateThread(nullptr, 0, WinThreadFunc, this, 0, &thread_id);
-	return { thread_handle, thread_id };
+	return {thread_handle, thread_id};
 }
 
-void Thread::TerminateIfRunning(const HANDLE handle, const uint16_t exit_code) {
+void Thread::TerminateIfRunning(HANDLE handle, const uint16_t exit_code) {
 	auto lock = std::scoped_lock(mutex);
 	if (task_state != TaskState::Finished) {
 		const auto result = TerminateThread(handle, exit_code);

@@ -207,6 +207,23 @@ public:
 	/// Tuto metodu pouziva vlakno, aby oznamilo process manageru, ze skoncilo
 	/// </summary>
 	void NotifyThreadFinished(kiv_os::THandle tid);
+	void HandleSignalForCurrentThread(const int signal_number) {
+		auto lock = std::scoped_lock(tasks_mutex);
+		const auto current_tid = GetCurrentTid();
+		const auto current_thread = GetThread(current_tid);
+		const auto process = process_table[current_thread->GetPid()];
+		if (process == nullptr) {
+			LogDebug("Terminating thread with pid: " + std::to_string(current_thread->GetPid()) + " as it does not have any process assigned.");
+			ExitThread(1); // Pokud proces neexistuje ukoncime vlakno. Nicmene tento stav by se nemel nikdy logicky stat
+		}
+
+		if (!process->HasCallbackForSignal(signal_number)) {
+			return; // pokud callback neni nic nedelame
+		}
+
+		// Provedeme callback
+		process->ExecuteCallback(signal_number);
+	}
 
 private:
 	/// <summary>
@@ -214,6 +231,7 @@ private:
 	///	se neukonci shell.
 	/// </summary>
 	void RunInitProcess(kiv_os::TThread_Proc program);
+
 
 	/// <summary>
 	/// Init vlakno pocka, dokud se vsechny vlakna neukonci
@@ -316,18 +334,5 @@ private:
 
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
-		const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
-		const auto callback = reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r); // funkce pro signal
-
-		const auto current_tid = GetCurrentTid();
-		if (current_tid == kiv_os::Invalid_Handle) {
-			return kiv_os::NOS_Error::Permission_Denied;
-		}
-
-		auto lock = std::scoped_lock(tasks_mutex);
-		const auto thread = GetThread(current_tid);
-		const auto process = GetProcess(thread->GetPid());
-		process->SetSignalCallback(signal, callback);
-	}
+	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs);
 };

@@ -1,8 +1,17 @@
 #include "ProcessManager.h"
 
+#include <csignal>
+
 #include "Init.h"
 #include "../kernel.h"
 #include "../IO/IOManager.h"
+
+size_t DefaultCallback(const kiv_hal::TRegisters& regs) {
+	const auto signal_val = static_cast<int>(regs.rcx.r);
+	LogDebug("Default callback call performed");
+	signal(signal_val, SIG_DFL); // provedeme defaultni signal
+	return 0;
+}
 
 kiv_os::THandle ProcessManager::GetFreePid() const {
 	for (uint16_t i = 0; i < static_cast<uint16_t>(process_table.size()); i += 1) {
@@ -193,6 +202,9 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Pridame proces a vlakno do tabulky
 	AddProcess(process, pid);
 	AddThread(main_thread, tid);
+
+	// Pridame defaultni signal handler
+	process->SetSignalCallback(kiv_os::NSignal_Id::Terminate, DefaultCallback);
 
 	const auto command = std::string(program_name);
 	LogDebug("Creating new process for command: " + command + " with pid: "
@@ -417,8 +429,13 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 	const auto handle_array = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	const auto handle_count = regs.rcx.e;
 
+	auto current_tid = kiv_os::Invalid_Handle;
+
 	// Thread id aktualne beziciho vlakna
-	const auto current_tid = GetCurrentTid();
+	{
+		auto lock = std::scoped_lock(tasks_mutex);
+		current_tid = GetCurrentTid();
+	}
 	if (current_tid == kiv_os::Invalid_Handle) {
 		return kiv_os::NOS_Error::Invalid_Argument;
 	}
@@ -512,6 +529,7 @@ kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs)
 }
 
 kiv_os::NOS_Error ProcessManager::ExitTask(const kiv_hal::TRegisters& regs) {
+	auto scoped_lock = std::scoped_lock(tasks_mutex);
 	const auto tid = GetCurrentTid();
 	const auto exit_code = regs.rcx.x;
 	TerminateThread(tid, true, exit_code);
@@ -536,6 +554,28 @@ kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& reg
 		}
 	}
 
+	return kiv_os::NOS_Error::Success;
+}
+
+
+
+kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
+	const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
+
+
+	const auto callback = regs.rdx.r == 0 ? DefaultCallback : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r); // funkce pro signal  // NOLINT(performance-no-int-to-ptr)
+
+	// zamkneme
+	auto lock = std::scoped_lock(tasks_mutex);
+	const auto current_tid = GetCurrentTid();
+	if (current_tid == kiv_os::Invalid_Handle) {
+		return kiv_os::NOS_Error::Permission_Denied;
+	}
+	
+	// Nastavime signal handler
+	const auto thread = GetThread(current_tid);
+	const auto process = GetProcess(thread->GetPid());
+	process->SetSignalCallback(signal, callback);
 	return kiv_os::NOS_Error::Success;
 }
 

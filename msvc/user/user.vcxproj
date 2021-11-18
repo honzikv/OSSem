@@ -23,6 +23,7 @@
     <ClInclude Include="..\..\src\api\hal.h" />
     <ClInclude Include="..\..\src\user\Programs\Freq.h" />
     <ClInclude Include="..\..\src\user\Programs\Shutdown.h" />
+    <ClInclude Include="..\..\src\user\Programs\Sort.h" />
     <ClInclude Include="..\..\src\user\rtl.h" />
     <ClInclude Include="..\..\src\user\Shell\Command.h" />
     <ClInclude Include="..\..\src\user\shell_commands.h" />

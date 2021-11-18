@@ -76,7 +76,6 @@ extern "C" size_t __stdcall rd(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall dir(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall echo(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall find(const kiv_hal::TRegisters& regs) { return 0; }
-extern "C" size_t __stdcall sort(const kiv_hal::TRegisters& regs) { return 0; }
 extern "C" size_t __stdcall rgen(const kiv_hal::TRegisters& regs) { return 0; }
 
 extern "C" size_t __stdcall tasklist(const kiv_hal::TRegisters& regs) { return 0; }

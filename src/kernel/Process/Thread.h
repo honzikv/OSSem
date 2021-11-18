@@ -44,6 +44,7 @@ class Thread final : public Task {
 	/// Pid procesu, ke kteremu toto vlakno patri
 	/// </summary>
 	const kiv_os::THandle pid;
+	
 
 public:
 

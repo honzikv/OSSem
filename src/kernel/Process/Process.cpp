@@ -21,10 +21,22 @@ kiv_os::THandle Process::GetStdOut() const { return std_out; }
 
 std::string& Process::GetWorkingDir() { return working_dir; }
 
-void Process::SetWorkingDir(const std::string dir) {
+void Process::SetWorkingDir(const std::string& dir) {
 	working_dir = dir;
 }
 
 void Process::SetSignalCallback(const kiv_os::NSignal_Id signal, const kiv_os::TThread_Proc callback) {
 	signal_callbacks[signal] = callback;
+}
+
+bool Process::HasCallbackForSignal(int signal_number) const {
+	return signal_callbacks.count(static_cast<kiv_os::NSignal_Id>(signal_number)) != 0;
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void Process::ExecuteCallback(int signal_number) {
+	LogDebug("Executing signal callback");
+	auto regs = kiv_hal::TRegisters();
+	regs.rcx.r = signal_number;
+	signal_callbacks[static_cast<kiv_os::NSignal_Id>(signal_number)](regs);
 }

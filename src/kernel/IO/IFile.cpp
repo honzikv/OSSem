@@ -3,6 +3,8 @@
 #include "Utils/Logging.h"
 
 
+IFile::~IFile() = default;
+
 kiv_os::NOS_Error IFile::Read(char* target_buffer, size_t buffer_size, size_t& bytes_read) {
 	LogWarning("IFile: accessing unimplemented method read");
 	return kiv_os::NOS_Error::IO_Error;

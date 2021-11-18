@@ -38,12 +38,12 @@ class Process : public Task {
 	/// <summary>
 	/// Mapping signalu a callbacku, ktery se provede po zavolani
 	/// </summary>
-	std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc> signal_callbacks;
+	std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc> signal_callbacks = {};
 
 	/// <summary>
 	/// Seznam vlaken, ktere patri tomuto procesu. Vlakno na 0tem indexu je main
 	/// </summary>
-	std::vector<kiv_os::THandle> threads;
+	std::vector<kiv_os::THandle> threads = {};
 
 public:
 	Process(kiv_os::THandle pid, kiv_os::THandle main_thread_tid, kiv_os::THandle parent_pid,
@@ -55,7 +55,7 @@ public:
 	/// <param name="tid">tid vlakna</param>
 	void AddThread(kiv_os::THandle tid);
 
-	
+	// Gettery
 	[[nodiscard]] kiv_os::THandle GetPid() const;
 	[[nodiscard]] kiv_os::THandle GetParentPid() const;
 	[[nodiscard]] kiv_os::THandle GetStdIn() const;
@@ -66,7 +66,7 @@ public:
 	/// Nastavi pracovni adresar pro proces
 	/// </summary>
 	/// <param name="dir"></param>
-	void SetWorkingDir(std::string dir);
+	void SetWorkingDir(const std::string& dir);
 
 	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() const {
 		return signal_callbacks;
@@ -80,5 +80,18 @@ public:
 	void SetSignalCallback(kiv_os::NSignal_Id signal, kiv_os::TThread_Proc callback);
 
 	[[nodiscard]] inline const std::vector<kiv_os::THandle>& GetProcessThreads() const { return threads; }
+
+	/// <summary>
+	/// Vrati, zda-li existuje pro signal dany callback
+	/// </summary>
+	/// <param name="signal_number"></param>
+	/// <returns></returns>
+	[[nodiscard]] bool HasCallbackForSignal(int signal_number) const;
+
+	/// <summary>
+	/// Provede callback na dany signal
+	/// </summary>
+	/// <param name="signal_number">Cislo signalu</param>
+	void ExecuteCallback(int signal_number);
 
 };

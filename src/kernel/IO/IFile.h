@@ -8,8 +8,9 @@
 ///	Defaultni implementace pro read a write vraci UnknownError a musi se prepsat pro spravnou funkcionalitu
 /// </summary>
 class IFile {
+
 public:
-	virtual ~IFile() = default;
+	virtual ~IFile();
 	/// <summary>
 	/// Precte data ze souboru do bufferu. Vychozi implementace vraci UnknownError
 	/// </summary>
