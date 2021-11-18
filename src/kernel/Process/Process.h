@@ -68,7 +68,7 @@ public:
 	/// <param name="dir"></param>
 	void SetWorkingDir(const std::string& dir);
 
-	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() const {
+	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() {
 		return signal_callbacks;
 	}
 
@@ -91,7 +91,7 @@ public:
 	/// <summary>
 	/// Provede callback na dany signal
 	/// </summary>
-	/// <param name="signal_number">Cislo signalu</param>
-	void ExecuteCallback(int signal_number);
+	/// <param name="signal_id">Cislo signalu</param>
+	void ExecuteCallback(kiv_os::NSignal_Id signal_id);
 
 };

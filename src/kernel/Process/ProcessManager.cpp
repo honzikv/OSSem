@@ -6,10 +6,9 @@
 #include "../kernel.h"
 #include "../IO/IOManager.h"
 
-size_t DefaultCallback(const kiv_hal::TRegisters& regs) {
+size_t DefaultSignalCallback(const kiv_hal::TRegisters& regs) {
 	const auto signal_val = static_cast<int>(regs.rcx.r);
 	LogDebug("Default callback call performed");
-	signal(signal_val, SIG_DFL); // provedeme defaultni signal
 	return 0;
 }
 
@@ -204,7 +203,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	AddThread(main_thread, tid);
 
 	// Pridame defaultni signal handler
-	process->SetSignalCallback(kiv_os::NSignal_Id::Terminate, DefaultCallback);
+	process->SetSignalCallback(kiv_os::NSignal_Id::Terminate, DefaultSignalCallback);
 
 	const auto command = std::string(program_name);
 	LogDebug("Creating new process for command: " + command + " with pid: "
@@ -348,6 +347,11 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 		"Terminating process with pid: " + std::to_string(pid) + " which terminated_forcefully=" + std::to_string(
 			terminated_forcefully));
 
+	if (terminated_forcefully) {
+		// Zavolame callback pro signal
+		process->ExecuteCallback(kiv_os::NSignal_Id::Terminate);
+	}
+
 	// Rekneme IOManageru aby odstranil referenci na handle z naseho procesu
 	IOManager::Get().UnregisterProcessStdIO(process->GetStdIn(), process->GetStdOut());
 
@@ -429,7 +433,7 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 	const auto handle_array = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	const auto handle_count = regs.rcx.e;
 
-	auto current_tid = kiv_os::Invalid_Handle;
+	kiv_os::THandle current_tid;
 
 	// Thread id aktualne beziciho vlakna
 	{
@@ -540,13 +544,13 @@ kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& reg
 	LogDebug("Shutdown performed from tid: " + std::to_string(GetCurrentTid()));
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	const auto current_tid = GetCurrentTid();
-	if (current_tid == kiv_os::Invalid_Handle) { // kadzopadne tento check je useless
+	if (current_tid == kiv_os::Invalid_Handle) {
 		return kiv_os::NOS_Error::Permission_Denied;
 	}
 	const auto current_pid = GetThread(current_tid)->GetPid();
 	shutdown_triggered = {true};
 	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
-		// Init proces se terminuje sam a ma vzdy id 0, stejne tak aktualni proces pro ukonceni se odstrani sam
+		// Init proces se terminuje sam a ma vzdy id 0, takze ukoncujeme od pid = 1 a pid, ktery spustil ukonceni se ukonci sam
 
 		if (current_pid != pid && process_table[pid] != nullptr) {
 			TerminateProcess(pid, true, -1);
@@ -563,7 +567,7 @@ kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TR
 	const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
 
 
-	const auto callback = regs.rdx.r == 0 ? DefaultCallback : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r); // funkce pro signal  // NOLINT(performance-no-int-to-ptr)
+	const auto callback = regs.rdx.r == 0 ? DefaultSignalCallback : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r); // funkce pro signal  // NOLINT(performance-no-int-to-ptr)
 
 	// zamkneme
 	auto lock = std::scoped_lock(tasks_mutex);

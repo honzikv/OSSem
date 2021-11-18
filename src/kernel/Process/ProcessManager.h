@@ -207,23 +207,6 @@ public:
 	/// Tuto metodu pouziva vlakno, aby oznamilo process manageru, ze skoncilo
 	/// </summary>
 	void NotifyThreadFinished(kiv_os::THandle tid);
-	void HandleSignalForCurrentThread(const int signal_number) {
-		auto lock = std::scoped_lock(tasks_mutex);
-		const auto current_tid = GetCurrentTid();
-		const auto current_thread = GetThread(current_tid);
-		const auto process = process_table[current_thread->GetPid()];
-		if (process == nullptr) {
-			LogDebug("Terminating thread with pid: " + std::to_string(current_thread->GetPid()) + " as it does not have any process assigned.");
-			ExitThread(1); // Pokud proces neexistuje ukoncime vlakno. Nicmene tento stav by se nemel nikdy logicky stat
-		}
-
-		if (!process->HasCallbackForSignal(signal_number)) {
-			return; // pokud callback neni nic nedelame
-		}
-
-		// Provedeme callback
-		process->ExecuteCallback(signal_number);
-	}
 
 private:
 	/// <summary>

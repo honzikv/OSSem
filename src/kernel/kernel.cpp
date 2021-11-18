@@ -2,6 +2,7 @@
 
 #include "kernel.h"
 
+#include <csignal>
 #include <Windows.h>
 
 #include "Process/Init.h"
@@ -16,6 +17,7 @@ void Initialize_Kernel() {
 void Shutdown_Kernel() {
 	FreeLibrary(User_Programs);
 }
+
 
 
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
