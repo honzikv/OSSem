@@ -2,12 +2,7 @@
 #include "ProcessManager.h"
 #include <csignal>
 
-void OnReceiveSignal(const int signal) {
-	ProcessManager::Get().HandleSignalForCurrentThread(signal);
-}
-
 void Thread::ThreadFunc() {
-	signal(SIGINT, OnReceiveSignal);
 	SetRunning();
 
 	const auto task_exit_code = program(regs); // ziskame exit code z programu
@@ -49,7 +44,7 @@ std::pair<HANDLE, DWORD> Thread::Dispatch() {
 void Thread::TerminateIfRunning(HANDLE handle, const uint16_t exit_code) {
 	auto lock = std::scoped_lock(mutex);
 	if (task_state != TaskState::Finished) {
-		const auto result = TerminateThread(handle, exit_code);
+		TerminateThread(handle, exit_code);
 		task_exit_code = exit_code;
 	}
 	task_state = TaskState::Finished;
