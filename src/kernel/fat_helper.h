@@ -43,7 +43,7 @@ namespace Fat_Helper {
     const char kCurDirChar = '.'; // odkaz na aktualni adresar
     const char kSpaceChar = ' '; // mezera - zapisuje se napr. pri kratsim jmene nez 8 znaku
     const char kEndOfString = '\0'; // znak oznacujici konec stringu
-    const int kFreeDirItem = 229; // oznacuje volnou polozku adresare
+    const int kFreeDirItem = 246; // oznacuje volnou polozku adresare
 
     struct DirItem {
         std::string file_name;
