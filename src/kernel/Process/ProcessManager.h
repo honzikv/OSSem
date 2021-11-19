@@ -34,7 +34,7 @@ public:
 	// Konstanty pro rozsahy pidu a tidu
 
 	static constexpr uint16_t PID_RANGE_START = 0;
-	static constexpr uint16_t PID_RANGE_END = 7;
+	static constexpr uint16_t PID_RANGE_END = 4096;
 	static constexpr uint16_t TID_RANGE_START = 4096;
 	static constexpr uint16_t TID_RANGE_END = 8192;
 	static constexpr uint16_t NO_FREE_ID = -1;
@@ -146,7 +146,9 @@ private:
 	std::recursive_mutex suspend_callbacks_mutex;
 
 	ProcessManager() = default;
-	~ProcessManager() = default;
+	~ProcessManager() {
+		LogDebug("Dtor called");
+	}
 	ProcessManager(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
 	ProcessManager& operator=(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
 

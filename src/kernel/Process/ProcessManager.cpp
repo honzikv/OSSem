@@ -299,6 +299,8 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 
 void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_handle,
                                             const kiv_os::THandle notifier_handle) {
+	LogDebug("Waking up handle: " + std::to_string(subscriber_handle) + " by handle: " + std::to_string(notifier_handle));
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	const auto callback = suspend_callbacks[subscriber_handle];
 	if (callback != nullptr && TaskNotifiable(subscriber_handle)) {
 		callback->Notify(notifier_handle);
@@ -318,10 +320,11 @@ void ProcessManager::NotifyThreadFinished(const kiv_os::THandle tid) {
 
 void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool terminated_forcefully,
                                       const uint16_t thread_exit_code) {
+	LogDebug("Terminating process with pid: " + std::to_string(pid) + " from thread: " + std::to_string(GetCurrentTid()));
 	std::shared_ptr<Process> process;
 	{
 		process = GetProcess(pid);
-		if (process == nullptr || process->GetState() != TaskState::Running) {
+		if (process == nullptr || process->GetState() == TaskState::Finished || process->GetState() == TaskState::Terminated) {
 			return;
 		}
 		// Pokud byl proces ukoncen nasilim, pak muze bezet i jeho hlavni vlakno
@@ -335,9 +338,6 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 	process->NotifySubscribers(process->GetPid(), terminated_forcefully);
 
 	process->SetExitCode(terminated_forcefully ? -1 : thread_exit_code);
-	LogDebug(
-		"Terminating process with pid: " + std::to_string(pid) + " which terminated_forcefully=" + std::to_string(
-			terminated_forcefully));
 
 	if (terminated_forcefully) {
 		// Zavolame callback pro signal
@@ -352,12 +352,9 @@ void ProcessManager::TerminateThread(const kiv_os::THandle tid, const bool termi
                                      const size_t exit_code) {
 	// Zde lock neni potreba, protoze tato metoda se da zavolat pouze z NotifyThreadFinished a nebo NotifyThreadFinished
 	const auto thread = GetThread(tid);
-	if (thread == nullptr) {
+	if (thread == nullptr || thread->GetState() == TaskState::Finished || thread->GetState() == TaskState::Terminated) {
 		return;
 	}
-	LogDebug(
-		"Terminating thread with tid: " + std::to_string(tid) + " which terminated_forcefully=" + std::to_string(
-			terminated_forcefully));
 
 	// Notifikujeme cekajici tasky na toto vlakno o tom, ze uz dobehlo
 	thread->NotifySubscribers(thread->GetTid(), terminated_forcefully);
@@ -381,7 +378,7 @@ void ProcessManager::AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_
 	// Pro validaci musime locknout tabulku
 	// Validujeme protoze se muze stat, ze procesy mezitim co jsme provadeli metodu
 	// dobehli, a byly odstranene z tabulek
-	auto lock = std::scoped_lock(tasks_mutex);
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	for (uint32_t i = 0; i < handle_array_size; i += 1) {
 		const auto handle = handle_array[i];
 		const auto handleType = GetHandleType(handle);
@@ -485,6 +482,7 @@ kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs)
 	// Ziskame vlakno / proces, pro ktery exit code cteme a odstranime jeho zaznamy z tabulky
 	std::shared_ptr<Task> task = nullptr;
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
+	LogDebug("Reading exit code by: " + std::to_string(GetCurrentTid()));
 	if (handle_type == HandleType::Process) {
 		// NOLINT(bugprone-branch-clone)
 		task = GetProcess(handle);
@@ -499,7 +497,7 @@ kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs)
 		}
 	}
 
-	// V pripade, ze se task nepodarilo najit, nebo nebyl proces / vlakno
+	// V pripade, ze se task nepodarilo najit, nebo to nebyl proces / vlakno
 	if (task == nullptr) {
 		regs.flags.carry = 1;
 		regs.rcx.r = static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found);
@@ -524,6 +522,7 @@ kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& reg
 	// Nastavime flag pro shutdown - diky tomu bude init proces vedet zda-li ma ukoncit zbyle procesy
 	shutdown_triggered = { true };
 
+	auto scoped_lock = std::scoped_lock(tasks_mutex);
 	// Vzbudime Init a ten vypne zbyle procesy
 	shutdown_callback->Notify(kiv_os::Invalid_Handle);
 
@@ -551,19 +550,16 @@ kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TR
 }
 
 void ProcessManager::TerminateOtherProcesses(const kiv_os::THandle this_thread_pid) {
-	{
-		auto lock = std::scoped_lock(tasks_mutex);
-
-		// Projedeme tabulku a vypneme vsechny procesy krome Initu
-		for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
-			if (pid != this_thread_pid && GetProcess(pid) != nullptr) {
-				TerminateProcess(pid, true, -1);
-				RemoveProcessFromTable(GetProcess(pid));
-			}
+	LogDebug("Shutdown performed from tid: " + std::to_string(GetCurrentTid()));
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
+	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
+		// Init proces se terminuje sam a ma vzdy id 0, takze ukoncujeme od pid = 1 a pid, ktery spustil ukonceni se ukonci sam
+		if (const auto process = GetProcess(pid); pid != this_thread_pid && process != nullptr) {
+			TerminateProcess(pid, true, -1);
+			RemoveProcessFromTable(process);
 		}
-
-		auto i = 300;
 	}
+
 }
 
 void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
@@ -614,7 +610,6 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 
 
 void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_handle) {
-	auto lock = std::scoped_lock(suspend_callbacks_mutex);
 	if (suspend_callbacks.count(subscriber_handle) == 0 || suspend_callbacks[subscriber_handle] == nullptr) {
 		suspend_callbacks[subscriber_handle] = std::make_shared<SuspendCallback>();
 	}
