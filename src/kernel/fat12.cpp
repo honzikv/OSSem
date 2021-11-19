@@ -30,20 +30,12 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
 
     std::vector<std::string> pathCopy(path.path_vector);
 
-    // odstrani ".", pokud je posledni
-    if(!path.full_name.empty() && path.full_name == std::string(1, Fat_Helper::kCurDirChar)) {
-        path.Delete_Name_From_Path();
-    }
     Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path, fat);
 
     int32_t target_cluster = dir_item.first_cluster;
 
     kiv_os::NOS_Error res;
 
-    // pokud byl "." posledni, vrati jej do cesty
-    if(!path.full_name.empty() && path.full_name == std::string(1, Fat_Helper::kCurDirChar)) {
-        path.Add_Name_To_Path();
-    }
     if (target_cluster == -1) { // nenalezen - tzn. neexistuje
         if (flags == kiv_os::NOpen_File::fmOpen_Always) { // musi existovat, aby byl otevren => chyba
             return kiv_os::NOS_Error::File_Not_Found;
@@ -189,10 +181,6 @@ kiv_os::NOS_Error Fat12::Rm_Dir(Path &path) {
  * @return vysledek operace - uspech/neuspech
  */
 kiv_os::NOS_Error Fat12::Read_Dir(Path &path, std::vector<kiv_os::TDir_Entry> &entries) {
-    if (path.path_vector.back() == std::string(1, Fat_Helper::kCurDirChar)) {
-        path.Delete_Name_From_Path(); // pokud jmeno pouze '.', tak odstranit
-    }
-
     if (path.path_vector.empty()) { // root
         std::vector<unsigned char> root_directory_content = Fat_Helper::Read_Data_From_Cluster(Fat_Helper::kRootDirSize,
                                                                                                Fat_Helper::kRootDirSectorStart,
@@ -467,37 +455,14 @@ kiv_os::NOS_Error Fat12::Set_Attributes(Path path, uint8_t attributes) {
 /**
  * Zjisti, jestli polozka (soubor/adresar) existuje
  * @param path cesta k polozce
- * @param current_fd v jakem adresari ma byt polozka hledana
  * @param target_fd zde bude ulozeno cislo polozky adresare (prvni cluster), kde se hledana polozka nachazi
- * @param root true pokud se ma hledat od root (pak je "current_fd" ignorovan), jinak false
  * @return true pokud hledana polozka nalezena, jinak false
  */
-bool Fat12::File_Exists(Path path, int32_t current_fd, int32_t &target_fd, bool root) {
-    if (path.full_name == std::string(1, Fat_Helper::kCurDirChar)) { // aktualni slozka - vzdy existuje
-        target_fd = current_fd;
-        return true;
-    }
-
-    if (path.full_name == (std::string() + Fat_Helper::kCurDirChar + Fat_Helper::kCurDirChar)) { // nadrazeny adresar
-        if (root) { // root nema nadrazenou slozku
-            return false;
-        }
-        std::vector<unsigned char> first_cluster_data = Fat_Helper::Read_Data_From_Cluster(1, current_fd, false);
-        std::vector<unsigned char> first_cluster;
-        // prvni je '.', druhy je '..', preskocit na spravnou pozici
-        first_cluster.insert(first_cluster.end(),
-                             first_cluster_data.begin() + Fat_Helper::kDirItemSize + Fat_Helper::kDirItemClusterPos,
-                             first_cluster_data.begin() + Fat_Helper::kDirItemSize + Fat_Helper::kDirItemClusterPos +
-                             Fat_Helper::kDirItemClusterBytes);
-
-        target_fd = Fat_Helper::Get_Int_From_Char_Vector(first_cluster); // prvni cluster nadrazene slozky
-        return true;
-    }
-
-    int start_sector = root ? Fat_Helper::kRootDirSectorStart : current_fd; // zacatek - root nebo soucasny
+bool Fat12::File_Exists(Path path, int32_t &target_fd) {
+    int start_sector = Fat_Helper::kRootDirSectorStart; // zacatek - root
     Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(start_sector, path, fat);
     target_fd = dir_item.first_cluster;
-    return dir_item.first_cluster != -1; // vysledek, jestli naleze nebo ne
+    return dir_item.first_cluster != -1; // vysledek, jestli nalezen nebo ne
 }
 
 /**

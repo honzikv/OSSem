@@ -13,6 +13,11 @@ private:
 
     void Create_Name();
 
+    const std::string kCurDir = "."; // soucasny adresat
+    const std::string kParentDir = ".."; // nadrazeny adresar
+    const char kSeparator = '\\'; // separator
+    const char kDot = '.'; // tecka
+
 public:
     std::vector<std::string> path_vector;
     std::string full_name;
@@ -23,5 +28,4 @@ public:
 
     void Delete_Name_From_Path();
 
-    void Add_Name_To_Path();
 };

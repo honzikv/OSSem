@@ -107,9 +107,7 @@ private:
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error PerformCloseHandle(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformSetWorkingdir(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error PerformSetWorkingDir(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformGetWorkingDir(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;

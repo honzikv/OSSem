@@ -29,7 +29,7 @@ void IOManager::HandleIO(kiv_hal::TRegisters &regs) {
         }
 
         case kiv_os::NOS_File_System::Set_Working_Dir: {
-            operation_result = PerformSetWorkingdir(regs);
+            operation_result = PerformSetWorkingDir(regs);
             break;
         }
 
@@ -327,8 +327,12 @@ kiv_os::NOS_Error IOManager::PerformSeek(kiv_hal::TRegisters &regs) {
         auto res = file->Seek(new_pos, pos_type, operation, file_pos);
     }
     auto res = file->Seek(new_pos, pos_type, operation, file_pos);
-    if (res == kiv_os::NOS_Error::Success) {
+    if (res == kiv_os::NOS_Error::Success && operation == kiv_os::NFile_Seek::Set_Position) {
         regs.rax.r = file_pos;
     }
     return res;
+}
+
+kiv_os::NOS_Error PerformSetWorkingDir(const kiv_hal::TRegisters& regs) {
+
 }

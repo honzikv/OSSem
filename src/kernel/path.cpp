@@ -4,14 +4,16 @@
 
 #include "path.h"
 
-const char kSeparator = '\\';
-const char kDot = '.';
 
 Path::Path(const char *file_path) {
     Create_Path(file_path);
     Create_Name();
 }
 
+/**
+ * Vytvori vector stringu jednotlivych slozek cesty, upravi podle "." a ".." (vynecha, resp. odstrani posledni)
+ * @param file_path cesta zadana jako vektor znaku
+ */
 void Path::Create_Path(const char *file_path) {
     std::vector<char> item;
     int pos = 0;
@@ -20,7 +22,9 @@ void Path::Create_Path(const char *file_path) {
         c = file_path[pos];
         if (c == kSeparator) {
             std::string item_string(item.begin(), item.end());
-            if (!item_string.empty()) {
+            if (item_string == kParentDir) {
+                path_vector.pop_back();
+            } else if (item_string != kCurDir && !item_string.empty()) {
                 for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
                     ch = ::toupper(ch);
                 }
@@ -29,10 +33,14 @@ void Path::Create_Path(const char *file_path) {
             item.clear();
         } else if (c == '\0') {
             std::string item_string(item.begin(), item.end());
-            for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
-                ch = ::toupper(ch);
+            if (item_string == kParentDir) {
+                path_vector.pop_back();
+            } else if (item_string != kCurDir){
+                for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
+                    ch = ::toupper(ch);
+                }
+                path_vector.push_back(item_string);
             }
-            path_vector.push_back(item_string);
             break;
         } else {
             item.push_back(c);
@@ -67,11 +75,3 @@ void Path::Create_Name() {
 void Path::Delete_Name_From_Path() {
     path_vector.pop_back();
 }
-
-/**
- * Vrati nazev zpet do cesty
- */
-void Path::Add_Name_To_Path() {
-    path_vector.push_back(full_name);
-}
-

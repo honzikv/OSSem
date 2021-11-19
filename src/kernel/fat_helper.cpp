@@ -24,12 +24,12 @@ namespace Fat_Helper {
         return table;
     }
 
-/**
- * Zkontroluje, zdali je obsah obou tabulek FAT totozny
- * @param first_table prvni FAT tabulka
- * @param second_table druha FAT tabulka
- * @return true pokud jsou FAT tabulky totozne, jinak false
- */
+    /**
+     * Zkontroluje, zdali je obsah obou tabulek FAT totozny
+     * @param first_table prvni FAT tabulka
+     * @param second_table druha FAT tabulka
+     * @return true pokud jsou FAT tabulky totozne, jinak false
+     */
     bool Check_Fat_Consistency(std::vector<unsigned char> first_table, std::vector<unsigned char> second_table) {
         for (int i = 0; i < static_cast<int>(first_table.size()); ++i) {
             if (first_table.at(i) != second_table.at(i)) {
@@ -39,10 +39,10 @@ namespace Fat_Helper {
         return true;
     }
 
-/**
- * Nacte obsah root directory nachazejici se v sektorech 19 az 32. Kazde zaznam v adresari obsahuje napr. jmeno souboru a cislo prvnoho clusteru
- * @return vektor zaznamu v adresari
- */
+    /**
+     * Nacte obsah root directory nachazejici se v sektorech 19 az 32. Kazde zaznam v adresari obsahuje napr. jmeno souboru a cislo prvnoho clusteru
+     * @return vektor zaznamu v adresari
+     */
     std::vector<unsigned char> Load_Root_Directory() {
         std::vector<unsigned char> root_dir;
 
@@ -51,13 +51,13 @@ namespace Fat_Helper {
         return root_dir;
     }
 
-/**
- * Precte data zacinajici a koncici na danych clusterech (tzn. sektorech)
- * @param cluster_count pocet clusteru k precteni
- * @param start_cluster cislo prvniho clusteru
- * @param is_root je root slozka
- * @return data z clusteru
- */
+    /**
+     * Precte data zacinajici a koncici na danych clusterech (tzn. sektorech)
+     * @param cluster_count pocet clusteru k precteni
+     * @param start_cluster cislo prvniho clusteru
+     * @param is_root je root slozka
+     * @return data z clusteru
+     */
     std::vector<unsigned char> Read_Data_From_Cluster(int cluster_count, int start_cluster, bool is_root) {
         std::vector<unsigned char> bytes;
         // cluster 2 je prvni a je vlastne na pozici 33 (krome root)
@@ -68,12 +68,12 @@ namespace Fat_Helper {
         return bytes;
     }
 
-/**
- * Nacte data z registru
- * @param cluster_count pocet clusteru, ktere se budou cist
- * @param start_index index prvniho clusteru
- * @return prectene byty
- */
+    /**
+     * Nacte data z registru
+     * @param cluster_count pocet clusteru, ktere se budou cist
+     * @param start_index index prvniho clusteru
+     * @return prectene byty
+     */
     std::vector<unsigned char> Read_From_Registers(int cluster_count, int start_index) {
         std::vector<unsigned char> result;
 
@@ -102,22 +102,22 @@ namespace Fat_Helper {
         return result;
     }
 
-/**
- * Zapise data na dany cluster
- * @param buffer data, ktera se maji zapsat
- * @param start_cluster pocatecni cluster
- * @param is_root true pokud root, jinak false
- */
+    /**
+     * Zapise data na dany cluster
+     * @param buffer data, ktera se maji zapsat
+     * @param start_cluster pocatecni cluster
+     * @param is_root true pokud root, jinak false
+     */
     void Write_Data_To_Cluster(std::vector<char> buffer, int start_cluster, bool is_root) {
         int start_index = start_cluster + (is_root ? 0 : kDataSectorConversion);
         Write_To_Registers(std::move(buffer), start_index);
     }
 
-/**
- * Zapise data na dany index
- * @param buffer data, ktera se maji zapsat
- * @param start_index index, kam se ma zapsat
- */
+    /**
+     * Zapise data na dany index
+     * @param buffer data, ktera se maji zapsat
+     * @param start_index index, kam se ma zapsat
+     */
     void Write_To_Registers(std::vector<char> buffer, int start_index) {
         kiv_hal::TRegisters registers{};
         kiv_hal::TDisk_Address_Packet address_packet{};
@@ -150,12 +150,12 @@ namespace Fat_Helper {
         kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Disk_IO, registers); //TODO error
     }
 
-/**
- * Ziska cislo clusteru z FAT (12 bit cislo, little endian)
- * @param fat FAT
- * @param pos pozice do FAT
- * @return cislo clusteru
- */
+    /**
+     * Ziska cislo clusteru z FAT (12 bit cislo, little endian)
+     * @param fat FAT
+     * @param pos pozice do FAT
+     * @return cislo clusteru
+     */
     uint16_t Get_Cluster_Num(std::vector<unsigned char> fat, int pos) {
         int index = (int) (pos * kIndexToFatConversion);
         uint16_t cluster_num = 0;
@@ -169,11 +169,11 @@ namespace Fat_Helper {
         return cluster_num;
     }
 
-/**
- * Vypocte a vrati int hodnotu z vektoru bytu
- * @param bytes vektor bytu
- * @return int hodnota z vektoru bytu
- */
+    /**
+     * Vypocte a vrati int hodnotu z vektoru bytu
+     * @param bytes vektor bytu
+     * @return int hodnota z vektoru bytu
+     */
     int Get_Int_From_Char_Vector(std::vector<unsigned char> bytes) {
         int res = 0;
         for (int i = (int) bytes.size() - 1; i >= 0; i--) {
@@ -182,11 +182,11 @@ namespace Fat_Helper {
         return res;
     }
 
-/**
- * Vrati vektor bytu z celociselne hodnoty
- * @param value hodnota
- * @return vektor bytu
- */
+    /**
+     * Vrati vektor bytu z celociselne hodnoty
+     * @param value hodnota
+     * @return vektor bytu
+     */
     std::vector<unsigned char> Get_Bytes_From_Int(int value) {
         std::vector<unsigned char> res;
         res.push_back(value & 0xFF); // obracene - little endian
@@ -194,11 +194,11 @@ namespace Fat_Helper {
         return res;
     }
 
-/**
- * Vrati vektor bytu z celociselne hodnoty (4 byty)
- * @param value hodnota
- * @return vektor bytu
- */
+    /**
+     * Vrati vektor bytu z celociselne hodnoty (4 byty)
+     * @param value hodnota
+     * @return vektor bytu
+     */
     std::vector<unsigned char> Get_Bytes_From_Int_4(int value) {
         std::vector<unsigned char> res;
         for (int i = 0; i < 4; ++i) { // obracene - little endian
@@ -208,11 +208,11 @@ namespace Fat_Helper {
     }
 
 
-/**
- * Najde a vrati ve FAT index prvniho volneho clusteru
- * @param fat FAT
- * @return index prvniho volneho clusteru, -1 pokud nenalezen
- */
+    /**
+     * Najde a vrati ve FAT index prvniho volneho clusteru
+     * @param fat FAT
+     * @return index prvniho volneho clusteru, -1 pokud nenalezen
+     */
     uint16_t Get_Free_Index(std::vector<unsigned char> fat) {
         for (int i = 0; i < fat.size(); i += 3) {
             uint16_t cluster_num = 0;
@@ -231,12 +231,12 @@ namespace Fat_Helper {
         return -1;
     }
 
-/**
- * Ulozi do FAT na danou pozici novou hodnotu
- * @param fat FAT
- * @param pos pozice
- * @param new_value nova hodnota
- */
+    /**
+     * Ulozi do FAT na danou pozici novou hodnotu
+     * @param fat FAT
+     * @param pos pozice
+     * @param new_value nova hodnota
+     */
     void Write_Value_To_Fat(std::vector<unsigned char> &fat, int pos, int new_value) {
         int index = (int) (pos * kIndexToFatConversion);
         if (pos % 2 == 0) {
@@ -248,10 +248,10 @@ namespace Fat_Helper {
         }
     }
 
-/**
- * Ulozi FAT
- * @param fat FAT
- */
+    /**
+     * Ulozi FAT
+     * @param fat FAT
+     */
     void Save_Fat(const std::vector<unsigned char> &fat) {
         std::vector<char> fat_char;
         for (unsigned char i: fat) {
@@ -262,12 +262,12 @@ namespace Fat_Helper {
     }
 
 
-/**
- * Ziska a vrati seznam sektoru obsahujici dany soubor
- * @param fat FAT
- * @param start prvni sektor souboru
- * @return seznam sektoru daneho souboru
- */
+    /**
+     * Ziska a vrati seznam sektoru obsahujici dany soubor
+     * @param fat FAT
+     * @param start prvni sektor souboru
+     * @return seznam sektoru daneho souboru
+     */
     std::vector<int> Get_Sectors_Indexes(const std::vector<unsigned char> &fat, int start) {
         std::vector<int> sectors;
 
@@ -282,12 +282,12 @@ namespace Fat_Helper {
     }
 
 
-/**
- * Ziska a vrati vektor polozek adresare (obsah slozky)
- * @param content vektor s byty jedne slozky
- * @param sectors_count pocet sektoru dane slozky
- * @return vektor polozek adresare
- */
+    /**
+     * Ziska a vrati vektor polozek adresare (obsah slozky)
+     * @param content vektor s byty jedne slozky
+     * @param sectors_count pocet sektoru dane slozky
+     * @return vektor polozek adresare
+     */
     std::vector<DirItem> Get_Directory_Items(std::vector<unsigned char> content, int sectors_count) {
         std::vector<DirItem> dir_content;
 
@@ -356,12 +356,12 @@ namespace Fat_Helper {
         return dir_content;
     }
 
-/**
- * Ziska a vrati obsah dane slozky
- * @param fat FAT
- * @param start_sector cislo prvniho sektoru dane slozky
- * @return vektor polozek adresare v dane slozce
- */
+    /**
+     * Ziska a vrati obsah dane slozky
+     * @param fat FAT
+     * @param start_sector cislo prvniho sektoru dane slozky
+     * @return vektor polozek adresare v dane slozce
+     */
     std::vector<DirItem> Get_Folders_From_Dir(const std::vector<unsigned char> &fat, int start_sector) {
         if (start_sector == kRootDirSectorStart) { // root
             std::vector<unsigned char> data_clusters = Read_Data_From_Cluster(kRootDirSize, kRootDirSectorStart, true);
@@ -395,13 +395,13 @@ namespace Fat_Helper {
         }
     }
 
-/**
- * Vrati polozku adresare, na kterem zacina hledany soubor/slozka
- * @param start_cluster pocatecni cluster, kde se hleda soubor/slozka
- * @param path cesta k souboru/slozce
- * @param fat FAT
- * @return polozka adresare
- */
+    /**
+     * Vrati polozku adresare, na kterem zacina hledany soubor/slozka
+     * @param start_cluster pocatecni cluster, kde se hleda soubor/slozka
+     * @param path cesta k souboru/slozce
+     * @param fat FAT
+     * @return polozka adresare
+     */
     DirItem Get_Dir_Item_Cluster(int start_cluster, const Path &path, const std::vector<unsigned char> &fat) {
         if (path.path_vector.empty()) { // root
             DirItem dir_item;
@@ -424,7 +424,7 @@ namespace Fat_Helper {
                 DirItem dir_item = cur_folder_items.at(j);
                 std::string dir_item_full_name = dir_item.file_name; // cele jmeno vcetne pripony, pokud existuje
                 if (!dir_item.extension.empty()) {
-                    dir_item_full_name += std::string(1, kCurDirChar) + dir_item.extension;
+                    dir_item_full_name += kCurDirChar + dir_item.extension;
                 }
                 if (path_part == dir_item_full_name) {
                     directory_item_num = j;
@@ -458,12 +458,12 @@ namespace Fat_Helper {
         return dir_item; //TODO neco s adresou
     }
 
-/**
- * Alokuje novy cluster souboru/slozce zacinajici na dane pozici
- * @param start_cluster prvni cluster
- * @param fat FAT
- * @return cislo clusteru / -1, pokud se nepodarilo
- */
+    /**
+     * Alokuje novy cluster souboru/slozce zacinajici na dane pozici
+     * @param start_cluster prvni cluster
+     * @param fat FAT
+     * @return cislo clusteru / -1, pokud se nepodarilo
+     */
     int Allocate_New_Cluster(int start_cluster, std::vector<unsigned char> &fat) {
         int free_index = Get_Free_Index(fat);
         if (free_index == -1) {
@@ -480,11 +480,11 @@ namespace Fat_Helper {
         }
     }
 
-/**
- * Zjisti, jestli je nazev souboru validni (neni prazdny, neprekracuje meze nazev ani pripona, pripona neni prazdna po '.')
- * @param file_name nazev souboru
- * @return true pokud je nazev souboru validni, jinak false
- */
+    /**
+     * Zjisti, jestli je nazev souboru validni (neni prazdny, neprekracuje meze nazev ani pripona, pripona neni prazdna po '.')
+     * @param file_name nazev souboru
+     * @return true pokud je nazev souboru validni, jinak false
+     */
     bool Validate_File_Name(const std::string &file_name) {
         std::vector<char> file_name_char;
         std::vector<char> file_extension_char;
@@ -512,17 +512,13 @@ namespace Fat_Helper {
         return true;
     }
 
-/**
- * Precte dany adresar
- * @param path cesta
- * @param fat FAT
- * @return obsah adresare (vektor polozek adresare)
- */
-    std::vector<kiv_os::TDir_Entry> Read_Directory(Path path, const std::vector<unsigned char> &fat) {
-        if (path.full_name == std::string(1, kCurDirChar)) { //odstrani '.'
-            path.Delete_Name_From_Path();
-        }
-
+    /**
+     * Precte dany adresar
+     * @param path cesta
+     * @param fat FAT
+     * @return obsah adresare (vektor polozek adresare)
+     */
+    std::vector<kiv_os::TDir_Entry> Read_Directory(const Path& path, const std::vector<unsigned char> &fat) {
         if (path.path_vector.empty()) { // root
             std::vector<unsigned char> rootContent = Read_Data_From_Cluster(kRootDirSize, kRootDirSectorStart, true);
             return Get_Directory_Entries(rootContent, kRootDirSize, true);
@@ -543,11 +539,11 @@ namespace Fat_Helper {
         return Get_Directory_Entries(all_clusters_data, clusters_indexes.size(), false);
     }
 
-/**
- * Zapise pro slozku aktualni '.' a nadrazenou slozku '..'
- * @param cur_index index aktualni slozky
- * @param parent_index index nadrazene slozky
- */
+    /**
+     * Zapise pro slozku aktualni '.' a nadrazenou slozku '..'
+     * @param cur_index index aktualni slozky
+     * @param parent_index index nadrazene slozky
+     */
     void Write_Current_And_Parent_Folder(int cur_index, int parent_index) {
         std::vector<char> buffer_to_write;
 
@@ -617,13 +613,13 @@ namespace Fat_Helper {
         Write_Data_To_Cluster(buffer_to_write, cur_index, false);
     }
 
-/**
- * Ziska a vrati vektor polozek adresare (obsah slozky) - std::vector<kiv_os::TDir_Entry>
- * @param content vektor s byty jedne slozky
- * @param clusters_count pocet sektoru dane slozky
- * @param is_root - true pokud root slozka, jinak false
- * @return vektor polozek adresare
- */
+    /**
+     * Ziska a vrati vektor polozek adresare (obsah slozky) - std::vector<kiv_os::TDir_Entry>
+     * @param content vektor s byty jedne slozky
+     * @param clusters_count pocet sektoru dane slozky
+     * @param is_root - true pokud root slozka, jinak false
+     * @return vektor polozek adresare
+     */
     std::vector<kiv_os::TDir_Entry>
     Get_Directory_Entries(std::vector<unsigned char> content, size_t clusters_count, bool is_root) {
         std::vector<kiv_os::TDir_Entry> dir_content;
@@ -692,14 +688,14 @@ namespace Fat_Helper {
         return dir_content;
     }
 
-/**
- * Vytvori soubor nebo slozku
- * @param path cesta k souboru/slozce
- * @param attributes atributy
- * @param fat FAT
- * @param is_dir true pokud se jedna o slozku
- * @return vysledek operace - uspech/neuspech
- */
+    /**
+     * Vytvori soubor nebo slozku
+     * @param path cesta k souboru/slozce
+     * @param attributes atributy
+     * @param fat FAT
+     * @param is_dir true pokud se jedna o slozku
+     * @return vysledek operace - uspech/neuspech
+     */
     kiv_os::NOS_Error Create_File_Or_Dir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir) {
         std::string folder_name = path.full_name;
 
@@ -810,12 +806,12 @@ namespace Fat_Helper {
         return kiv_os::NOS_Error::Success;
     }
 
-/**
- * Zmeni veliksot souboru v polozce adresare
- * @param file_name cesta k souboru - neparsovana
- * @param new_size nova velikost
- * @param fat FAT
- */
+    /**
+     * Zmeni veliksot souboru v polozce adresare
+     * @param file_name cesta k souboru - neparsovana
+     * @param new_size nova velikost
+     * @param fat FAT
+     */
     void Change_File_Size(const char *file_name, size_t new_size, const std::vector<unsigned char> &fat) {
         Path path(file_name);
         path.Delete_Name_From_Path();
@@ -845,11 +841,11 @@ namespace Fat_Helper {
         Write_Data_To_Cluster(buffer_to_write, sectors_indexes.at(cluster_pos), path.path_vector.empty());
     }
 
-/**
- * Prevede vektor struktur TDir_Entry na vektor bytu
- * @param entries vektor struktur TDir_Entry
- * @return vektor struktur TDir_Entry prevedeny na vektor bytu
- */
+    /**
+     * Prevede vektor struktur TDir_Entry na vektor bytu
+     * @param entries vektor struktur TDir_Entry
+     * @return vektor struktur TDir_Entry prevedeny na vektor bytu
+     */
     std::vector<char> Convert_Dir_Entries_To_Char_Vector(std::vector<kiv_os::TDir_Entry> entries) {
         std::vector<char> res;
 
@@ -861,14 +857,14 @@ namespace Fat_Helper {
         return res;
     }
 
-/**
- * Nastavi nebo ziska atributy daneho souboru/adresare
- * @param path cesta k souboru/adresari
- * @param attributes atributy - bud ktere se maji zapsat, nebo do nich ulozena hodnota
- * @param fat FAT
- * @param read true pokud se ctou atributy, false pokud se nastavuji
- * @return vysledek operace - uspech/neuspech
- */
+    /**
+     * Nastavi nebo ziska atributy daneho souboru/adresare
+     * @param path cesta k souboru/adresari
+     * @param attributes atributy - bud ktere se maji zapsat, nebo do nich ulozena hodnota
+     * @param fat FAT
+     * @param read true pokud se ctou atributy, false pokud se nastavuji
+     * @return vysledek operace - uspech/neuspech
+     */
     kiv_os::NOS_Error
     Get_Or_Set_Attributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, bool read) {
         path.Delete_Name_From_Path(); // smazat jmeno z cesty
@@ -904,14 +900,14 @@ namespace Fat_Helper {
     }
 
 
-/**
- * Ziska index prvniho sektoru daneho souboru/adresare, nastavi, jestli se nachazi v rootu a seznam sektoru obsahujici dany soubor
- * @param path cesta k souboru/adresari
- * @param fat FAT
- * @param is_root nastaveni, jestli je v rootu nebo ne
- * @param sectors_indexes nastavi seznam sektoru obsahujici dany soubor/adresar
- * @return index prvniho sektoru
- */
+    /**
+     * Ziska index prvniho sektoru daneho souboru/adresare, nastavi, jestli se nachazi v rootu a seznam sektoru obsahujici dany soubor
+     * @param path cesta k souboru/adresari
+     * @param fat FAT
+     * @param is_root nastaveni, jestli je v rootu nebo ne
+     * @param sectors_indexes nastavi seznam sektoru obsahujici dany soubor/adresar
+     * @return index prvniho sektoru
+     */
     int Get_Start_Sector(const Path &path, const std::vector<unsigned char> &fat, bool &is_root,
                          std::vector<int> &sectors_indexes) {
         int start_sector;
@@ -930,13 +926,13 @@ namespace Fat_Helper {
         return start_sector;
     }
 
-/**
- * Vrati index souboru/adresare v polozkach adresare
- * @param path cesta k souboru/adresari
- * @param start_sector prvni sektor souboru/adresare
- * @param fat FAT
- * @return index souboru/adresare v polozkach adresare, -1 pokud nenalezen
- */
+    /**
+     * Vrati index souboru/adresare v polozkach adresare
+     * @param path cesta k souboru/adresari
+     * @param start_sector prvni sektor souboru/adresare
+     * @param fat FAT
+     * @return index souboru/adresare v polozkach adresare, -1 pokud nenalezen
+     */
     int Get_Item_Index(const Path &path, int start_sector, const std::vector<unsigned char> &fat) {
         std::vector<DirItem> directory_items = Get_Folders_From_Dir(fat, start_sector);
 
@@ -962,12 +958,12 @@ namespace Fat_Helper {
         return item_index;
     }
 
-/**
- * Zjisti, jestli se rovna cele jmeno souboru (jmeno + pripona) s celym jmenem polozky adresare
- * @param path cesta k souboru/slozce
- * @param dir_item polozka adresare
- * @return true pokud se cela jmena rovnaji, jinak false
- */
+    /**
+     * Zjisti, jestli se rovna cele jmeno souboru (jmeno + pripona) s celym jmenem polozky adresare
+     * @param path cesta k souboru/slozce
+     * @param dir_item polozka adresare
+     * @return true pokud se cela jmena rovnaji, jinak false
+     */
     bool Check_Name_Matches(const Path &path, const DirItem &dir_item) {
         if (dir_item.extension == path.extension && dir_item.file_name == path.name) {
             return true;

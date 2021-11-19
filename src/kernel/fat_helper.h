@@ -85,7 +85,7 @@ namespace Fat_Helper {
 
     bool Validate_File_Name(const std::string &file_name);
 
-    std::vector<kiv_os::TDir_Entry> Read_Directory(Path path, const std::vector<unsigned char> &fat);
+    std::vector<kiv_os::TDir_Entry> Read_Directory(const Path& path, const std::vector<unsigned char> &fat);
 
     std::vector<kiv_os::TDir_Entry>
     Get_Directory_Entries(std::vector<unsigned char> content, size_t clusters_count, bool is_root);
