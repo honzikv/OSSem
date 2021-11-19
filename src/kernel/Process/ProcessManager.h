@@ -27,6 +27,7 @@ static constexpr uint16_t ForcefullyEndedTaskExitCode = -1;
 /// </summary>
 class ProcessManager {
 	friend class InitProcess;
+	friend class IOManager;
 	// NOLINT(cppcoreguidelines-special-member-functions)
 public:
 	// Konstanty pro rozsahy pidu a tidu

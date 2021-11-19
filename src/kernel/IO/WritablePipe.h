@@ -20,5 +20,5 @@ public:
 
 	kiv_os::NOS_Error Close() override;
 
-	kiv_os::NOS_Error Seek(size_t position, kiv_os::NFile_Seek seek_type) override;
+	kiv_os::NOS_Error Seek(size_t position, kiv_os::NFile_Seek seek_type, kiv_os::NFile_Seek seek_operation, size_t& res_size) override;
 };
