@@ -299,25 +299,20 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 
 void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_handle,
                                             const kiv_os::THandle notifier_handle) {
-	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	const auto callback = suspend_callbacks[subscriber_handle];
-	if (callback == nullptr || !TaskNotifiable(subscriber_handle)) {
-		// Nemuzeme notifikovat vlakno, ktere je zabite, protoze jinak OS
-		// vyhodi memory access violation
-		return;
+	if (callback != nullptr && TaskNotifiable(subscriber_handle)) {
+		callback->Notify(notifier_handle);
 	}
-
-	callback->Notify(notifier_handle);
 }
 
 void ProcessManager::NotifyProcessFinished(const kiv_os::THandle pid, uint16_t exit_code) {
-	auto lock = std::scoped_lock(tasks_mutex);
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	TerminateProcess(pid, false, exit_code);
 }
 
 
 void ProcessManager::NotifyThreadFinished(const kiv_os::THandle tid) {
-	auto lock = std::scoped_lock(tasks_mutex);
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	TerminateThread(tid, false);
 }
 
@@ -326,8 +321,7 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 	std::shared_ptr<Process> process;
 	{
 		process = GetProcess(pid);
-
-		if (process == nullptr) {
+		if (process == nullptr || process->GetState() != TaskState::Running) {
 			return;
 		}
 		// Pokud byl proces ukoncen nasilim, pak muze bezet i jeho hlavni vlakno
@@ -429,7 +423,7 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 	// Pridame vlakno do vsech existujicich procesu/vlaken v handle_array
 	AddCurrentThreadAsSubscriber(handle_array, handle_count, current_tid);
 
-	// Nastavime vychozi hodnotu na invalid value, pokud se na neco opravdu cekalo prenastavime
+	// Nastavime vychozi hodnotu na invalid value. Pokud se na neco opravdu cekalo prenastavi se to
 	regs.rax.x = static_cast<decltype(regs.rax.x)>(kiv_os::Invalid_Handle);
 	std::shared_ptr<SuspendCallback> callback; // nullptr
 
@@ -558,7 +552,7 @@ kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TR
 
 void ProcessManager::TerminateOtherProcesses(const kiv_os::THandle this_thread_pid) {
 	{
-		auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
+		auto lock = std::scoped_lock(tasks_mutex);
 
 		// Projedeme tabulku a vypneme vsechny procesy krome Initu
 		for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
@@ -567,12 +561,13 @@ void ProcessManager::TerminateOtherProcesses(const kiv_os::THandle this_thread_p
 				RemoveProcessFromTable(GetProcess(pid));
 			}
 		}
-	}
 
-	auto i = 2;
+		auto i = 300;
+	}
 }
 
 void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	constexpr auto pid = PID_RANGE_START; // Pid Init procesu bude vzdy na zacatku tabulky (index 0)
 	const auto tid = GetFreeTid(); // Tid vezmeme jakykoliv
 
@@ -605,8 +600,7 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 	// slozite hledat
 	shutdown_callback = init_suspend_callback;
 
-	// V tento moment uz budeme spoustet, takze musime tabulku zamknout, protoze k ni muze pristupovat vice procesu / vlaken najednou
-	auto lock = std::scoped_lock(tasks_mutex);
+	
 	auto [native_handle, native_tid] = thread->Dispatch(); // spusteni procesu
 	// Pridame do tabulky
 	AddProcess(process, pid);
@@ -627,5 +621,8 @@ void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_
 }
 
 void ProcessManager::RemoveSuspendCallback(const kiv_os::THandle subscriber_handle) {
-	suspend_callbacks.erase(subscriber_handle);
+	auto lock = std::scoped_lock(suspend_callbacks_mutex);
+	if (suspend_callbacks.count(subscriber_handle) > 0) {
+		suspend_callbacks.erase(subscriber_handle);
+	}
 }
