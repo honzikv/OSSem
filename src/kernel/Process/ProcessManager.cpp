@@ -100,6 +100,7 @@ void ProcessManager::ProcessSyscall(kiv_hal::TRegisters& regs) {
 		}
 	}
 
+	// Pokud nastane chyba nastavime carry bit na 1 a chybu zapiseme do registru
 	if (operation_result != kiv_os::NOS_Error::Success) {
 		regs.flags.carry = 1;
 		regs.rax.x = static_cast<decltype(regs.rax.x)>(operation_result);
@@ -196,7 +197,12 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Zjistime, zda-li vlakno, ve kterem se proces vytvari ma nejakeho rodice a nastavime ho (pokud existuje
 	// jinak se nastavi invalid value)
 	const auto parent_process_pid = FindParentPid();
-	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out);
+	auto working_dir = DEFAULT_PROCESS_WORKING_DIR;
+	if (parent_process_pid != kiv_os:: Invalid_Handle) {
+		const auto parent = GetProcess(parent_process_pid);
+		working_dir = parent->GetWorkingDir();
+	}
+	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out, working_dir);
 
 	// Pridame proces a vlakno do tabulky
 	AddProcess(process, pid);
@@ -293,7 +299,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 
 void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_handle,
                                             const kiv_os::THandle notifier_handle) {
-	auto lock = std::scoped_lock(suspend_callbacks_mutex, tasks_mutex);
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	const auto callback = suspend_callbacks[subscriber_handle];
 	if (callback == nullptr || !TaskNotifiable(subscriber_handle)) {
 		// Nemuzeme notifikovat vlakno, ktere je zabite, protoze jinak OS
@@ -488,11 +494,15 @@ kiv_os::NOS_Error ProcessManager::PerformReadExitCode(kiv_hal::TRegisters& regs)
 	if (handle_type == HandleType::Process) {
 		// NOLINT(bugprone-branch-clone)
 		task = GetProcess(handle);
-		RemoveProcessFromTable(std::static_pointer_cast<Process>(task)); // pretypovani Task na Process shared ptr
+		if (task != nullptr) {
+			RemoveProcessFromTable(std::static_pointer_cast<Process>(task)); // pretypovani Task na Process shared ptr
+		}
 	}
 	else if (handle_type == HandleType::Thread) {
 		task = GetThread(handle);
-		RemoveThreadFromTable(std::static_pointer_cast<Thread>(task)); // pretypovani Task na Thread shared ptr
+		if (task != nullptr) {
+			RemoveThreadFromTable(std::static_pointer_cast<Thread>(task)); // pretypovani Task na Thread shared ptr
+		}
 	}
 
 	// V pripade, ze se task nepodarilo najit, nebo nebyl proces / vlakno
@@ -527,7 +537,6 @@ kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& reg
 }
 
 
-
 kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
 	const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
 
@@ -547,6 +556,22 @@ kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TR
 	return kiv_os::NOS_Error::Success;
 }
 
+void ProcessManager::TerminateOtherProcesses(const kiv_os::THandle this_thread_pid) {
+	{
+		auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
+
+		// Projedeme tabulku a vypneme vsechny procesy krome Initu
+		for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
+			if (pid != this_thread_pid && GetProcess(pid) != nullptr) {
+				TerminateProcess(pid, true, -1);
+				RemoveProcessFromTable(GetProcess(pid));
+			}
+		}
+	}
+
+	auto i = 2;
+}
+
 void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 	constexpr auto pid = PID_RANGE_START; // Pid Init procesu bude vzdy na zacatku tabulky (index 0)
 	const auto tid = GetFreeTid(); // Tid vezmeme jakykoliv
@@ -564,7 +589,7 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 
 	// Vytvorime novy proces. Parent procesu bude invalid handle, protoze init proces nema rodice
 	const auto process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, std_in,
-	                                                   std_out);
+	                                                   std_out, DEFAULT_PROCESS_WORKING_DIR);
 	// Nastavime funkci, ktera se ma spustit
 	const auto args = ""; // zadne argumenty nejsou potreba
 	const auto thread = std::make_shared<Thread>(program, init_thread_regs, tid, pid, args);
@@ -593,10 +618,6 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 	native_thread_id_to_native_handle[native_tid] = native_handle;
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void ProcessManager::WaitForShutdown() {
-	suspend_callbacks[PID_RANGE_START]->Suspend();
-}
 
 void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_handle) {
 	auto lock = std::scoped_lock(suspend_callbacks_mutex);
@@ -604,7 +625,6 @@ void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_
 		suspend_callbacks[subscriber_handle] = std::make_shared<SuspendCallback>();
 	}
 }
-
 
 void ProcessManager::RemoveSuspendCallback(const kiv_os::THandle subscriber_handle) {
 	suspend_callbacks.erase(subscriber_handle);

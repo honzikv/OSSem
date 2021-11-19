@@ -1,9 +1,12 @@
 #include "Process.h"
 #include "ProcessManager.h"
 
+
 Process::Process(const kiv_os::THandle pid, const kiv_os::THandle main_thread_tid, const kiv_os::THandle parent_pid,
-                 const kiv_os::THandle std_in, const kiv_os::THandle std_out): pid(pid), parent_pid(parent_pid),
-                                                                               std_in(std_in), std_out(std_out) {
+                 const kiv_os::THandle std_in, const kiv_os::THandle std_out, std::string working_dir):
+	pid(pid), parent_pid(parent_pid), std_in(std_in),
+	std_out(std_out), working_dir(std::move(working_dir)) {
+
 	threads.push_back(main_thread_tid);
 }
 

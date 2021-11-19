@@ -47,7 +47,7 @@ class Process : public Task {
 
 public:
 	Process(kiv_os::THandle pid, kiv_os::THandle main_thread_tid, kiv_os::THandle parent_pid,
-	        kiv_os::THandle std_in, kiv_os::THandle std_out);
+		kiv_os::THandle std_in, kiv_os::THandle std_out, std::string working_dir);
 
 	/// <summary>
 	/// Prida vlakno do procesu

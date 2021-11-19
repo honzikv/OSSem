@@ -34,7 +34,7 @@ public:
 	// Konstanty pro rozsahy pidu a tidu
 
 	static constexpr uint16_t PID_RANGE_START = 0;
-	static constexpr uint16_t PID_RANGE_END = 4096;
+	static constexpr uint16_t PID_RANGE_END = 7;
 	static constexpr uint16_t TID_RANGE_START = 4096;
 	static constexpr uint16_t TID_RANGE_END = 8192;
 	static constexpr uint16_t NO_FREE_ID = -1;
@@ -42,7 +42,7 @@ public:
 	/// <summary>
 	/// Vychozi pracovni adresar, pokud neni zadny 
 	/// </summary>
-	inline static const std::string DEFAULT_PROCESS_WORKDIR = "C:\\";
+	inline static const std::string DEFAULT_PROCESS_WORKING_DIR = "C:\\";
 
 	/// <summary>
 	/// Singleton ziskani objektu. Provede lazy inicializaci a vrati referenci
@@ -210,12 +210,6 @@ private:
 	/// </summary>
 	void RunInitProcess(kiv_os::TThread_Proc program);
 
-
-	/// <summary>
-	/// Init vlakno pocka, dokud se vsechny vlakna neukonci
-	/// </summary>
-	void WaitForShutdown();
-
 	/// <summary>
 	/// Ukonci proces
 	/// </summary>
@@ -313,4 +307,6 @@ private:
 	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs);
+
+	void TerminateOtherProcesses(kiv_os::THandle this_thread_pid);
 };
