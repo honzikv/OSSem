@@ -329,7 +329,7 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 	std::shared_ptr<Process> process;
 	{
 		process = GetProcess(pid);
-		if (process == nullptr || process->GetState() == TaskState::Finished || process->GetState() == TaskState::Terminated) {
+		if (process == nullptr) {
 			return;
 		}
 		// Pokud byl proces ukoncen nasilim, pak muze bezet i jeho hlavni vlakno
@@ -354,7 +354,7 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 
 void ProcessManager::TerminateThread(const kiv_os::THandle tid, const bool terminated_forcefully,
                                      const size_t exit_code) {
-	// Zde lock neni potreba, protoze tato metoda se da zavolat pouze z NotifyThreadFinished a nebo NotifyThreadFinished
+	// Zde lock neni potreba, protoze tato metoda se da zavolat pouze z NotifyThreadFinished a nebo NotifyProcessFinished
 	const auto thread = GetThread(tid);
 	if (thread == nullptr || thread->GetState() == TaskState::Finished || thread->GetState() == TaskState::Terminated) {
 		return;
