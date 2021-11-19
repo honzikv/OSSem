@@ -222,10 +222,6 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	process->SetRunning();
 	regs.rax.x = pid;
 
-	// Zvysime pocet vlaken a procesu o 1
-	running_processes += 1;
-	running_threads += 1;
-
 	// Vratime success
 	return kiv_os::NOS_Error::Success;
 }
@@ -291,10 +287,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 	kiv_handle_to_native_thread_id[tid] = native_tid;
 	native_thread_id_to_native_handle[native_tid] = native_handle;
 	regs.rax.x = tid; // Vratime zpet tid vlakna
-
-	// Zvysime pocet procesu o 1
-	running_threads += 1;
-
+	
 	return kiv_os::NOS_Error::Success;
 }
 
@@ -336,7 +329,6 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 		for (size_t i = terminated_forcefully ? 0 : 1; i < process->GetProcessThreads().size(); i += 1) {
 			TerminateThread(process->GetProcessThreads()[i], true, ForcefullyEndedTaskExitCode);
 		}
-		running_processes -= 1;
 	}
 
 	// Zavolame vsechny vlakna / procesy cekajici na ukonceni procesu
@@ -354,13 +346,6 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 
 	// Rekneme IOManageru aby odstranil referenci na handle z naseho procesu
 	IOManager::Get().UnregisterProcessStdIO(process->GetStdIn(), process->GetStdOut());
-
-	// Toto znamena, ze bezi jenom Init proces, takze doslo k shutdownu nebo exitu
-	if (shutdown_triggered && running_processes == 1 && running_threads == 1) {
-		LogDebug("Proc deinit notifying init process");
-		// Vzbudime init proces
-		shutdown_semaphore->Release();
-	}
 }
 
 void ProcessManager::TerminateThread(const kiv_os::THandle tid, const bool terminated_forcefully,
@@ -379,15 +364,6 @@ void ProcessManager::TerminateThread(const kiv_os::THandle tid, const bool termi
 
 	// Pokud se vlakno neukoncilo samo ukoncime ho a nastavime mu patricny exit code
 	thread->TerminateIfRunning(GetNativeThreadHandle(thread->GetTid()), exit_code);
-
-	running_threads -= 1; // snizime pocet vlaken o 1
-
-	// Pokud bezi pouze jedno vlakno a proces, znamena to, ze doslo k shutdownu a muzeme ukoncit i init proces
-	if (shutdown_triggered && running_processes == 1 && running_threads == 1) {
-		LogDebug("Thread deinit notifying init process");
-		// Vzbudime init proces
-		shutdown_semaphore->Release();
-	}
 }
 
 HandleType ProcessManager::GetHandleType(const kiv_os::THandle id) {
@@ -541,22 +517,11 @@ kiv_os::NOS_Error ProcessManager::ExitTask(const kiv_hal::TRegisters& regs) {
 }
 
 kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& regs) {
-	LogDebug("Shutdown performed from tid: " + std::to_string(GetCurrentTid()));
-	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
-	const auto current_tid = GetCurrentTid();
-	if (current_tid == kiv_os::Invalid_Handle) {
-		return kiv_os::NOS_Error::Permission_Denied;
-	}
-	const auto current_pid = GetThread(current_tid)->GetPid();
-	shutdown_triggered = {true};
-	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
-		// Init proces se terminuje sam a ma vzdy id 0, takze ukoncujeme od pid = 1 a pid, ktery spustil ukonceni se ukonci sam
+	// Nastavime flag pro shutdown - diky tomu bude init proces vedet zda-li ma ukoncit zbyle procesy
+	shutdown_triggered = { true };
 
-		if (current_pid != pid && process_table[pid] != nullptr) {
-			TerminateProcess(pid, true, -1);
-			RemoveProcessFromTable(GetProcess(pid));
-		}
-	}
+	// Vzbudime Init a ten vypne zbyle procesy
+	shutdown_callback->Notify(kiv_os::Invalid_Handle);
 
 	return kiv_os::NOS_Error::Success;
 }
@@ -565,7 +530,6 @@ kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& reg
 
 kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs) {
 	const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
-
 
 	const auto callback = regs.rdx.r == 0 ? DefaultSignalCallback : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r); // funkce pro signal  // NOLINT(performance-no-int-to-ptr)
 
@@ -584,28 +548,49 @@ kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TR
 }
 
 void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
-	constexpr auto pid = PID_RANGE_START;
-	const auto tid = GetFreeTid();
+	constexpr auto pid = PID_RANGE_START; // Pid Init procesu bude vzdy na zacatku tabulky (index 0)
+	const auto tid = GetFreeTid(); // Tid vezmeme jakykoliv
 
-	const auto process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, kiv_os::Invalid_Handle,
-	                                                   kiv_os::Invalid_Handle);
-	// "Funkce", ktera se ma spustit
-	const auto args = "";
-	const auto thread = std::make_shared<Thread>(program, kiv_hal::TRegisters(), tid, pid, args);
+	// Vytvorime stdio
+	const auto [std_in, std_out] = IOManager::Get().CreateStdIO();
 
+	// Vytvorime registry, ktere se predaji vlaknu
+	auto init_thread_regs = kiv_hal::TRegisters();
 
-	// Vytvorime callback pro init, aby se mohl vzbudit az se odstrani vsechny procesy
-	suspend_callbacks[pid] = std::make_shared<SuspendCallback>();
+	// Nastavime stdio a predame ho do registru
+	init_thread_regs.rax.x = std_in;
+	init_thread_regs.rbx.x = std_out;
+	init_thread_regs.rcx.x = pid; // navic budeme potrebovat pid pro ukonceni procesu
 
+	// Vytvorime novy proces. Parent procesu bude invalid handle, protoze init proces nema rodice
+	const auto process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, std_in,
+	                                                   std_out);
+	// Nastavime funkci, ktera se ma spustit
+	const auto args = ""; // zadne argumenty nejsou potreba
+	const auto thread = std::make_shared<Thread>(program, init_thread_regs, tid, pid, args);
+
+	// Potrebujeme nejakym zpusobem notifikovat init proces ze se zavolal shutdown
+	// Pro to pouzijeme callback stejnym zpusobem jako u wait for
+	const auto init_suspend_callback = std::make_shared<SuspendCallback>();
+
+	// Callback musi byt nastaveny tid, protoze vlakno ceka na proces/vlakno
+	suspend_callbacks[tid] = init_suspend_callback;
+
+	// Pro shutdown si jeste explicitne ulozime shared pointer na tento callback abysme ho nemuseli v mape
+	// slozite hledat
+	shutdown_callback = init_suspend_callback;
+
+	// V tento moment uz budeme spoustet, takze musime tabulku zamknout, protoze k ni muze pristupovat vice procesu / vlaken najednou
 	auto lock = std::scoped_lock(tasks_mutex);
-	auto [native_handle, native_tid] = thread->Dispatch();
+	auto [native_handle, native_tid] = thread->Dispatch(); // spusteni procesu
 	// Pridame do tabulky
 	AddProcess(process, pid);
 	AddThread(thread, tid);
+
+	// Nastavime si mapping z Windows handlu a tidu na interni kiv_os handle
 	thread_id_to_kiv_handle[native_tid] = tid;
 	kiv_handle_to_native_thread_id[tid] = native_tid;
 	native_thread_id_to_native_handle[native_tid] = native_handle;
-
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

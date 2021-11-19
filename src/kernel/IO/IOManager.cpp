@@ -333,6 +333,6 @@ kiv_os::NOS_Error IOManager::PerformSeek(kiv_hal::TRegisters &regs) {
     return res;
 }
 
-kiv_os::NOS_Error PerformSetWorkingDir(const kiv_hal::TRegisters& regs) {
-
+kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters& regs) {
+    return kiv_os::NOS_Error::Success;
 }

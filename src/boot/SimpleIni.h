@@ -27,7 +27,7 @@
         - key/values with no section
         - removal of whitespace around sections, keys and values
     - support for multi-line values (values with embedded newline characters)
-    - optional support for multiple keys with the same file_name
+    - optional support for multiple keys with the same name
     - optional case-insensitive sections and keys (for ASCII characters only)
     - saves files with sections and keys in the same order as they were loaded
     - preserves comments on the file, section and keys where possible.
@@ -132,7 +132,7 @@
       data entry. It ends at the beginning of the section.
     - Every key may have a single "key comment". This comment will start
       with the first comment line following the section start, or the file
-      comment if there is no section file_name.
+      comment if there is no section name.
     - Comments are set at the time that the file, section or key is first
       created. The only way to modify a comment on a section or a key is to
       delete that entry and recreate it with the new comment. There is no
@@ -141,7 +141,7 @@
     @section save SAVE ORDER
 
     The sections and keys are written out in the same order as they were
-    Read in from the file. Sections and keys added to the data after the
+    read in from the file. Sections and keys added to the data after the
     file has been loaded will be added to the end of the file when it is
     written. There is no way to specify the location of a section or key
     other than in first-created, first-saved order.
@@ -152,7 +152,7 @@
       Unicode, or SI_CONVERT_GENERIC, or SI_CONVERT_ICU.
     - When using SI_CONVERT_GENERIC, ConvertUTF.c must be compiled and linked.
     - When using SI_CONVERT_ICU, ICU header files must be on the include
-      path_vector and icuuc.lib must be linked in.
+      path and icuuc.lib must be linked in.
     - To load a UTF-8 file on Windows AND expose it with SI_CHAR == char,
       you should use SI_CONVERT_GENERIC.
     - The collation (sorting) order used for sections and keys returned from
@@ -203,7 +203,7 @@
 //  4127 "conditional expression is constant" as the conversion classes trigger
 //  it with the statement if (sizeof(SI_CHAR) == sizeof(char)). This test will
 //  be optimized away in a release build.
-//  4503 'insert' : decorated file_name length exceeded, file_name was truncated
+//  4503 'insert' : decorated name length exceeded, name was truncated
 //  4702 "unreachable code" as the MS STL header causes it in release mode.
 //  Again, the code causing the warning will be cleaned up by the compiler.
 //  4786 "identifier truncated to 256 characters" as this is thrown hundreds
@@ -334,7 +334,7 @@ public:
         bool operator>(const Entry & rhs) const { return LoadOrder()(rhs, *this); }
 #endif
 
-        /** Strict less ordering by file_name of key only */
+        /** Strict less ordering by name of key only */
         struct KeyOrder  {
             bool operator()(const Entry & lhs, const Entry & rhs) const {
                 const static SI_STRLESS isLess = SI_STRLESS();
@@ -342,7 +342,7 @@ public:
             }
         };
 
-        /** Strict less ordering by order, and then file_name of key */
+        /** Strict less ordering by order, and then name of key */
         struct LoadOrder {
             bool operator()(const Entry & lhs, const Entry & rhs) const {
                 if (lhs.nOrder != rhs.nOrder) {
@@ -377,7 +377,7 @@ public:
         OutputWriter & operator=(const OutputWriter &); // disable
     };
 
-    /** OutputWriter class to Write the INI data to a file */
+    /** OutputWriter class to write the INI data to a file */
     class FileWriter : public OutputWriter {
         FILE * m_file;
     public:
@@ -390,7 +390,7 @@ public:
         FileWriter & operator=(const FileWriter &); // disable
     };
 
-    /** OutputWriter class to Write the INI data to a string */
+    /** OutputWriter class to write the INI data to a string */
     class StringWriter : public OutputWriter {
         std::string & m_string;
     public:
@@ -404,7 +404,7 @@ public:
     };
 
 #ifdef SI_SUPPORT_IOSTREAMS
-    /** OutputWriter class to Write the INI data to an ostream */
+    /** OutputWriter class to write the INI data to an ostream */
     class StreamWriter : public OutputWriter {
         std::ostream & m_ostream;
     public:
@@ -556,7 +556,7 @@ public:
     /** Load an INI file from disk into memory
 
         @param a_pszFile    Path of the file to be loaded. This will be passed
-                            to fopen() and so must be a valid path_vector for the
+                            to fopen() and so must be a valid path for the
                             current platform.
 
         @return SI_Error    See error definitions
@@ -579,8 +579,8 @@ public:
 
     /** Load the file from a file pointer.
 
-        @param a_fpFile     Valid file pointer to Read the file data from. The
-                            file will be Read until end of file.
+        @param a_fpFile     Valid file pointer to read the file data from. The
+                            file will be read until end of file.
 
         @return SI_Error    See error definitions
     */
@@ -591,7 +591,7 @@ public:
 #ifdef SI_SUPPORT_IOSTREAMS
     /** Load INI file data from an istream.
 
-        @param a_istream    Stream to Read from
+        @param a_istream    Stream to read from
 
         @return SI_Error    See error definitions
      */
@@ -629,7 +629,7 @@ public:
     /** Save an INI file from memory to disk
 
         @param a_pszFile    Path of the file to be saved. This will be passed
-                            to fopen() and so must be a valid path_vector for the
+                            to fopen() and so must be a valid path for the
                             current platform.
 
         @param a_bAddSignature  Prepend the UTF-8 BOM if the output data is
@@ -696,10 +696,10 @@ public:
         convert text to the correct format regardless of the output format
         being used by SimpleIni.
 
-        To add a BOM to UTF-8 data, Write it out manually at the very beginning
+        To add a BOM to UTF-8 data, write it out manually at the very beginning
         like is done in SaveFile when a_bUseBOM is true.
 
-        @param a_oOutput    Output writer to Write the data to.
+        @param a_oOutput    Output writer to write the data to.
 
         @param a_bAddSignature  Prepend the UTF-8 BOM if the output data is in
                             UTF-8 format. If it is not UTF-8 then this value is
@@ -846,7 +846,7 @@ public:
 
         @param a_pSection       Name of the section to return
         @return boolean         Was a section matching the supplied
-                                file_name found.
+                                name found.
      */
     const TKeyVal * GetSection(
         const SI_CHAR * a_pSection
@@ -990,7 +990,7 @@ public:
         @param a_pComment   Comment to be associated with the key. See the 
                             notes on SetValue() for comments.
         @param a_bUseHex    By default the value will be written to the file 
-                            in decimal format. Set this to true to Write it
+                            in decimal format. Set this to true to write it 
                             as hexadecimal.
         @param a_bForceReplace  Should all existing values in a multi-key INI
                             file be replaced with this entry. This option has
@@ -1073,7 +1073,7 @@ public:
         data returned by GetSection is invalid and must not be used after
         anything has been deleted from that section using this method.
         Note when multiple keys is enabled, this will delete all keys with
-        that file_name; to selectively delete individual key/values, use
+        that name; to selectively delete individual key/values, use
         DeleteValue.
 
         @param a_pSection       Section to delete key from, or if
@@ -1162,9 +1162,9 @@ private:
 
     /** Add the section/key/value to our data.
 
-        @param a_pSection   Section file_name. Sections will be created if they
+        @param a_pSection   Section name. Sections will be created if they
                             don't already exist.
-        @param a_pKey       Key file_name. May be NULL to create an empty section.
+        @param a_pKey       Key name. May be NULL to create an empty section.
                             Existing entries will be updated. New entries will
                             be created.
         @param a_pValue     Value for the key.
@@ -1572,7 +1572,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::FindEntry(
                 ++a_pData;
             }
 
-            // find the end of the section file_name (it may contain spaces)
+            // find the end of the section name (it may contain spaces)
             // and convert it to lowercase as necessary
             a_pSection = a_pData;
             while (*a_pData && *a_pData != ']' && !IsNewLineChar(*a_pData)) {
@@ -1603,7 +1603,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::FindEntry(
             return true;
         }
 
-        // find the end of the key file_name (it may contain spaces)
+        // find the end of the key name (it may contain spaces)
         // and convert it to lowercase as necessary
         a_pKey = a_pData;
         while (*a_pData && *a_pData != '=' && !IsNewLineChar(*a_pData)) {
@@ -1764,7 +1764,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::LoadMultiLineText(
             }
 
             // if we are allowing blank lines then we only include them
-            // in this comment if another comment follows, so Read ahead
+            // in this comment if another comment follows, so read ahead
             // to find out.
             SI_CHAR * pCurr = a_pData;
             int nNewLines = 0;
@@ -2425,7 +2425,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
     oSections.sort(typename Entry::LoadOrder());
 #endif
 
-    // Write the file comment if we have one
+    // write the file comment if we have one
     bool bNeedNewLine = false;
     if (m_pFileComment) {
         if (!OutputMultiLineText(a_oOutput, convert, m_pFileComment)) {
@@ -2437,7 +2437,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
     // iterate through our sections and output the data
     typename TNamesDepend::const_iterator iSection = oSections.begin();
     for ( ; iSection != oSections.end(); ++iSection ) {
-        // Write out the comment if there is one
+        // write out the comment if there is one
         if (iSection->pComment) {
             if (bNeedNewLine) {
                 a_oOutput.Write(SI_NEWLINE_A);
@@ -2455,7 +2455,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
             bNeedNewLine = false;
         }
 
-        // Write the section (unless there is no section file_name)
+        // write the section (unless there is no section name)
         if (*iSection->pItem) {
             if (!convert.ConvertToStore(iSection->pItem)) {
                 return SI_Error::SI_FAIL;
@@ -2477,7 +2477,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
         oKeys.sort(typename Entry::LoadOrder());
 #endif
 
-        // Write all keys and values
+        // write all keys and values
         typename TNamesDepend::const_iterator iKey = oKeys.begin();
         for ( ; iKey != oKeys.end(); ++iKey) {
             // get all values for this key
@@ -2486,7 +2486,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
 
             typename TNamesDepend::const_iterator iValue = oValues.begin();
             for ( ; iValue != oValues.end(); ++iValue) {
-                // Write out the comment if there is one
+                // write out the comment if there is one
                 if (iValue->pComment) {
                     a_oOutput.Write(SI_NEWLINE_A);
                     if (!OutputMultiLineText(a_oOutput, convert, iValue->pComment)) {
@@ -2494,13 +2494,13 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::Save(
                     }
                 }
 
-                // Write the key
+                // write the key
                 if (!convert.ConvertToStore(iKey->pItem)) {
                     return SI_Error::SI_FAIL;
                 }
                 a_oOutput.Write(convert.Data());
 
-                // Write the value
+                // write the value
                 if (!convert.ConvertToStore(iValue->pItem)) {
                     return SI_Error::SI_FAIL;
                 }
@@ -2672,7 +2672,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::DeleteString(
 //  SI_CONVERT_GENERIC      Use the Unicode reference conversion library in
 //                          the accompanying files ConvertUTF.h/c
 //  SI_CONVERT_ICU          Use the IBM ICU conversion library. Requires
-//                          ICU headers on include path_vector and icuuc.lib
+//                          ICU headers on include path and icuuc.lib
 //  SI_CONVERT_WIN32        Use the Win32 API functions for conversion.
 
 #if !defined(SI_CONVERT_GENERIC) && !defined(SI_CONVERT_WIN32) && !defined(SI_CONVERT_ICU)

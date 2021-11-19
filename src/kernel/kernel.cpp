@@ -10,19 +10,36 @@
 #include "Utils/Debug.h"
 
 
-void Initialize_Kernel() {
+void SysCall(kiv_hal::TRegisters& regs) {
+	switch (static_cast<kiv_os::NOS_Service_Major>(regs.rax.h)) {
+	case kiv_os::NOS_Service_Major::File_System:
+		IOManager::Get().HandleIO(regs);
+		break;
+
+	case kiv_os::NOS_Service_Major::Process:
+		ProcessManager::Get().ProcessSyscall(regs);
+		break;
+	}
+
+}
+
+void InitializeKernel() {
 	User_Programs = LoadLibraryW(L"user.dll");
 }
 
-void Shutdown_Kernel() {
+void ShutdownKernel() {
 	FreeLibrary(User_Programs);
 }
 
+void HandleSignal(int signum) {
+	LogDebug("Hello signal");
+}
 
 
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
-	Initialize_Kernel();
-	Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
+	InitializeKernel();
+	signal(SIGINT, HandleSignal);
+	Set_Interrupt_Handler(kiv_os::System_Int_Number, SysCall);
 
 	// Spustime init proces
 	InitProcess::Start();
@@ -32,11 +49,11 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 #endif
 
-	Shutdown_Kernel();
+	ShutdownKernel();
 }
 
 
-void Set_Error(const bool failed, kiv_hal::TRegisters& regs) {
+void SetError(const bool failed, kiv_hal::TRegisters& regs) {
 	if (failed) {
 		regs.flags.carry = true;
 		regs.rax.r = GetLastError();

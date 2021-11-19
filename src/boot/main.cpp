@@ -40,6 +40,6 @@ int __cdecl main() {
 	
 	//a az simulovany OS skonci, uvolnime zdroje z pameti
 	FreeLibrary(kernel);
-	TlsFree(kiv_hal::Expected_Tls_IDT_Index);
+	
 	return 0;
 }

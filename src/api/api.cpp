@@ -11,9 +11,8 @@
 	#endif
 #endif
 
-kiv_hal::TInterrupt_Handler *interrupt_descriptor_table;
-
 namespace kiv_hal {
+	kiv_hal::TInterrupt_Handler* const interrupt_descriptor_table = reinterpret_cast<kiv_hal::TInterrupt_Handler*>(0x50000000);
 
 	#ifdef KERNEL
 		void Set_Interrupt_Handler(kiv_hal::NInterrupt interrupt, kiv_hal::TInterrupt_Handler handler) {
@@ -50,7 +49,6 @@ namespace kiv_os {
 						 ) {
 		switch (ul_reason_for_call)	{
 			case DLL_PROCESS_ATTACH:	
-				interrupt_descriptor_table = reinterpret_cast<kiv_hal::TInterrupt_Handler*>(TlsGetValue(kiv_hal::Expected_Tls_IDT_Index));
 	#if defined(KERNEL) && defined(_USRDLL)
 				kiv_hal::Set_Interrupt_Handler(kiv_hal::NInterrupt::Bootstrap_Loader, Bootstrap_Loader);
 	#endif		

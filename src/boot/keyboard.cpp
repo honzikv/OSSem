@@ -12,12 +12,44 @@ bool Recover_From_Cancel_Io = false;
 std::queue<char> Keyboard_Buffer;
 const size_t Max_Keyboard_Buffer_Size = 16;	//default BIOS size
 
+
+bool Write_Char(const char& input_ch) {
+	if (!Std_In_Is_Open)
+		return false;
+
+	if (Keyboard_Buffer.size() >= Max_Keyboard_Buffer_Size)
+		return false;
+
+	Keyboard_Buffer.push(input_ch);
+	Recover_From_Cancel_Io = CancelIoEx(hConsoleInput, nullptr);
+	//nemuze se zotavit uz tady, protoze nas planovac mohl prerusit	
+	return true;
+}
+
+
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
+	switch (fdwCtrlType) {		
+		case CTRL_C_EVENT:						
+		case CTRL_BREAK_EVENT:
+			Write_Char(static_cast<char>(kiv_hal::NControl_Codes::ETX));	//Ctr+C
+		break;
+	default:
+		break;
+	}
+
+	return TRUE;
+}
+
+
 bool Init_Keyboard() {
 	//pokusime se vypnout echo na konzoli
 	//mj. Win prestanou detekovat a "krast" napr. Ctrl+C
 
 	if (Std_In_Redirected) return true;	//neni co prepinat s presmerovanym vstupem
 		
+	SetConsoleCtrlHandler(CtrlHandler, TRUE);
+
+
 	DWORD mode;
 	bool echo_off = GetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), &mode);
 	if (echo_off) echo_off = SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), mode & (~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT)));
@@ -79,19 +111,6 @@ bool Read_Char(decltype(kiv_hal::TRegisters::rax.x) &result_ch) {
 	}
 	
 	return Std_In_Is_Open;
-}
-
-bool Write_Char(const char& input_ch) {
-	if (!Std_In_Is_Open) 
-		return false;
-
-	if (Keyboard_Buffer.size() >= Max_Keyboard_Buffer_Size)
-		return false;
-
-	Keyboard_Buffer.push(input_ch);
-	Recover_From_Cancel_Io = CancelIoEx(hConsoleInput, nullptr);	
-		//nemuze se zotavit uz tady, protoze nas planovac mohl prerusit	
-	return true;
 }
 
 

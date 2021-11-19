@@ -6,7 +6,7 @@
 #include "hal.h"
 
 namespace kiv_os {
-	const kiv_hal::NInterrupt System_Int_Number = kiv_hal::NInterrupt(0x69); // puvodne 0x21
+	const kiv_hal::NInterrupt System_Int_Number = kiv_hal::NInterrupt(0x21);
 			//je to libovolne arbitrarni cislo, ktere neni uz obsazene v kiv_hal::NInterrupt
 
 #ifndef KERNEL
@@ -170,7 +170,7 @@ namespace kiv_os {
 	//rezim otevreni noveho souboru
 	enum class NOpen_File : std::uint8_t {
 		fmOpen_Always = 1	//pokud je nastavena, pak soubor musi existovat, aby byl otevren
-								//nenï¿½-li fmOpen_Always nastaveno, pak je soubor vï¿½dy vytvoï¿½en - tj. i pï¿½epsï¿½n starï¿½ soubor
+								//není-li fmOpen_Always nastaveno, pak je soubor vždy vytvoøen - tj. i pøepsán starý soubor
 	};
 
 

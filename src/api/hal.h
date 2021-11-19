@@ -5,7 +5,7 @@
 //HAL aka hardware abstraction layer for the kiv_os namespace
 
 namespace kiv_hal {
-
+	
 	struct TGeneral_Register {
 		union {
 			uint64_t r;			//e.g., rax
@@ -34,11 +34,11 @@ namespace kiv_hal {
 	struct TRegisters;
 
 	using TInterrupt_Handler = void(__stdcall *)(TRegisters &context);			//prototyp funkce, ktera realizuje syscall
-	using TInterrupt_Descriptor_Table = TInterrupt_Handler*;					//ziskani ukazatele na tabulku se deje v dllmain.cpp, ktery nemate povoleno menit
+	using TInterrupt_Descriptor_Table = TInterrupt_Handler*;				
 	
 
-	const uint32_t Expected_Tls_IDT_Index = 1;					//k ziskani ukazatele na tabulku vektoru preruseni pouzijeme TLS s ocekavanou hodnotu TLS indexu
-	
+	extern kiv_hal::TInterrupt_Handler* const interrupt_descriptor_table;			//k ziskani ukazatele na tabulku vektoru preruseni pouzijeme fixni adresu v ramci naseho adresoveho prostoru
+
 	struct TRegisters {
 		TGeneral_Register rax, rbx, rcx, rdx;
 		TIndex_Register rdi;

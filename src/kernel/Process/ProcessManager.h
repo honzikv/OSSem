@@ -26,8 +26,9 @@ static constexpr uint16_t ForcefullyEndedTaskExitCode = -1;
 /// Trida, ktera se stara o spravu procesu a vlaken
 /// </summary>
 class ProcessManager {
+
+	// Init proces ma pristup ke vsem fieldum a metodam aby mohl ukoncit procesy
 	friend class InitProcess;
-	friend class IOManager;
 	// NOLINT(cppcoreguidelines-special-member-functions)
 public:
 	// Konstanty pro rozsahy pidu a tidu
@@ -58,7 +59,10 @@ private:
 	/// </summary>
 	std::atomic<bool> shutdown_triggered = { false };
 
-	const std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
+	/// <summary>
+	/// Callback pro probuzeni initu pri vypnuti
+	/// </summary>
+	std::shared_ptr<SuspendCallback> shutdown_callback;
 
 	/// <summary>
 	/// Tabulka procesu
@@ -69,16 +73,6 @@ private:
 	/// Tabulka vlaken
 	/// </summary>
 	std::array<std::shared_ptr<Thread>, TID_RANGE_END - TID_RANGE_START> thread_table = {};
-
-	/// <summary>
-	/// Pocet bezicich procesu
-	/// </summary>
-	size_t running_processes = 0;
-
-	/// <summary>
-	/// Pocet bezicich vlaken
-	/// </summary>
-	size_t running_threads = 0;
 
 	/// <summary>
 	/// TID -> Handle
