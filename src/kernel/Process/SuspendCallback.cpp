@@ -7,8 +7,8 @@ void SuspendCallback::Suspend() const {
 }
 
 void SuspendCallback::Notify(const kiv_os::THandle notifier_id) {
-	if (triggered) { return; } // toto muzeme udelat i bez locku, protoze je "triggered" atomic
 	auto lock = std::scoped_lock(mutex);
+	if (triggered) { return; }
 	this->notifier_id = notifier_id;
 	triggered = true;
 	semaphore->Release();

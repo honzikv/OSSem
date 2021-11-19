@@ -310,5 +310,5 @@ private:
 
 	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs);
 
-	void TerminateOtherProcesses(kiv_os::THandle this_thread_pid);
+	void TerminateProcesses(kiv_os::THandle this_thread_pid);
 };

@@ -299,12 +299,17 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 
 void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_handle,
                                             const kiv_os::THandle notifier_handle) {
-	LogDebug("Waking up handle: " + std::to_string(subscriber_handle) + " by handle: " + std::to_string(notifier_handle));
-	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
+	auto suspend_callbacks_lock = std::scoped_lock(suspend_callbacks_mutex);
+	if (suspend_callbacks.count(subscriber_handle) == 0) {
+		return;
+	}
+
 	const auto callback = suspend_callbacks[subscriber_handle];
+	auto tasks_lock = std::scoped_lock(tasks_mutex);
 	if (callback != nullptr && TaskNotifiable(subscriber_handle)) {
 		callback->Notify(notifier_handle);
 	}
+	LogDebug("Handle: " + std::to_string(notifier_handle) + " notified: " + std::to_string(subscriber_handle));
 }
 
 void ProcessManager::NotifyProcessFinished(const kiv_os::THandle pid, uint16_t exit_code) {
@@ -336,7 +341,6 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 
 	// Zavolame vsechny vlakna / procesy cekajici na ukonceni procesu
 	process->NotifySubscribers(process->GetPid(), terminated_forcefully);
-
 	process->SetExitCode(terminated_forcefully ? -1 : thread_exit_code);
 
 	if (terminated_forcefully) {
@@ -549,7 +553,7 @@ kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TR
 	return kiv_os::NOS_Error::Success;
 }
 
-void ProcessManager::TerminateOtherProcesses(const kiv_os::THandle this_thread_pid) {
+void ProcessManager::TerminateProcesses(const kiv_os::THandle this_thread_pid) {
 	LogDebug("Shutdown performed from tid: " + std::to_string(GetCurrentTid()));
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
