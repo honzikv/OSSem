@@ -14,6 +14,6 @@ kiv_os::NOS_Error WritablePipe::Close() {
 	return kiv_os::NOS_Error::Success;
 }
 
-kiv_os::NOS_Error WritablePipe::Seek(size_t position, kiv_os::NFile_Seek seek) {
+kiv_os::NOS_Error WritablePipe::Seek(size_t position, kiv_os::NFile_Seek seek_type, kiv_os::NFile_Seek seek_operation, size_t& res_size) {
 	return kiv_os::NOS_Error::IO_Error;
 }
