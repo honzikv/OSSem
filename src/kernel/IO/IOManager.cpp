@@ -333,6 +333,44 @@ kiv_os::NOS_Error IOManager::PerformSeek(kiv_hal::TRegisters &regs) {
     return res;
 }
 
-kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error IOManager::PerformGetWorkingDir(const kiv_hal::TRegisters &regs) {
+    auto lock = std::scoped_lock(mutex);
+    char *buffer = reinterpret_cast<char *>(regs.rdx.r);
+    auto buffer_size = static_cast<size_t>(regs.rcx.r);
+    size_t written;
+    //TODO najit proces vlakna, kopirovat buffer do working dir, nastavit written
+    //strcpy(buffer, buffer_size, process->GetWorkingDir().To_String();
+    //written = min(process->GetWorkingDir().To_String.length(), buffer_size);
     return kiv_os::NOS_Error::Success;
+}
+
+kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters& regs) {
+    auto lock = std::scoped_lock(mutex);
+    auto path_char = reinterpret_cast<char *>(regs.rdx.r);
+    if (path_char == nullptr) {
+        return kiv_os::NOS_Error::IO_Error;
+    }
+    Path path(path_char);
+    if (path.is_relative) {
+        // TODO ziskat proces a jeho cestu a append pred nasi cestu
+        //Path process_path = process->GetWorkingDir();
+    }
+    int32_t target_fd;
+    if (file_systems.at(path.disk_letter).second->File_Exists(path, target_fd)) {
+        //process->SetWorkingDir(path);
+        return kiv_os::NOS_Error::Success;
+    }
+
+    return kiv_os::NOS_Error::File_Not_Found;
+}
+
+kiv_os::NOS_Error IOManager::PerformOpenFile(const kiv_hal::TRegisters &regs) {
+    char *file_name = reinterpret_cast<char *>(regs.rdx.r);
+    auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.l); // TODO check
+    auto attributes = static_cast<uint8_t>(regs.rdi.i);
+    kiv_os::THandle handle; //TODO vytvorit handle
+
+
+    // pokud success, tak do rax.x handle, jinak error
+
 }

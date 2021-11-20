@@ -110,17 +110,13 @@ private:
 
 	kiv_os::NOS_Error PerformSetWorkingDir(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformGetWorkingDir(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error PerformGetWorkingDir(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformGetFileAttribute(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 
-	kiv_os::NOS_Error PerformOpenFile(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error PerformOpenFile(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformDeleteFile(const kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;

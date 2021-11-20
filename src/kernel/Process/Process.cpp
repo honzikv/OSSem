@@ -3,7 +3,7 @@
 
 
 Process::Process(const kiv_os::THandle pid, const kiv_os::THandle main_thread_tid, const kiv_os::THandle parent_pid,
-                 const kiv_os::THandle std_in, const kiv_os::THandle std_out, std::string working_dir):
+                 const kiv_os::THandle std_in, const kiv_os::THandle std_out, Path& working_dir):
 	pid(pid), parent_pid(parent_pid), std_in(std_in),
 	std_out(std_out), working_dir(std::move(working_dir)) {
 
@@ -22,11 +22,12 @@ kiv_os::THandle Process::GetStdIn() const { return std_in; }
 
 kiv_os::THandle Process::GetStdOut() const { return std_out; }
 
-std::string& Process::GetWorkingDir() { return working_dir; }
+Path& Process::GetWorkingDir() { return working_dir; }
 
-void Process::SetWorkingDir(const std::string& dir) {
-	working_dir = dir;
+void Process::SetWorkingDir(Path& path) {
+	working_dir = std::move(path);
 }
+
 
 void Process::SetSignalCallback(const kiv_os::NSignal_Id signal, const kiv_os::TThread_Proc callback) {
 	signal_callbacks[signal] = callback;

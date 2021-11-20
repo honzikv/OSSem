@@ -2,10 +2,11 @@
 // Created by Kuba on 20.10.2021.
 //
 
+#include <algorithm>
 #include "path.h"
 
 
-Path::Path(const char *file_path) {
+Path::Path(std::string file_path) {
     Create_Path(file_path);
     Create_Name();
 }
@@ -14,31 +15,30 @@ Path::Path(const char *file_path) {
  * Vytvori vector stringu jednotlivych slozek cesty, upravi podle "." a ".." (vynecha, resp. odstrani posledni)
  * @param file_path cesta zadana jako vektor znaku
  */
-void Path::Create_Path(const char *file_path) {
+void Path::Create_Path(std::string file_path) {
+    std::string cur_dir = "."; // soucasny adresat
+    std::string parent_dir = ".."; // nadrazeny adresar
+    char separator = '\\'; // separator
     std::vector<char> item;
     int pos = 0;
     char c;
     while (true) {
         c = file_path[pos];
-        if (c == kSeparator) {
+        if (c == separator) {
             std::string item_string(item.begin(), item.end());
-            if (item_string == kParentDir) {
+            if (item_string == parent_dir) {
                 path_vector.pop_back();
-            } else if (item_string != kCurDir && !item_string.empty()) {
-                for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
-                    ch = ::toupper(ch);
-                }
+            } else if (item_string != cur_dir && !item_string.empty()) {
+                std::transform(item_string.begin(), item_string.end(), item_string.begin(), ::toupper); // vsechno ve FAT12 je ukladano velkymi pismeny
                 path_vector.push_back(item_string);
             }
             item.clear();
         } else if (c == '\0') {
             std::string item_string(item.begin(), item.end());
-            if (item_string == kParentDir) {
+            if (item_string == parent_dir) {
                 path_vector.pop_back();
-            } else if (item_string != kCurDir){
-                for (char &ch: item_string) { // vsechno ve FAT12 je ukladano velkymi pismeny
-                    ch = ::toupper(ch);
-                }
+            } else if (item_string != cur_dir){
+                std::transform(item_string.begin(), item_string.end(), item_string.begin(), ::toupper); // vsechno ve FAT12 je ukladano velkymi pismeny
                 path_vector.push_back(item_string);
             }
             break;
@@ -47,6 +47,13 @@ void Path::Create_Path(const char *file_path) {
         }
         pos++;
     }
+    if (path_vector.front().find(':') != std::string::npos) { // je absolutni
+        disk_letter = path_vector.front().at(0);
+        path_vector.erase(path_vector.begin());
+        is_relative = false;
+    } else {
+        is_relative = true;
+    }
     //TODO osetrit mozna prazdnou cestu nebo neco takovyho
 }
 
@@ -54,14 +61,15 @@ void Path::Create_Path(const char *file_path) {
  * Vytvori jmeno slozky/souboru a priponu
  */
 void Path::Create_Name() {
+    char dot = '.'; // tecka
     full_name = path_vector.back();
-    bool isExtension = false;
+    bool is_extension = false;
     for (const char c: full_name) {
-        if (c == kDot) {
-            isExtension = true;
+        if (c == dot) {
+            is_extension = true;
             continue;
         }
-        if (isExtension) {
+        if (is_extension) {
             extension.push_back(c);
         } else {
             name.push_back(c);
@@ -74,4 +82,33 @@ void Path::Create_Name() {
  */
 void Path::Delete_Name_From_Path() {
     path_vector.pop_back();
+}
+
+/**
+ * Prida cestu k soucasne ceste
+ * @param path cesta, ktera bude pridana
+ */
+void Path::Append_Path(const Path &path) {
+    for (const auto & i : path.path_vector) {
+        path_vector.push_back(i);
+    }
+}
+
+/**
+ * Prevede cestu na string
+ * @return string ziskany z vektoru stringu cesty
+ */
+std::string Path::To_String() {
+    std::string res;
+    char separator = '\\';
+    if (!is_relative) {
+        res += disk_letter;
+        res += ':';
+        res += separator;
+    }
+    for (auto & i : path_vector) {
+        res += i;
+        res += separator;
+    }
+    return res;
 }
