@@ -63,14 +63,7 @@ public:
 	/// <summary>
 	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho handle a thread id
 	/// </summary>
-	std::pair<HANDLE, DWORD> Dispatch();
-
-	/// <summary>
-	/// Nasilne ukonci vlakno. Tato funkce nic nedela, pokud se vlakno ukoncilo samo
-	/// </summary>
-	/// <param name="handle"></param>
-	/// <param name="exit_code">Exit code, ktery se nastavi po ukonceni</param>
-	void TerminateIfRunning(HANDLE handle, uint16_t exit_code);
+	std::thread::id Dispatch();
 
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne

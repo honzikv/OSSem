@@ -25,31 +25,32 @@ Thread::Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os
 	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(this->args.c_str());
 }
 
-/// <summary>
-/// Windows API funkce pro spusteni vlakna
-/// </summary>
-/// <param name="params"></param>
-/// <returns></returns>
-DWORD WINAPI WinThreadFunc(const LPVOID params) {
-	auto& thread = *static_cast<Thread*>(params);
-	thread.ThreadFunc();
-	return thread.GetExitCode();
-}
+// /// <summary>
+// /// Windows API funkce pro spusteni vlakna
+// /// </summary>
+// /// <param name="params"></param>
+// /// <returns></returns>
+// DWORD WINAPI WinThreadFunc(const LPVOID params) {
+// 	auto& thread = *static_cast<Thread*>(params);
+// 	thread.ThreadFunc();
+// 	return thread.GetExitCode();
+// }
 
 
-std::pair<HANDLE, DWORD> Thread::Dispatch() {
-	DWORD thread_id;
-	auto thread_handle = CreateThread(nullptr, 0, WinThreadFunc, this, 0, &thread_id);
-	return {thread_handle, thread_id};
+std::thread::id Thread::Dispatch() {
+	auto thread = std::thread(&Thread::ThreadFunc, this);
+	auto thread_id = thread.get_id();
+	thread.detach();
+	return thread_id;
 }
 
-void Thread::TerminateIfRunning(HANDLE handle, const uint16_t exit_code) {
-	auto lock = std::scoped_lock(mutex);
-	if (task_state != TaskState::Finished) {
-		const auto result = TerminateThread(handle, exit_code);
-		task_exit_code = exit_code;
-	}
-	task_state = TaskState::Finished;
-}
+// void Thread::TerminateIfRunning(HANDLE handle, const uint16_t exit_code) {
+// 	auto lock = std::scoped_lock(mutex);
+// 	if (task_state != TaskState::Finished) {
+// 		const auto result = TerminateThread(handle, exit_code);
+// 		task_exit_code = exit_code;
+// 	}
+// 	task_state = TaskState::Finished;
+// }
 
 TaskState Thread::GetState() const { return task_state; }
