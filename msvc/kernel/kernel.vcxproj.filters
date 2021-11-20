@@ -95,9 +95,6 @@
     <ClCompile Include="..\..\src\kernel\path.cpp">
       <Filter>Source Files\FatFS</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\Process\Init.cpp">
-      <Filter>Source Files\Process</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
@@ -106,6 +103,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\IO\WritablePipe.cpp">
       <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Process\InitProcess.cpp">
+      <Filter>Source Files\Process</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -175,9 +175,6 @@
     <ClInclude Include="..\..\src\kernel\vfs.h">
       <Filter>Headers\FatFS</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\Process\Init.h">
-      <Filter>Headers\Process</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
@@ -186,6 +183,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\WritablePipe.h">
       <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\InitProcess.h">
+      <Filter>Headers\Process</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
