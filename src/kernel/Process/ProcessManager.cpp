@@ -382,7 +382,6 @@ void ProcessManager::AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_
 	// Pro validaci musime locknout tabulku
 	// Validujeme protoze se muze stat, ze procesy mezitim co jsme provadeli metodu
 	// dobehli, a byly odstranene z tabulek
-	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	for (uint32_t i = 0; i < handle_array_size; i += 1) {
 		const auto handle = handle_array[i];
 		const auto handleType = GetHandleType(handle);
@@ -411,26 +410,19 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 	const auto handle_count = regs.rcx.e;
 
 	kiv_os::THandle current_tid;
-
-	// Thread id aktualne beziciho vlakna
+	std::shared_ptr<SuspendCallback> callback;
 	{
-		auto lock = std::scoped_lock(tasks_mutex);
+		auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 		current_tid = GetCurrentTid();
-	}
-	if (current_tid == kiv_os::Invalid_Handle) {
-		return kiv_os::NOS_Error::Invalid_Argument;
-	}
+		if (current_tid == kiv_os::Invalid_Handle) {
+			return kiv_os::NOS_Error::Invalid_Argument;
+		}
 
-	// Pridame vlakno do vsech existujicich procesu/vlaken v handle_array
-	AddCurrentThreadAsSubscriber(handle_array, handle_count, current_tid);
+		// Pridame vlakno do vsech existujicich procesu/vlaken v handle_array
+		AddCurrentThreadAsSubscriber(handle_array, handle_count, current_tid);
 
-	// Nastavime vychozi hodnotu na invalid value. Pokud se na neco opravdu cekalo prenastavi se to
-	regs.rax.x = static_cast<decltype(regs.rax.x)>(kiv_os::Invalid_Handle);
-	std::shared_ptr<SuspendCallback> callback; // nullptr
-
-	// Musime locknout aby nedoslo k race condition
-	{
-		auto lock = std::scoped_lock(suspend_callbacks_mutex);
+		// Nastavime vychozi hodnotu na invalid value, pokud se na neco opravdu cekalo prenastavime
+		regs.rax.x = static_cast<decltype(regs.rax.x)>(kiv_os::Invalid_Handle);
 		callback = suspend_callbacks[current_tid]; // ziskame callback
 	}
 
@@ -440,16 +432,18 @@ kiv_os::NOS_Error ProcessManager::PerformWaitFor(kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::Success;
 	}
 
-	// Pokud se callback jeste nespustil uspime vlakno
-	if (!callback->Triggered()) {
-		callback->Suspend();
-	}
+	// Uspime se - pokud neco callback spustilo, tato operace nebude blokovat, jinak cekame dokud nas neco nevzbudi
+	// TODO 
+	callback->Suspend();
 
 	// Ziskame id vlakna/procesu, ktery toto vlakno vzbudil
 	regs.rax.x = callback->GetNotifierId();
 
 	// Smazeme zaznam z mapy callbacku
-	RemoveSuspendCallback(current_tid);
+	{
+		auto lock = std::scoped_lock(suspend_callbacks_mutex);
+		suspend_callbacks.erase(current_tid);
+	}
 
 	return kiv_os::NOS_Error::Success;
 }
@@ -599,7 +593,6 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc program) {
 	// Pro shutdown si jeste explicitne ulozime shared pointer na tento callback abysme ho nemuseli v mape
 	// slozite hledat
 	shutdown_callback = init_suspend_callback;
-
 	
 	auto [native_handle, native_tid] = thread->Dispatch(); // spusteni procesu
 	// Pridame do tabulky
