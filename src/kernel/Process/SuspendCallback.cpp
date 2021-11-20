@@ -14,9 +14,6 @@ void SuspendCallback::Notify(const kiv_os::THandle notifier_id) {
 	semaphore->Release();
 }
 
-bool SuspendCallback::Triggered() {
-	return triggered;
-}
 
 kiv_os::THandle SuspendCallback::GetNotifierId() const {
 	return notifier_id;

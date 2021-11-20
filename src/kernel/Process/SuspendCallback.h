@@ -26,7 +26,7 @@ class SuspendCallback {
 	/// <summary>
 	/// Zda-li se callback provedl
 	/// </summary>
-	std::atomic<bool> triggered = {false};
+	bool triggered = false;
 
 public:
 	/// <summary>
@@ -35,12 +35,10 @@ public:
 	void Suspend() const;
 
 	/// <summary>
-	/// Vzbudi vlakno a nastavi notifier_id, handle_type a triggered flag
+	/// Vzbudi vlakno a nastavi notifier_id a triggered flag
 	/// </summary>
 	/// <param name="notifier_id">id vlakna/procesu, ktere vzbudilo vlakno</param>
 	void Notify(kiv_os::THandle notifier_id);
-
-	bool Triggered();
 
 	/// <summary>
 	/// Toto se muze volat az po tom, co se triggered nastavi na true.

@@ -40,7 +40,7 @@ public:
 	static constexpr uint16_t NO_FREE_ID = -1;
 
 	/// <summary>
-	/// Vychozi pracovni adresar, pokud neni zadny 
+	/// Vychozi pracovni adresar, pokud neni zadny specifikovany
 	/// </summary>
 	inline static const auto DEFAULT_PROCESS_WORKING_DIR =  Path("C:\\");
 
@@ -112,6 +112,13 @@ private:
 	std::shared_ptr<Process> GetProcess(kiv_os::THandle pid);
 
 	/// <summary>
+	/// Getter pro vlakno procesu podle tidu
+	/// </summary>
+	/// <param name="tid">tid</param>
+	/// <returns>Pointer na vlakno</returns>
+	std::shared_ptr<Thread> GetThread(kiv_os::THandle tid);
+
+	/// <summary>
 	/// Prida proces do tabulky
 	/// </summary>
 	/// <param name="process">Pointer na proces</param>
@@ -126,18 +133,16 @@ private:
 	void AddThread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
 
 	/// <summary>
-	/// Zjisti, zda-li task existuje
+	/// Zjisti, zda-li task lze notifikovat
 	/// </summary>
 	/// <param name="task_handle"></param>
 	/// <returns></returns>
 	bool TaskNotifiable(kiv_os::THandle task_handle);
-	
 
 	/// <summary>
-	/// Mutex pro callbacky pro vzbuzeni
+	/// Mutex pro synchronizaci kriticke sekce
 	/// </summary>
-	std::recursive_mutex suspend_callbacks_mutex;
-	std::recursive_mutex tasks_mutex;
+	std::recursive_mutex mutex = {};
 
 	ProcessManager() = default;
 	~ProcessManager() = default;
@@ -145,7 +150,7 @@ private:
 	ProcessManager& operator=(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
 
 	/// <summary>
-	/// Najde PID rodice pro dane vlakno
+	/// Najde PID rodice pro vlakno, ze ktereho se metoda zavolala
 	/// </summary>
 	/// <returns></returns>
 	kiv_os::THandle FindParentPid();
@@ -193,19 +198,19 @@ public:
 	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
 	/// </summary>
 	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
-	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
+	void CreateSuspendCallbackIfNotExists(kiv_os::THandle subscriber_handle);
 
 	/// <summary>
 	/// Tuto metodu pouziva hlavni vlakno po uspesnem skonceni sveho lifecyclu - ukonci tim svuj proces
 	/// </summary>
 	/// <param name="pid">Pid procesu, ktery se ma ukoncit</param>
 	/// <param name="exit_code">Exit code procesu</param>
-	void NotifyProcessFinished(kiv_os::THandle pid, uint16_t exit_code);
+	void OnProcessFinished(kiv_os::THandle pid, uint16_t exit_code);
 
 	/// <summary>
 	/// Tuto metodu pouziva vlakno, aby oznamilo process manageru, ze skoncilo
 	/// </summary>
-	void NotifyThreadFinished(kiv_os::THandle tid);
+	void OnThreadFinished(kiv_os::THandle tid);
 
 private:
 	/// <summary>
@@ -237,12 +242,6 @@ private:
 	/// <returns>Success pokud vse probehlo v poradku, jinak chybu</returns>
 	kiv_os::NOS_Error PerformClone(kiv_hal::TRegisters& regs);
 
-	/// <summary>
-	/// Getter pro vlakno procesu podle tidu
-	/// </summary>
-	/// <param name="tid">tid</param>
-	/// <returns>Pointer na vlakno</returns>
-	std::shared_ptr<Thread> GetThread(kiv_os::THandle tid);
 
 	/// <summary>
 	/// Vytvori proces s hlavnim vlaknem a prida je do tabulek
@@ -257,12 +256,6 @@ private:
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error CreateNewThread(kiv_hal::TRegisters& regs);
-
-	/// <summary>
-	/// Odstrani callback pro vzbuzeni
-	/// </summary>
-	/// <param name="subscriber_handle"></param>
-	void RemoveSuspendCallback(kiv_os::THandle subscriber_handle);
 
 	/// <summary>
 	/// Vrati typ handle pro  dane id

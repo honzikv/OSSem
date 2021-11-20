@@ -116,6 +116,7 @@ void IOManager::DecrementFileReference(const kiv_os::THandle handle, bool &handl
 }
 
 kiv_os::NOS_Error IOManager::UnregisterProcessStdIO(const kiv_os::THandle std_in, const kiv_os::THandle std_out) {
+    auto lock = std::scoped_lock(mutex);
     auto erase_std_in_handle = false;
     auto erase_std_out_handle = false;
     {

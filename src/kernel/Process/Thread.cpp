@@ -11,10 +11,10 @@ void Thread::ThreadFunc() {
 	SetExitCode(task_exit_code); // nastavime ho
 
 	// Program dobehl, rekneme process managerovi at ho ukonci
-	ProcessManager::Get().NotifyThreadFinished(tid);
+	ProcessManager::Get().OnThreadFinished(tid);
 
 	if (main_thread) {
-		ProcessManager::Get().NotifyProcessFinished(pid, task_exit_code);
+		ProcessManager::Get().OnProcessFinished(pid, task_exit_code);
 	}
 }
 
