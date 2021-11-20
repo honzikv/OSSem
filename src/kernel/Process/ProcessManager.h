@@ -42,7 +42,7 @@ public:
 	/// <summary>
 	/// Vychozi pracovni adresar, pokud neni zadny 
 	/// </summary>
-	inline static const std::string DEFAULT_PROCESS_WORKING_DIR = "C:\\";
+	inline static const auto DEFAULT_PROCESS_WORKING_DIR =  Path("C:\\");
 
 	/// <summary>
 	/// Singleton ziskani objektu. Provede lazy inicializaci a vrati referenci

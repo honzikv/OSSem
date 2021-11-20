@@ -356,10 +356,10 @@ kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters& reg
         //Path process_path = process->GetWorkingDir();
     }
     int32_t target_fd;
-    if (file_systems.at(path.disk_letter).second->File_Exists(path, target_fd)) {
-        //process->SetWorkingDir(path);
-        return kiv_os::NOS_Error::Success;
-    }
+    // if (file_systems.at(path.disk_letter).second->File_Exists(path, target_fd)) {
+    //     //process->SetWorkingDir(path);
+    //     return kiv_os::NOS_Error::Success;
+    // }
 
     return kiv_os::NOS_Error::File_Not_Found;
 }
@@ -372,5 +372,5 @@ kiv_os::NOS_Error IOManager::PerformOpenFile(const kiv_hal::TRegisters &regs) {
 
 
     // pokud success, tak do rax.x handle, jinak error
-
+    return kiv_os::NOS_Error::Success;
 }

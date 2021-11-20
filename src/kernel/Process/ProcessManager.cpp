@@ -320,15 +320,17 @@ void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_han
 	LogDebug("Handle: " + std::to_string(notifier_handle) + " notified: " + std::to_string(subscriber_handle));
 }
 
-void ProcessManager::NotifyProcessFinished(const kiv_os::THandle pid, uint16_t exit_code) {
+void ProcessManager::NotifyProcessFinished(const kiv_os::THandle pid, const uint16_t exit_code) {
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	TerminateProcess(pid, false, exit_code);
+	LogDebug("Notifying process " + std::to_string(pid) + " finished");
 }
 
 
 void ProcessManager::NotifyThreadFinished(const kiv_os::THandle tid) {
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	TerminateThread(tid, false);
+	LogDebug("Notifying thread " + std::to_string(tid) + " finished");
 }
 
 void ProcessManager::RunInitProcess(kiv_os::TThread_Proc init_main) {
@@ -339,7 +341,8 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc init_main) {
 	const auto [std_in, std_out] = IOManager::Get().CreateStdIO();
 
 	// Proces pro init
-	const auto init_process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, DEFAULT_PROCESS_WORKING_DIR);
+	auto path = Path("C:\\");
+	const auto init_process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, path);
 
 	// Initu predame do registru stdio
 	auto init_regs = kiv_hal::TRegisters();

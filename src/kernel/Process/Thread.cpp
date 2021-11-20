@@ -47,8 +47,6 @@ void Thread::TerminateIfRunning(HANDLE handle, const uint16_t exit_code) {
 	auto lock = std::scoped_lock(mutex);
 	if (task_state != TaskState::Finished) {
 		const auto result = TerminateThread(handle, exit_code);
-		LogDebug("KILLED thread with tid: " + std::to_string(tid) + " pid: " + std::to_string(pid) + " and handle: " + std::to_string(
-			reinterpret_cast<size_t>(handle)) + " success: " + std::to_string(result));
 		task_exit_code = exit_code;
 	}
 	task_state = TaskState::Finished;
