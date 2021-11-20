@@ -9,23 +9,25 @@
 
 class Path {
 private:
-    void Create_Path(const char *file_path);
+    void Create_Path(std::string file_path);
 
     void Create_Name();
-
-    const std::string kCurDir = "."; // soucasny adresat
-    const std::string kParentDir = ".."; // nadrazeny adresar
-    const char kSeparator = '\\'; // separator
-    const char kDot = '.'; // tecka
 
 public:
     std::vector<std::string> path_vector;
     std::string full_name;
     std::string name;
     std::string extension;
+    bool is_relative = false;
+    char disk_letter = '\0';
 
-    explicit Path(const char *file_path);
+    explicit Path(std::string file_path);
 
     void Delete_Name_From_Path();
+
+    void Append_Path(const Path &path);
+
+    std::string To_String();
+
 
 };

@@ -4,6 +4,7 @@
 
 #include "Task.h"
 #include "../../api/api.h"
+#include "../path.h"
 
 /// <summary>
 /// Reprezentuje proces (resp. PCB)
@@ -33,7 +34,7 @@ class Process : public Task {
 	/// <summary>
 	/// Slozka, ve ktere proces aktualne operuje
 	/// </summary>
-	std::string working_dir;
+	Path working_dir;
 
 	/// <summary>
 	/// Mapping signalu a callbacku, ktery se provede po zavolani
@@ -47,7 +48,7 @@ class Process : public Task {
 
 public:
 	Process(kiv_os::THandle pid, kiv_os::THandle main_thread_tid, kiv_os::THandle parent_pid,
-		kiv_os::THandle std_in, kiv_os::THandle std_out, std::string working_dir);
+		kiv_os::THandle std_in, kiv_os::THandle std_out, Path& working_dir);
 
 	/// <summary>
 	/// Prida vlakno do procesu
@@ -60,13 +61,13 @@ public:
 	[[nodiscard]] kiv_os::THandle GetParentPid() const;
 	[[nodiscard]] kiv_os::THandle GetStdIn() const;
 	[[nodiscard]] kiv_os::THandle GetStdOut() const;
-	[[nodiscard]] std::string& GetWorkingDir();
+	[[nodiscard]] Path& GetWorkingDir();
 
 	/// <summary>
 	/// Nastavi pracovni adresar pro proces
 	/// </summary>
 	/// <param name="dir"></param>
-	void SetWorkingDir(const std::string& dir);
+	void SetWorkingDir(Path& path);
 
 	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() {
 		return signal_callbacks;
