@@ -5,7 +5,8 @@
 #include <csignal>
 #include <Windows.h>
 
-#include "Process/Init.h"
+#include "IO/IOManager.h"
+#include "Process/InitProcess.h"
 #include "Process/ProcessManager.h"
 #include "Utils/Debug.h"
 

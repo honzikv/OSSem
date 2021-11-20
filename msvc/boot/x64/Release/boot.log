@@ -6,7 +6,8 @@
   main.cpp
   vga.cpp
   Generating code
-  Previous IPDB was built with incompatible compiler, fall back to full compilation.
-  All 943 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  932 of 949 functions (98.2%) were compiled, the rest were copied from previous compilation.
+    15 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
-  boot.vcxproj -> C:\Users\nvk\source\repos\honzikv\OSSem\compiled\boot.exe
+  boot.vcxproj -> C:\dev\os\OSSem\compiled\boot.exe

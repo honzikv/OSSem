@@ -4,6 +4,8 @@
 
 void Thread::ThreadFunc() {
 	SetRunning();
+	auto thread_tid = tid;
+	auto thread_pid = pid;
 
 	const auto task_exit_code = program(regs); // ziskame exit code z programu
 	SetExitCode(task_exit_code); // nastavime ho
