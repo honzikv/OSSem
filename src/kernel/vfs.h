@@ -38,7 +38,7 @@ public:
 
     virtual kiv_os::NOS_Error Get_Attributes(Path path, uint8_t &attributes) = 0;
 
-    virtual bool File_Exists(Path path, int32_t &target_fd) = 0;
+    virtual bool Check_File_Exists(Path path, int32_t &target_fd) = 0;
 
     virtual uint32_t Get_Root_Fd() = 0;
 

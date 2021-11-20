@@ -19,11 +19,13 @@ public:
     std::string name;
     std::string extension;
     bool is_relative = false;
-    char disk_letter = '\0';
+    std::string disk_letter;
 
     explicit Path(std::string file_path);
 
     void Delete_Name_From_Path();
+
+    void Return_Name_to_Path();
 
     void Append_Path(const Path &path);
 

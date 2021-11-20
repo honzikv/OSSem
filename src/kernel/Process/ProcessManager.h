@@ -48,21 +48,18 @@ public:
 	/// Singleton ziskani objektu. Provede lazy inicializaci a vrati referenci
 	/// </summary>
 	/// <returns>Referenci na singleton instanci teto tridy</returns>
-	static ProcessManager& Get() {
-		static ProcessManager instance;
-		return instance;
-	}
+	static ProcessManager& Get();
 
 private:
 	/// <summary>
 	/// Flag pro shutdown
 	/// </summary>
-	std::atomic<bool> shutdown_triggered = { false };
+	std::atomic<bool> shutdown_triggered = {false};
 
 	/// <summary>
-	/// Callback pro probuzeni initu pri vypnuti
+	/// Semafor pro vypnuti OS
 	/// </summary>
-	std::shared_ptr<SuspendCallback> shutdown_callback;
+	const std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
 
 	/// <summary>
 	/// Tabulka procesu
@@ -134,21 +131,16 @@ private:
 	/// <param name="task_handle"></param>
 	/// <returns></returns>
 	bool TaskNotifiable(kiv_os::THandle task_handle);
-
-	/// <summary>
-	/// Slouzi k zamykani kriticke sekce pro procesy a vlakna (tabulky)
-	/// </summary>
-	std::recursive_mutex tasks_mutex;
+	
 
 	/// <summary>
 	/// Mutex pro callbacky pro vzbuzeni
 	/// </summary>
 	std::recursive_mutex suspend_callbacks_mutex;
+	std::recursive_mutex tasks_mutex;
 
 	ProcessManager() = default;
-	~ProcessManager() {
-		LogDebug("Dtor called");
-	}
+	~ProcessManager() = default;
 	ProcessManager(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
 	ProcessManager& operator=(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
 
@@ -171,6 +163,16 @@ private:
 	/// <param name="tid"></param>
 	/// <returns></returns>
 	HANDLE GetNativeThreadHandle(kiv_os::THandle tid);
+
+	/// <summary>
+	/// Pocet bezicich procesu
+	/// </summary>
+	size_t running_processes = 0;
+
+	/// <summary>
+	/// Pocet bezicich vlaken
+	/// </summary>
+	size_t running_threads = 0;
 
 public:
 	/// <summary>
@@ -207,10 +209,10 @@ public:
 
 private:
 	/// <summary>
-	/// Vytvori Init proces. Tato metoda se musi zavolat v mainu, jinak nebude kernel blokovat, dokud
-	///	se neukonci shell.
+	/// Spusti init proces
 	/// </summary>
-	void RunInitProcess(kiv_os::TThread_Proc program);
+	/// <param name="init_main">odkaz na funkci s mainem pro init proces</param>
+	void RunInitProcess(kiv_os::TThread_Proc init_main);
 
 	/// <summary>
 	/// Ukonci proces

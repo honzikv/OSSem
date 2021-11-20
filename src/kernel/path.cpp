@@ -3,11 +3,12 @@
 //
 
 #include <algorithm>
+#include <utility>
 #include "path.h"
 
 
 Path::Path(std::string file_path) {
-    Create_Path(file_path);
+    Create_Path(std::move(file_path));
     Create_Name();
 }
 
@@ -62,6 +63,8 @@ void Path::Create_Path(std::string file_path) {
  */
 void Path::Create_Name() {
     char dot = '.'; // tecka
+    extension.clear();
+    name.clear();
     full_name = path_vector.back();
     bool is_extension = false;
     for (const char c: full_name) {
@@ -92,6 +95,14 @@ void Path::Append_Path(const Path &path) {
     for (const auto & i : path.path_vector) {
         path_vector.push_back(i);
     }
+    Create_Name();
+}
+
+/**
+ * Vrati nazev souboru/slozky do cesty
+ */
+void Path::Return_Name_to_Path() {
+    path_vector.push_back(full_name);
 }
 
 /**
@@ -109,6 +120,9 @@ std::string Path::To_String() {
     for (auto & i : path_vector) {
         res += i;
         res += separator;
+    }
+    if (res.back() == separator) {
+        res.pop_back();
     }
     return res;
 }

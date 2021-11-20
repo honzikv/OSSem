@@ -112,19 +112,17 @@ private:
 
 	kiv_os::NOS_Error PerformGetWorkingDir(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformGetFileAttribute(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error PerformGetFileAttribute(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformOpenFile(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error PerformOpenFile(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformDeleteFile(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error PerformDeleteFile(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error PerformSeek(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformSetFileAttribute(const kiv_hal::TRegisters& regs) {
-		return kiv_os::NOS_Error::Success;
-	}
+	kiv_os::NOS_Error PerformSetFileAttribute(const kiv_hal::TRegisters& regs);
+
+    kiv_os::NOS_Error OpenFile(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle &handle);
+
+    VFS *GetFileSystem(const std::string& disk);
 };

@@ -66,9 +66,9 @@ kiv_os::NOS_Error Fat12::Open(Path &path, kiv_os::NOpen_File flags, File &file, 
                                                                   fat).first_cluster;
             }
         }
-    } else if (((attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory)) &&
-                (dir_item.attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory))) == 0) {
-        // neni atribut slozka - chybi nastaveny bit 0x10
+    } else if ((((dir_item.attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory)) != 0) &&
+                ((attributes & static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory)) == 0))) {
+        // neni atribut slozka - chybi nastaveny bit 0x10 - ale snaha otevrit slozku
         return kiv_os::NOS_Error::Permission_Denied;
     }
     // soubor/slozka existuje (pripadne vytvoren(a))
@@ -452,13 +452,14 @@ kiv_os::NOS_Error Fat12::Set_Attributes(Path path, uint8_t attributes) {
     return Fat_Helper::Get_Or_Set_Attributes(path, attributes, fat, false);
 }
 
+//TOTO target fd mozna smazat, zatim nakonec neni potreba
 /**
  * Zjisti, jestli polozka (soubor/adresar) existuje
  * @param path cesta k polozce
  * @param target_fd zde bude ulozeno cislo polozky adresare (prvni cluster), kde se hledana polozka nachazi
  * @return true pokud hledana polozka nalezena, jinak false
  */
-bool Fat12::File_Exists(Path path, int32_t &target_fd) {
+bool Fat12::Check_File_Exists(Path path, int32_t &target_fd) {
     int start_sector = Fat_Helper::kRootDirSectorStart; // zacatek - root
     Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(start_sector, path, fat);
     target_fd = dir_item.first_cluster;

@@ -3,6 +3,7 @@
 #include "ReadablePipe.h"
 #include "WritablePipe.h"
 #include "Utils/Logging.h"
+#include "fs_file.h"
 
 void IOManager::HandleIO(kiv_hal::TRegisters &regs) {
     const auto operation = regs.rax.l;
@@ -297,7 +298,7 @@ void IOManager::Init_Filesystems() {
         kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Disk_IO, registers);
         if (!registers.flags.carry) { // je disk
             auto fat_fs = new Fat12();
-            file_systems["C:\\"] = std::unique_ptr<VFS>(fat_fs);
+            file_systems["C"] = std::unique_ptr<VFS>(fat_fs);
             break;
         }
     }
@@ -344,7 +345,7 @@ kiv_os::NOS_Error IOManager::PerformGetWorkingDir(const kiv_hal::TRegisters &reg
     return kiv_os::NOS_Error::Success;
 }
 
-kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters &regs) {
     auto lock = std::scoped_lock(mutex);
     auto path_char = reinterpret_cast<char *>(regs.rdx.r);
     if (path_char == nullptr) {
@@ -356,7 +357,11 @@ kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters& reg
         //Path process_path = process->GetWorkingDir();
     }
     int32_t target_fd;
-    if (file_systems.at(path.disk_letter).second->File_Exists(path, target_fd)) {
+    auto fs = GetFileSystem(path.disk_letter);
+    if (fs == nullptr) {
+        return kiv_os::NOS_Error::Unknown_Filesystem;
+    }
+    if (fs->Check_File_Exists(path, target_fd)) {
         //process->SetWorkingDir(path);
         return kiv_os::NOS_Error::Success;
     }
@@ -364,13 +369,157 @@ kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters& reg
     return kiv_os::NOS_Error::File_Not_Found;
 }
 
-kiv_os::NOS_Error IOManager::PerformOpenFile(const kiv_hal::TRegisters &regs) {
+kiv_os::NOS_Error IOManager::PerformOpenFile(kiv_hal::TRegisters &regs) {
     char *file_name = reinterpret_cast<char *>(regs.rdx.r);
     auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.l); // TODO check
     auto attributes = static_cast<uint8_t>(regs.rdi.i);
     kiv_os::THandle handle; //TODO vytvorit handle
 
+    Path path(file_name);
+    if (path.is_relative) {
+        //TODO dostat proces
+        //Path working_dir = process->GetWorkingDir();
+        //working_dir.Append_Path(path);
+        //path = working_dir;
+    }
 
-    // pokud success, tak do rax.x handle, jinak error
+    auto res = OpenFile(path, flags, attributes, handle);
 
+    if (res == kiv_os::NOS_Error::Success) {
+        regs.rax.x = handle;
+    }
+
+    return res;
+}
+
+//TODO jestli prepsat soubor, kdyz je 0 fmalways a existuje
+kiv_os::NOS_Error IOManager::OpenFile(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle &handle) {
+    auto lock = std::scoped_lock(mutex);
+
+    //TODO mozna vytvoreni ruznych typu filu
+    const auto fs = GetFileSystem(path.disk_letter);
+    if (fs == nullptr) {
+        return kiv_os::NOS_Error::Unknown_Filesystem;
+    }
+    int32_t target_fd;
+    const bool file_exists = fs->Check_File_Exists(path, target_fd);
+
+    if (flags == kiv_os::NOpen_File::fmOpen_Always) {
+        if (!file_exists) { // neexistuje, ale mel by
+            handle = kiv_os::Invalid_Handle;
+            return kiv_os::NOS_Error::Invalid_Argument;
+        }
+    }
+
+    path.Delete_Name_From_Path(); // nemusi existovat, kontroluje se i bez jmena
+    const bool parent_exists = fs->Check_File_Exists(path, target_fd);
+
+    if (!parent_exists) {
+        handle = kiv_os::Invalid_Handle;
+        return kiv_os::NOS_Error::File_Not_Found;
+    }
+
+    path.Return_Name_to_Path();
+
+    // existuje a mel by byt vytvoren adresar - chyba
+    if (file_exists && (attributes & static_cast<decltype(attributes)>(kiv_os::NFile_Attributes::Directory))) {
+        handle = kiv_os::Invalid_Handle;
+        return kiv_os::NOS_Error::Invalid_Argument;
+    }
+
+    File f{};
+    auto res = fs->Open(path, flags, f, attributes);
+
+    if (res != kiv_os::NOS_Error::Success) {
+        handle = kiv_os::Invalid_Handle;
+        return res;
+    }
+    // v poradku
+    auto file = new Fs_File(fs, f);
+    path.Return_Name_to_Path();
+    f.name = &path.To_String()[0];
+
+    //TODO get handle - neco asi se da pouzit z handle service - pridat do mapy souboru
+    return kiv_os::NOS_Error::Success;
+
+}
+
+kiv_os::NOS_Error IOManager::PerformGetFileAttribute(kiv_hal::TRegisters &regs) {
+    char *file_name = reinterpret_cast<char *>(regs.rdx.r);
+
+    Path path(file_name);
+    if (path.is_relative) {
+        //TODO dostat proces
+        //Path working_dir = process->GetWorkingDir();
+        //working_dir.Append_Path(path);
+        //path = working_dir;
+    }
+    auto fs = GetFileSystem(path.disk_letter);
+    if (fs == nullptr) {
+        return kiv_os::NOS_Error::Unknown_Filesystem;
+    }
+    int32_t target_fd;
+    if (fs->Check_File_Exists(path, target_fd)) {
+        uint8_t attributes;
+        auto res = fs->Get_Attributes(path, attributes);
+        if (res == kiv_os::NOS_Error::Success) {
+            regs.rdi.i = attributes;
+        }
+        return res;
+    }
+    return kiv_os::NOS_Error::File_Not_Found;
+}
+
+kiv_os::NOS_Error IOManager::PerformSetFileAttribute(const kiv_hal::TRegisters &regs) {
+    char *file_name = reinterpret_cast<char *>(regs.rdx.r);
+    auto attributes = static_cast<uint8_t>(regs.rdi.i);
+
+    Path path(file_name);
+    if (path.is_relative) {
+        //TODO dostat proces
+        //Path working_dir = process->GetWorkingDir();
+        //working_dir.Append_Path(path);
+        //path = working_dir;
+    }
+    auto fs = GetFileSystem(path.disk_letter);
+    if (fs == nullptr) {
+        return kiv_os::NOS_Error::Unknown_Filesystem;
+    }
+    int32_t target_fd;
+    if (fs->Check_File_Exists(path, target_fd)) {
+        auto res = fs->Set_Attributes(path, attributes);
+        return res;
+    }
+    return kiv_os::NOS_Error::File_Not_Found;
+}
+
+kiv_os::NOS_Error IOManager::PerformDeleteFile(const kiv_hal::TRegisters &regs) {
+    char *file_name = reinterpret_cast<char *>(regs.rdx.r);
+
+    Path path(file_name);
+    if (path.is_relative) {
+        //TODO dostat proces
+        //Path working_dir = process->GetWorkingDir();
+        //working_dir.Append_Path(path);
+        //path = working_dir;
+    }
+    auto fs = GetFileSystem(path.disk_letter);
+    if (fs == nullptr) {
+        return kiv_os::NOS_Error::Unknown_Filesystem;
+    }
+    int32_t target_fd;
+    if (fs->Check_File_Exists(path, target_fd)) {
+        auto res = fs->Rm_Dir(path);
+        return res;
+    }
+    return kiv_os::NOS_Error::File_Not_Found;
+}
+
+VFS* IOManager::GetFileSystem(const std::string& disk) {
+    auto res = file_systems.find(disk);
+    if (res != file_systems.end()) {
+        return res->second.get();
+    }
+
+    return nullptr;
 }

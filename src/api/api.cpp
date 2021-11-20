@@ -3,6 +3,8 @@
 
 #include "api.h"
 
+//#include "rtl.h"
+
 #ifdef _USRDLL
 	#ifdef KERNEL
 		#include "..\kernel\kernel.h"
