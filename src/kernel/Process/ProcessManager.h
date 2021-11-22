@@ -52,14 +52,14 @@ public:
 
 private:
 	/// <summary>
-	/// Flag pro shutdown
+	/// Zda-li se provedl shutdown - aby ho nemohlo provest vice prikazu najednou
 	/// </summary>
-	std::atomic<bool> shutdown_triggered = {false};
+	std::atomic<bool> shutdown_triggered = { false };
 
 	/// <summary>
-	/// Semafor pro vypnuti OS
+	/// Callback pro probuzeni init procesu na shutdown
 	/// </summary>
-	const std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
+	std::shared_ptr<SuspendCallback> init_callback;
 
 	/// <summary>
 	/// Tabulka procesu
@@ -200,6 +200,7 @@ public:
 	/// </summary>
 	void OnThreadFinished(kiv_os::THandle tid);
 
+
 private:
 	/// <summary>
 	/// Spusti init proces
@@ -293,5 +294,10 @@ private:
 
 	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs);
 
-	void TerminateProcesses(kiv_os::THandle this_thread_pid);
+	/// <summary>
+	/// Odesle signal
+	/// </summary>
+	/// <param name="signal"></param>
+	void SendSignal(kiv_os::NSignal_Id signal, std::shared_ptr<Process> process);
+	
 };

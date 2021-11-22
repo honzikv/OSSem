@@ -13,7 +13,7 @@
 /// <summary>
 /// Reprezentuje vlakno
 /// </summary>
-class Thread final : public Task {
+class Thread : public Task {
 
 	/// <summary>
 	/// Program, ktery bude vlakno vykonavat

@@ -53,12 +53,12 @@ private:
 	/// <summary>
 	/// Zapis je zavreny
 	/// </summary>
-	bool writing_closed = false;
+	std::atomic<bool> writing_closed = false;
 
 	/// <summary>
 	/// Ctnei je zavrene
 	/// </summary>
-	bool reading_closed = false;
+	std::atomic<bool> reading_closed = false;
 	
 
 	/// <summary>

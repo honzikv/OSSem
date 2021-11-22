@@ -204,8 +204,6 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Pridame proces a vlakno do tabulky
 	AddProcess(process, pid);
 	AddThread(main_thread, tid);
-	running_threads += 1;
-	running_processes += 1;
 
 	// Pridame defaultni signal handler
 	process->SetSignalCallback(kiv_os::NSignal_Id::Terminate, DefaultSignalCallback);
@@ -339,8 +337,14 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc init_main) {
 
 	// Vlakno pro init
 	const auto args = "";
-	const auto init_main_thread = std::make_shared<Thread>(init_main, init_regs, tid, pid, args);
+	const auto init_main_thread = std::make_shared<InitThread>(init_main, init_regs, tid, pid, args);
 
+	// Vytvorime callback, aby mohl init vypnout os potom co se zavola shutdown
+	// Tento callback muze zavolat i shell, pokud se ukonci pomoci exit
+	init_callback = std::make_shared<SuspendCallback>();
+	suspend_callbacks[tid] = init_callback; // zkopirujeme i do pole
+
+	// Spustime vlakno initu
 	auto std_thread_id = init_main_thread->Dispatch();
 	// Pridame do tabulky
 	AddProcess(init_process, pid);
@@ -364,27 +368,14 @@ void ProcessManager::TerminateProcess(const kiv_os::THandle pid, const bool term
 		for (size_t i = terminated_forcefully ? 0 : 1; i < process->GetProcessThreads().size(); i += 1) {
 			TerminateThread(process->GetProcessThreads()[i], true, ForcefullyEndedTaskExitCode);
 		}
-		running_processes -= 1;
-	}
-
-	// Zavolame vsechny vlakna / procesy cekajici na ukonceni procesu
-	process->SetExitCode(terminated_forcefully ? ForcefullyEndedTaskExitCode : thread_exit_code);
-	process->NotifySubscribers(process->GetPid(), terminated_forcefully);
-
-	if (terminated_forcefully) {
-		// Zavolame callback pro signal
-		process->ExecuteCallback(kiv_os::NSignal_Id::Terminate);
 	}
 
 	// Rekneme IOManageru aby odstranil referenci na handle z naseho procesu
 	IOManager::Get().UnregisterProcessStdIO(process->GetStdIn(), process->GetStdOut());
 
-	// Pokud bezi pouze jedno vlakno a proces, znamena to, ze doslo k shutdownu a muzeme ukoncit i init proces
-	if (shutdown_triggered && running_processes == 1 && running_threads == 1) {
-		LogDebug("Process deinit notifying init process");
-		// Vzbudime init proces
-		shutdown_semaphore->Release();
-	}
+	// Zavolame vsechny vlakna / procesy cekajici na ukonceni procesu
+	process->SetExitCode(terminated_forcefully ? ForcefullyEndedTaskExitCode : thread_exit_code);
+	process->NotifySubscribers(process->GetPid(), terminated_forcefully);
 }
 
 void ProcessManager::TerminateThread(const kiv_os::THandle tid, const bool terminated_forcefully,
@@ -396,17 +387,8 @@ void ProcessManager::TerminateThread(const kiv_os::THandle tid, const bool termi
 	}
 
 	// Notifikujeme cekajici tasky na toto vlakno o tom, ze uz dobehlo
-	thread->NotifySubscribers(thread->GetTid(), terminated_forcefully);
 	thread->SetExitCode(terminated_forcefully ? ForcefullyEndedTaskExitCode : exit_code);
-
-	running_threads -= 1;
-
-	// Pokud bezi pouze jedno vlakno a proces, znamena to, ze doslo k shutdownu a muzeme ukoncit i init proces
-	if (shutdown_triggered && running_processes == 1 && running_threads == 1) {
-		LogDebug("Thread deinit notifying init process");
-		// Vzbudime init proces
-		shutdown_semaphore->Release();
-	}
+	thread->NotifySubscribers(thread->GetTid(), terminated_forcefully);
 }
 
 HandleType ProcessManager::GetHandleType(const kiv_os::THandle id) {
@@ -558,22 +540,12 @@ kiv_os::NOS_Error ProcessManager::ExitTask(const kiv_hal::TRegisters& regs) {
 
 kiv_os::NOS_Error ProcessManager::PerformShutdown(const kiv_hal::TRegisters& regs) {
 	auto lock = std::scoped_lock(mutex);
-	LogDebug("Shutdown started. Locking down ProcessManager");
-	const auto current_tid = GetCurrentTid();
-	if (current_tid == kiv_os::Invalid_Handle) {
+	if (shutdown_triggered) {
 		return kiv_os::NOS_Error::Permission_Denied;
 	}
-	const auto current_pid = GetThread(current_tid)->GetPid();
-	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
-		// Init proces se terminuje sam a ma vzdy id 0, takze ukoncujeme od pid = 1
 
-		// Take nechceme ukoncit aktualni vlakno a nebo pid, ktery neni obsazeny
-		if (current_pid != pid && process_table[pid] != nullptr) {
-			TerminateProcess(pid, true, -1);
-			RemoveProcessFromTable(GetProcess(pid));
-		}
-	}
-
+	shutdown_triggered = true;
+	init_callback->Notify(0); // kdo notifikoval nam je jedno
 	return kiv_os::NOS_Error::Success;
 }
 
@@ -598,18 +570,6 @@ kiv_os::NOS_Error ProcessManager::PerformRegisterSignalHandler(const kiv_hal::TR
 	return kiv_os::NOS_Error::Success;
 }
 
-void ProcessManager::TerminateProcesses(const kiv_os::THandle this_thread_pid) {
-	LogDebug("Shutdown performed from tid: " + std::to_string(GetCurrentTid()));
-	auto lock = std::scoped_lock(mutex);
-	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
-		// Init proces se terminuje sam a ma vzdy id 0, takze ukoncujeme od pid = 1 a pid, ktery spustil ukonceni se ukonci sam
-		if (const auto process = GetProcess(pid); pid != this_thread_pid && process != nullptr) {
-			TerminateProcess(pid, true, -1);
-			RemoveProcessFromTable(process);
-		}
-	}
-
-}
 
 void ProcessManager::CreateSuspendCallbackIfNotExists(const kiv_os::THandle subscriber_handle) {
 	if (suspend_callbacks.count(subscriber_handle) == 0 || suspend_callbacks[subscriber_handle] == nullptr) {

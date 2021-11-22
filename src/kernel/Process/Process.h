@@ -10,7 +10,7 @@
 /// Reprezentuje proces (resp. PCB)
 /// </summary>
 class Process : public Task {
-
+protected:
 	/// <summary>
 	/// PID
 	/// </summary>
@@ -93,6 +93,6 @@ public:
 	/// Provede callback na dany signal
 	/// </summary>
 	/// <param name="signal_id">Cislo signalu</param>
-	void ExecuteCallback(kiv_os::NSignal_Id signal_id);
+	void Signal(kiv_os::NSignal_Id signal_id);
 
 };

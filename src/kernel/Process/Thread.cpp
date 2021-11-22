@@ -4,8 +4,6 @@
 
 void Thread::ThreadFunc() {
 	SetRunning();
-	auto thread_tid = tid;
-	auto thread_pid = pid;
 
 	const auto task_exit_code = program(regs); // ziskame exit code z programu
 	SetExitCode(task_exit_code); // nastavime ho
@@ -25,32 +23,12 @@ Thread::Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os
 	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(this->args.c_str());
 }
 
-// /// <summary>
-// /// Windows API funkce pro spusteni vlakna
-// /// </summary>
-// /// <param name="params"></param>
-// /// <returns></returns>
-// DWORD WINAPI WinThreadFunc(const LPVOID params) {
-// 	auto& thread = *static_cast<Thread*>(params);
-// 	thread.ThreadFunc();
-// 	return thread.GetExitCode();
-// }
-
 
 std::thread::id Thread::Dispatch() {
 	auto thread = std::thread(&Thread::ThreadFunc, this);
-	auto thread_id = thread.get_id();
+	const auto thread_id = thread.get_id();
 	thread.detach();
 	return thread_id;
 }
-
-// void Thread::TerminateIfRunning(HANDLE handle, const uint16_t exit_code) {
-// 	auto lock = std::scoped_lock(mutex);
-// 	if (task_state != TaskState::Finished) {
-// 		const auto result = TerminateThread(handle, exit_code);
-// 		task_exit_code = exit_code;
-// 	}
-// 	task_state = TaskState::Finished;
-// }
 
 TaskState Thread::GetState() const { return task_state; }

@@ -28,13 +28,10 @@ void Pipe::AdvanceWritingIdx() {
 
 kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size_t& bytes_read) {
 	auto bytes_read_from_buffer = 0;
-	{
-		// Nejprve zkontrolujeme, jestli je co precist a pipe je pro cteni uzavrena
-		auto lock = std::scoped_lock(pipe_access);
-		if (writing_closed && Empty() || reading_closed) {
-			bytes_read = 0;
-			return kiv_os::NOS_Error::Permission_Denied;
-		}
+	// Nejprve zkontrolujeme, jestli je co precist a pipe je pro cteni uzavrena
+	if (writing_closed && Empty() || reading_closed) {
+		bytes_read = 0;
+		return kiv_os::NOS_Error::Permission_Denied;
 	}
 
 	// Pokud ne zacneme cist
@@ -74,12 +71,9 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 
 kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_size, size_t& bytes_written) {
 	auto bytes_written_to_buffer = 0;
-	{
-		auto lock = std::scoped_lock(pipe_access);
-		if (writing_closed || reading_closed) {
-			bytes_written = 0;
-			return kiv_os::NOS_Error::Permission_Denied;
-		}
+	if (writing_closed || reading_closed) {
+		bytes_written = 0;
+		return kiv_os::NOS_Error::Permission_Denied;
 	}
 
 	for (size_t i = 0; i < buffer_size; i += 1) {

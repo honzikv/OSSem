@@ -13,6 +13,8 @@ class InitProcess final : public Process {
 	/// <returns></returns>
 	static size_t InitFun(const kiv_hal::TRegisters& regs);
 
+	static void PerformShutdown();
+
 	void NotifySubscribers(kiv_os::THandle task_id, bool terminated_forcefully) override;
 
 public:
@@ -21,4 +23,12 @@ public:
 	/// </summary>
 	static void Start();
 	
+};
+
+class InitThread final : public Thread {
+public:
+	using Thread::Thread;
+	void NotifySubscribers(kiv_os::THandle task_id, bool terminated_forcefully) override {
+		// nic notifikovat nechceme
+	}
 };

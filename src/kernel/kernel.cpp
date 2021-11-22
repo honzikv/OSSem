@@ -11,7 +11,7 @@
 #include "Utils/Debug.h"
 
 
-void SysCall(kiv_hal::TRegisters& regs) {
+void __stdcall Sys_Call(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_Service_Major>(regs.rax.h)) {
 	case kiv_os::NOS_Service_Major::File_System:
 		IOManager::Get().HandleIO(regs);
@@ -24,6 +24,7 @@ void SysCall(kiv_hal::TRegisters& regs) {
 
 }
 
+
 void InitializeKernel() {
 	User_Programs = LoadLibraryW(L"user.dll");
 }
@@ -32,22 +33,15 @@ void ShutdownKernel() {
 	FreeLibrary(User_Programs);
 }
 
-void HandleSignal(int signum) {
-	LogDebug("Hello signal");
-}
-
 
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	InitializeKernel();
-	signal(SIGINT, HandleSignal);
-	Set_Interrupt_Handler(kiv_os::System_Int_Number, SysCall);
+	Set_Interrupt_Handler(kiv_os::System_Int_Number, Sys_Call);
 
 	// Spustime init proces
 	InitProcess::Start();
 
 #if IS_DEBUG
-	LogDebug("DEBUG: Init process killed. The Kernel will shutdown in 5s");
-	std::this_thread::sleep_for(std::chrono::seconds(5));
 #endif
 
 	ShutdownKernel();
