@@ -207,6 +207,8 @@ public:
 	/// </summary>
 	void NotifyThreadFinished(kiv_os::THandle tid);
 
+	std::shared_ptr<Process> GetCurrentProcess();
+
 private:
 	/// <summary>
 	/// Spusti init proces

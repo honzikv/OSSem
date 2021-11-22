@@ -202,7 +202,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Zjistime, zda-li vlakno, ve kterem se proces vytvari ma nejakeho rodice a nastavime ho (pokud existuje
 	// jinak se nastavi invalid value)
 	const auto parent_process_pid = FindParentPid();
-	auto working_dir = DEFAULT_PROCESS_WORKING_DIR;
+	auto working_dir = Path(DEFAULT_PROCESS_WORKING_DIR);
 	if (parent_process_pid != kiv_os:: Invalid_Handle) {
 		const auto parent = GetProcess(parent_process_pid);
 		working_dir = parent->GetWorkingDir();
@@ -331,6 +331,14 @@ void ProcessManager::NotifyThreadFinished(const kiv_os::THandle tid) {
 	TerminateThread(tid, false);
 }
 
+std::shared_ptr<Process> ProcessManager::GetCurrentProcess() {
+	auto lock = std::scoped_lock(tasks_mutex);
+	const auto current_tid = GetCurrentTid();
+	const auto thread = GetThread(current_tid);
+
+	return GetProcess(thread->GetPid());
+}
+
 void ProcessManager::RunInitProcess(kiv_os::TThread_Proc init_main) {
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	const auto pid = GetFreePid(); // Init process ma vzdy 0
@@ -339,7 +347,8 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc init_main) {
 	const auto [std_in, std_out] = IOManager::Get().CreateStdIO();
 
 	// Proces pro init
-	const auto init_process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, DEFAULT_PROCESS_WORKING_DIR);
+	auto path = Path("C:\\");
+	const auto init_process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, path);
 
 	// Initu predame do registru stdio
 	auto init_regs = kiv_hal::TRegisters();

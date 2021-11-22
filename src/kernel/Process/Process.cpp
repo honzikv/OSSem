@@ -25,6 +25,7 @@ kiv_os::THandle Process::GetStdOut() const { return std_out; }
 Path& Process::GetWorkingDir() { return working_dir; }
 
 void Process::SetWorkingDir(Path& path) {
+	auto lock = std::scoped_lock(mutex);
 	working_dir = std::move(path);
 }
 

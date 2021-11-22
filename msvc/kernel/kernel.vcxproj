@@ -24,6 +24,7 @@
     <ClCompile Include="..\..\src\kernel\fat_helper.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ConsoleIn.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ConsoleOut.cpp" />
+    <ClCompile Include="..\..\src\kernel\IO\fs_file.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\HandleService.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\IFile.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\..\src\kernel\fat_helper.h" />
     <ClInclude Include="..\..\src\kernel\IO\ConsoleIn.h" />
     <ClInclude Include="..\..\src\kernel\IO\ConsoleOut.h" />
+    <ClInclude Include="..\..\src\kernel\IO\fs_file.h" />
     <ClInclude Include="..\..\src\kernel\IO\HandleService.h" />
     <ClInclude Include="..\..\src\kernel\IO\IFile.h" />
     <ClInclude Include="..\..\src\kernel\IO\IOManager.h" />

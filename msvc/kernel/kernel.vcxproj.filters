@@ -107,6 +107,9 @@
     <ClCompile Include="..\..\src\kernel\Process\InitProcess.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\fs_file.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -186,6 +189,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Process\InitProcess.h">
       <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\fs_file.h">
+      <Filter>Headers\FatFS</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
