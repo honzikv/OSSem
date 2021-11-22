@@ -25,7 +25,7 @@ Fat12::Fat12() {
  */
 kiv_os::NOS_Error Fat12::Open(Path &path, const kiv_os::NOpen_File flags, File &file, uint8_t attributes) {
     file = File{};
-    std::string file_name = path.full_name;
+    std::string file_name = path.To_String();
     file.name = &file_name.at(0);
 
     std::vector<std::string> pathCopy(path.path_vector); //TODO asi smazat
@@ -451,17 +451,14 @@ kiv_os::NOS_Error Fat12::Set_Attributes(const Path path, uint8_t attributes) {
     return Fat_Helper::Get_Or_Set_Attributes(path, attributes, fat, false);
 }
 
-//TOTO target fd mozna smazat, zatim nakonec neni potreba
 /**
  * Zjisti, jestli polozka (soubor/adresar) existuje
  * @param path cesta k polozce
- * @param target_fd zde bude ulozeno cislo polozky adresare (prvni cluster), kde se hledana polozka nachazi
  * @return true pokud hledana polozka nalezena, jinak false
  */
-bool Fat12::Check_File_Exists(const Path path, int32_t &target_fd) {
+bool Fat12::Check_If_File_Exists(Path path) {
 	const int start_sector = Fat_Helper::kRootDirSectorStart; // zacatek - root
 	const Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(start_sector, path, fat);
-    target_fd = dir_item.first_cluster;
     return dir_item.first_cluster != -1; // vysledek, jestli nalezen nebo ne
 }
 
