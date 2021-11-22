@@ -3,25 +3,32 @@
 #include <csignal>
 
 void Thread::ThreadFunc() {
+	// Vlakno se spustilo - tzn nastavime stav vlakna na bezici
 	SetRunning();
-	auto thread_tid = tid;
-	auto thread_pid = pid;
 
-	const auto task_exit_code = program(regs); // ziskame exit code z programu
-	SetExitCode(task_exit_code); // nastavime ho
+	// Provedeme spusteni programu (funkce TThread_Proc), coz vlakno zablokuje dokud nedobehne
+	// a ziskame exit code z programu
+	const auto task_exit_code = program(regs);
 
-	// Program dobehl, rekneme process managerovi at ho ukonci
-	ProcessManager::Get().NotifyThreadFinished(tid);
+	// Nastavime exit code - toto se nemusi synchronizovat, protoze bud se vlakno v tomto momentu ukonci nasilim
+	// a exit code se nastavi na specialni a nebo se zavola callback pro notifikaci
+	this->task_exit_code = task_exit_code;
 
-	if (main_thread) {
-		ProcessManager::Get().NotifyProcessFinished(pid, task_exit_code);
+	// Zavolame funkci pro ukonceni vlakna v process manageru
+	// Zde musime objekt zamknout aby neslo zaroven vlakno odstrelit
+	auto lock = std::scoped_lock(thread_finish_mutex);
+	if (task_state == TaskState::ProgramTerminated) {
+		return;
 	}
+	task_state = TaskState::ProgramFinished;
+	ProcessManager::Get().OnThreadFinish(tid);
 }
 
-Thread::Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os::THandle tid, kiv_os::THandle pid,
-               const char* args, bool is_main_thread): program(program), regs(context), main_thread(is_main_thread),
-                                                       args(args),
-                                                       tid(tid), pid(pid) {
+Thread::Thread(const kiv_os::TThread_Proc program, kiv_hal::TRegisters context, const kiv_os::THandle tid,
+               const kiv_os::THandle pid,
+               const char* args, const bool is_main_thread): program(program), regs(context), main_thread(is_main_thread),
+                                                             args(args),
+                                                             tid(tid), pid(pid) {
 	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(this->args.c_str());
 }
 
@@ -30,28 +37,36 @@ Thread::Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os
 /// </summary>
 /// <param name="params"></param>
 /// <returns></returns>
-DWORD WINAPI WinThreadFunc(const LPVOID params) {
-	auto& thread = *static_cast<Thread*>(params);
-	thread.ThreadFunc();
-	return thread.GetExitCode();
+// DWORD WINAPI WinThreadFunc(const LPVOID params) {
+// 	auto& thread = *static_cast<Thread*>(params);
+// 	thread.ThreadFunc();
+// 	return thread.GetTaskExitCode();
+// }
+
+
+std::thread::id Thread::Dispatch() {
+	// DWORD thread_id;
+	// auto thread_handle = CreateThread(nullptr, 0, WinThreadFunc, this, 0, &thread_id);
+	// return {thread_handle, thread_id};
+
+	auto thread = std::thread(&Thread::ThreadFunc, this);
+	const auto thread_id = thread.get_id();
+
+	thread.detach();
+	return thread_id;
 }
 
+void Thread::TerminateIfRunning(const uint16_t exit_code) {
+	auto lock = std::scoped_lock(thread_finish_mutex);
+	// Pokud vlakno porad bezi, pak jsme se dostali jeste pred situaci, nez se vlakno ukoncilo prirozene
+	// Tzn. vlakno lze bezpecne zabit pomoci Windows api
+	if (task_state == TaskState::Running) {
+		// TerminateThread(native_thread_handle, exit_code);
 
-std::pair<HANDLE, DWORD> Thread::Dispatch() {
-	DWORD thread_id;
-	auto thread_handle = CreateThread(nullptr, 0, WinThreadFunc, this, 0, &thread_id);
-	return {thread_handle, thread_id};
-}
-
-void Thread::TerminateIfRunning(HANDLE handle, const uint16_t exit_code) {
-	auto lock = std::scoped_lock(mutex);
-	if (task_state != TaskState::Finished) {
-		const auto result = TerminateThread(handle, exit_code);
-		LogDebug("KILLED thread with tid: " + std::to_string(tid) + " pid: " + std::to_string(pid) + " and handle: " + std::to_string(
-			reinterpret_cast<size_t>(handle)) + " success: " + std::to_string(result));
+		// Nastavime exit code a task state jako program terminated
 		task_exit_code = exit_code;
+		task_state = TaskState::ProgramTerminated;
 	}
-	task_state = TaskState::Finished;
 }
 
 TaskState Thread::GetState() const { return task_state; }

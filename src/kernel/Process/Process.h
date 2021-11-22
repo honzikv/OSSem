@@ -57,7 +57,7 @@ public:
 	void AddThread(kiv_os::THandle tid);
 
 	// Gettery
-	[[nodiscard]] kiv_os::THandle GetPid() const;
+	[[nodiscard]] kiv_os::THandle Get_Pid() const;
 	[[nodiscard]] kiv_os::THandle GetParentPid() const;
 	[[nodiscard]] kiv_os::THandle GetStdIn() const;
 	[[nodiscard]] kiv_os::THandle GetStdOut() const;

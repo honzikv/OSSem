@@ -16,7 +16,7 @@ Path::Path(std::string file_path) {
  * Vytvori vector stringu jednotlivych slozek cesty, upravi podle "." a ".." (vynecha, resp. odstrani posledni)
  * @param file_path cesta zadana jako vektor znaku
  */
-void Path::Create_Path(const std::string file_path) {
+void Path::Create_Path(const std::string& file_path) {
 	const std::string cur_dir = "."; // soucasny adresat
 	const std::string parent_dir = ".."; // nadrazeny adresar
 	const char separator = '\\'; // separator
@@ -116,7 +116,7 @@ std::string Path::To_String() {
         res += ':';
         res += separator;
     }
-    for (auto & i : path_vector) {
+    for (const auto & i : path_vector) {
         res += i;
         res += separator;
     }

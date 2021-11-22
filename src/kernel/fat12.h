@@ -37,7 +37,7 @@ public:
 
     kiv_os::NOS_Error Get_Attributes(Path path, uint8_t &attributes) override;
 
-    bool Check_File_Exists(Path path, int32_t &target_fd) override;
+    bool Check_If_File_Exists(Path path) override;
 
     kiv_os::NOS_Error Set_Size(File file, size_t new_size) override;
 

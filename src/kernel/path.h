@@ -9,7 +9,7 @@
 
 class Path {
 private:
-    void Create_Path(std::string file_path);
+    void Create_Path(const std::string& file_path);
 
     void Create_Name();
 

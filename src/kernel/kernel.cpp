@@ -14,7 +14,7 @@
 void SysCall(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_Service_Major>(regs.rax.h)) {
 	case kiv_os::NOS_Service_Major::File_System:
-		IOManager::Get().HandleIO(regs);
+		IOManager::Get().Handle_IO(regs);
 		break;
 
 	case kiv_os::NOS_Service_Major::Process:
@@ -46,9 +46,13 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	InitProcess::Start();
 
 #if IS_DEBUG
-	LogDebug("DEBUG: Init process killed. The Kernel will shutdown in 5s");
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+	// LogDebug("DEBUG: Init process killed. The Kernel will shutdown in 5s");
+	// std::this_thread::sleep_for(std::chrono::seconds(5));
 #endif
+
+	// Pokud jsme se dostali az sem OS se bude vypinat
+	// Zavolame OnShutdown process manageru, coz nam sesynchronizuje main s ukoncenim init procesu
+	ProcessManager::Get().OnShutdown();
 
 	ShutdownKernel();
 }

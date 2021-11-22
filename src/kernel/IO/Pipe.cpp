@@ -128,6 +128,6 @@ void Pipe::CloseForReading() {
 void Pipe::CloseForWriting() {
 	LogDebug("Closing pipe for writing");
 	auto eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
-	auto _ = size_t{0};
-	Write(std::addressof(eof), 1, _); // toto nastavi flag writing closed za nas
+	auto bytes_written = size_t{0};
+	Write(std::addressof(eof), 1, bytes_written); // toto nastavi flag writing closed za nas
 }

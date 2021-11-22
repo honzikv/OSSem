@@ -228,7 +228,7 @@ void Shell::Run() {
 		if (const auto read_success = kiv_os_rtl::ReadFile(std_in, buffer.data(), buffer.size(), bytesRead);
 			!read_success) {
 			// Pokud EOT ukoncime while loop
-			break;
+			return;
 		}
 
 		// Ziskame uzivatelsky vstup, ktery prevedeme na std::sting (vyresi za nas \0 terminaci)

@@ -54,12 +54,17 @@ private:
 	/// <summary>
 	/// Flag pro shutdown
 	/// </summary>
-	std::atomic<bool> shutdown_triggered = {false};
+	bool shutdown_triggered = false;
 
 	/// <summary>
-	/// Semafor pro vypnuti OS
+	/// Mutex pro synchronizaci pri shutdownu
 	/// </summary>
-	const std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
+	std::mutex shutdown_mutex = {};
+
+	/// <summary>
+	/// Callback pro probuzeni Init procesu pro ukonceni OS
+	/// </summary>
+	std::shared_ptr<SuspendCallback> init_callback = std::make_shared<SuspendCallback>();
 
 	/// <summary>
 	/// Tabulka procesu
@@ -74,18 +79,13 @@ private:
 	/// <summary>
 	/// TID -> Handle
 	/// </summary>
-	std::unordered_map<DWORD, kiv_os::THandle> thread_id_to_kiv_handle = {};
+	std::unordered_map<std::thread::id, kiv_os::THandle> std_thread_id_to_kiv_handle = {};
 
 	/// <summary>
 	/// Handle -> Tid
 	///	Pro mazani
 	/// </summary>
-	std::unordered_map<kiv_os::THandle, DWORD> kiv_handle_to_native_thread_id = {};
-
-	/// <summary>
-	/// Thread id -> Handle pro ukonceni vlakna
-	/// </summary>
-	std::unordered_map<DWORD, HANDLE> native_thread_id_to_native_handle = {};
+	std::unordered_map<kiv_os::THandle, std::thread::id> kiv_handle_to_std_thread_id = {};
 
 	/// <summary>
 	/// Hashmapa s callbacky pro probouzeni vlaken
@@ -136,8 +136,12 @@ private:
 	/// <summary>
 	/// Mutex pro callbacky pro vzbuzeni
 	/// </summary>
-	std::recursive_mutex suspend_callbacks_mutex;
-	std::recursive_mutex tasks_mutex;
+	std::mutex suspend_callbacks_mutex;
+
+	/// <summary>
+	/// Mutex pro tasky
+	/// </summary>
+	std::mutex tasks_mutex;
 
 	ProcessManager() = default;
 	~ProcessManager() = default;
@@ -156,23 +160,6 @@ private:
 	/// </summary>
 	/// <returns>Tid aktualne beziciho vlakna</returns>
 	kiv_os::THandle GetCurrentTid();
-
-	/// <summary>
-	/// Vrati nativni handle k tidu - tid musi existovat
-	/// </summary>
-	/// <param name="tid"></param>
-	/// <returns></returns>
-	HANDLE GetNativeThreadHandle(kiv_os::THandle tid);
-
-	/// <summary>
-	/// Pocet bezicich procesu
-	/// </summary>
-	size_t running_processes = 0;
-
-	/// <summary>
-	/// Pocet bezicich vlaken
-	/// </summary>
-	size_t running_threads = 0;
 
 public:
 	/// <summary>
@@ -196,17 +183,8 @@ public:
 	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
 
 	/// <summary>
-	/// Tuto metodu pouziva hlavni vlakno po uspesnem skonceni sveho lifecyclu - ukonci tim svuj proces
+	/// Vrati aktualne bezici proces
 	/// </summary>
-	/// <param name="pid">Pid procesu, ktery se ma ukoncit</param>
-	/// <param name="exit_code">Exit code procesu</param>
-	void NotifyProcessFinished(kiv_os::THandle pid, uint16_t exit_code);
-
-	/// <summary>
-	/// Tuto metodu pouziva vlakno, aby oznamilo process manageru, ze skoncilo
-	/// </summary>
-	void NotifyThreadFinished(kiv_os::THandle tid);
-
 	std::shared_ptr<Process> GetCurrentProcess();
 
 private:
@@ -217,27 +195,11 @@ private:
 	void RunInitProcess(kiv_os::TThread_Proc init_main);
 
 	/// <summary>
-	/// Ukonci proces
-	/// </summary>
-	/// <param name="pid"></param>
-	/// <param name="terminated_forcefully">Zda-li se proces ukoncil nasilim</param>
-	/// <param name="thread_exit_code">Exit code hlavniho vlakna</param>
-	void TerminateProcess(kiv_os::THandle pid, bool terminated_forcefully = false, uint16_t thread_exit_code = 0);
-
-	/// <summary>
-	/// Ukonci vlakno
-	/// </summary>
-	/// <param name="tid"></param>
-	/// <param name="terminated_forcefully"></param>
-	/// <param name="exit_code">Exit code vlakna</param>
-	void TerminateThread(kiv_os::THandle tid, bool terminated_forcefully = false, size_t exit_code = 0);
-
-	/// <summary>
 	/// Provede klonovani procesu nebo vlakna
 	/// </summary>
 	/// <param name="regs">kontext</param>
 	/// <returns>Success pokud vse probehlo v poradku, jinak chybu</returns>
-	kiv_os::NOS_Error PerformClone(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Clone(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Getter pro vlakno procesu podle tidu
@@ -261,12 +223,6 @@ private:
 	kiv_os::NOS_Error CreateNewThread(kiv_hal::TRegisters& regs);
 
 	/// <summary>
-	/// Odstrani callback pro vzbuzeni
-	/// </summary>
-	/// <param name="subscriber_handle"></param>
-	void RemoveSuspendCallback(kiv_os::THandle subscriber_handle);
-
-	/// <summary>
 	/// Vrati typ handle pro  dane id
 	/// </summary>
 	/// <param name="id">id, pro ktere chceme typ handle dostat</param>
@@ -287,7 +243,7 @@ private:
 	/// </summary>
 	/// <param name="regs">kontext</param>
 	/// <returns>vysledek operace</returns>
-	kiv_os::NOS_Error PerformWaitFor(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Wait_For(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Odstrani proces z tabulky
@@ -306,13 +262,39 @@ private:
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns></returns>
-	kiv_os::NOS_Error PerformReadExitCode(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Read_Exit_Code(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error ExitTask(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Exit_Task(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformShutdown(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Shutdown(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformRegisterSignalHandler(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Register_Signal_Handler(const kiv_hal::TRegisters& regs);
 
-	void TerminateProcesses(kiv_os::THandle this_thread_pid);
+
+	// Update 22.11
+
+	/// <summary>
+	/// Nasilne ukonci 
+	/// </summary>
+	/// <param name="pid"></param>
+	void Terminate_Process(kiv_os::THandle pid);
+
+	void Terminate_Thread_Forcefully(std::shared_ptr<Thread> thread);
+
+	/// <summary>
+	/// Dokonceni zivotniho cyklu procesu - metodu zavola main vlakno po skonceni
+	/// </summary>
+	void On_Process_Finish(const kiv_os::THandle pid, const uint16_t main_thread_exit_code);
+
+
+public:
+	/// <summary>
+	/// Dokonceni zivotniho cyklu vlakna - provede zavolani metod a dokonceni
+	/// </summary>
+	void OnThreadFinish(kiv_os::THandle tid);
+
+	/// <summary>
+	/// Synchronizace main vlakna
+	/// </summary>
+	void OnShutdown();
 };

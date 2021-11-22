@@ -1,8 +1,9 @@
 #include "InitProcess.h"
 
 #include "kernel.h"
+#include "../IO/IOManager.h"
 
-void CreateShell(kiv_hal::TRegisters& shell_regs, const kiv_os::THandle std_in_handle,
+void Create_Shell(kiv_hal::TRegisters& shell_regs, const kiv_os::THandle std_in_handle,
                  const kiv_os::THandle std_out_handle) {
 	const auto shell_command = "shell";
 	const auto shell_args = "";
@@ -17,7 +18,7 @@ void CreateShell(kiv_hal::TRegisters& shell_regs, const kiv_os::THandle std_in_h
 	SysCall(shell_regs);
 }
 
-void WaitFor(kiv_os::THandle shell_pid) {
+void Wait_For(kiv_os::THandle shell_pid) {
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Wait_For);
@@ -26,7 +27,7 @@ void WaitFor(kiv_os::THandle shell_pid) {
 	SysCall(regs);
 }
 
-void ReadShellExitCode(const kiv_os::THandle shell_pid) {
+void Read_Shell_Exit_Code(const kiv_os::THandle shell_pid) {
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Read_Exit_Code);
@@ -39,19 +40,12 @@ size_t InitProcess::InitFun(const kiv_hal::TRegisters& regs) {
 	const auto std_out = regs.rbx.x;
 
 	auto shell_regs = kiv_hal::TRegisters();
-	CreateShell(shell_regs, std_in, std_out);
+	Create_Shell(shell_regs, std_in, std_out);
 	const auto shell_pid = shell_regs.rax.x;
 
 	// Pockame az skonci shell
-	WaitFor(shell_pid);
-
-	// Pokud doslo k shutdownu pockame, zda-li se vsechny procesy ukoncili
-	if (ProcessManager::Get().shutdown_triggered) {
-		ProcessManager::Get().shutdown_semaphore->Acquire();
-	}
-	else {
-		ReadShellExitCode(shell_pid); // Jinak staci precist exit code shellu
-	}
+	Wait_For(shell_pid);
+	Read_Shell_Exit_Code(shell_pid); // Jinak staci precist exit code shellu
 
 	return 0;
 }
@@ -61,6 +55,8 @@ void InitProcess::Start() {
 	semaphore->Acquire(); // Zablokujeme main vlakno aby cekalo na shutdown
 }
 
-void InitProcess::NotifySubscribers(kiv_os::THandle task_id, bool terminated_forcefully) {
+void InitProcess::NotifySubscribers(const kiv_os::THandle this_task_handle) {
+	Process::NotifySubscribers(this_task_handle);
 	semaphore->Release();
 }
+

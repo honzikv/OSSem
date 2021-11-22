@@ -21,6 +21,12 @@ class Thread final : public Task {
 	const kiv_os::TThread_Proc program;
 
 	/// <summary>
+	/// Mutex, ktery zabezpecuje ze nelze zaroven vlakno vypnout odstrelenim pres TerminateThread z jineho vlakna
+	///	a prirozene dobehnutim
+	/// </summary>
+	std::recursive_mutex thread_finish_mutex = {};
+
+	/// <summary>
 	/// Kontext vlakna
 	/// </summary>
 	kiv_hal::TRegisters regs;
@@ -63,14 +69,14 @@ public:
 	/// <summary>
 	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho handle a thread id
 	/// </summary>
-	std::pair<HANDLE, DWORD> Dispatch();
+	std::thread::id Dispatch();
 
 	/// <summary>
 	/// Nasilne ukonci vlakno. Tato funkce nic nedela, pokud se vlakno ukoncilo samo
 	/// </summary>
-	/// <param name="handle"></param>
+	/// <param name="native_thread_handle"></param>
 	/// <param name="exit_code">Exit code, ktery se nastavi po ukonceni</param>
-	void TerminateIfRunning(HANDLE handle, uint16_t exit_code);
+	void TerminateIfRunning(uint16_t exit_code);
 
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne

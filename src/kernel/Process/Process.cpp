@@ -14,7 +14,7 @@ void Process::AddThread(const kiv_os::THandle tid) {
 	threads.push_back(tid);
 }
 
-kiv_os::THandle Process::GetPid() const { return pid; }
+kiv_os::THandle Process::Get_Pid() const { return pid; }
 
 kiv_os::THandle Process::GetParentPid() const { return parent_pid; }
 
@@ -25,7 +25,7 @@ kiv_os::THandle Process::GetStdOut() const { return std_out; }
 Path& Process::GetWorkingDir() { return working_dir; }
 
 void Process::SetWorkingDir(Path& path) {
-	auto lock = std::scoped_lock(mutex);
+	auto lock = std::scoped_lock(subscribers_mutex);
 	working_dir = std::move(path);
 }
 

@@ -1,4 +1,6 @@
 #pragma once
+#include <unordered_set>
+
 #include "HandleService.h"
 #include "IFile.h"
 #include "Pipe.h"
@@ -10,7 +12,7 @@
 /// Singleton pro spravu IO
 /// </summary>
 class IOManager {
-	
+
 public:
 	static IOManager& Get() {
 		static IOManager instance;
@@ -30,8 +32,16 @@ private:
 
 	/// <summary>
 	/// Otevrene soubory - obsahuje dvojici pocet alokaci a referenci na soubor
+	///	Pokud klesne pocet alokaci pod 1 je soubor automaticky odstranen
+	///
+	///	Jeden soubor muze byt sdilen mezi vice procesy
 	/// </summary>
 	std::unordered_map<kiv_os::THandle, std::pair<int64_t, std::shared_ptr<IFile>>> open_files;
+
+	/// <summary>
+	/// PID -> mnozina file descriptoru, ktere muze proces pouzivat
+	/// </summary>
+	std::unordered_map<kiv_os::THandle, std::unordered_set<kiv_os::THandle>> process_to_file_mapping;
 
 	/**
 	* Mapa souborovych systemu - dvojice nazev a souborovy system
@@ -44,36 +54,74 @@ public:
 	*/
 	void Init_Filesystems();
 
+	/// <summary>
+	/// Vrati zda-li ma proces pristup k file descriptoru
+	/// </summary>
+	/// <param name="pid"></param>
+	/// <returns></returns>
+	bool Is_File_Descriptor_Accessible(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
+
+	/// <summary>
+	/// Zvysi pocet vyskytu file descriptoru. Vrati File_Not_Found pokud soubor neexistuje
+	/// </summary>
+	/// <param name="file_descriptor"></param>
+	/// <returns></returns>
+	kiv_os::NOS_Error Increment_File_Descriptor_Count(kiv_os::THandle file_descriptor);
+
+	/// <summary>
+	/// Registruje procesu soubor - tzn. proces bude mit pravo tento handle pouzivat
+	/// </summary>
+	/// <param name="pid">pid procesu</param>
+	/// <param name="file_descriptor">file descriptor, ktery registrujeme</param>
+	/// <returns></returns>
+	kiv_os::NOS_Error Register_File_To_Process(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
+
+	/// <summary>
+	/// Snizi pocet vyskytu file descriptoru. Vrati File_Not_Found  pokud soubor neexistuje.
+	///	Pokud ma soubor pocet vyskytu 0 nebo mensi je z open_files odstranen
+	/// </summary>
+	/// <param name="file_descriptor">file descriptor souboru</param>
+	kiv_os::NOS_Error Decrement_File_Descriptor_Count(kiv_os::THandle file_descriptor);
+
+	/// <summary>
+	/// Odregistruje procesu soubor - tzn. proces ho nemuze nadale pouzivat
+	/// </summary>
+	/// <param name="pid">pid procesu</param>
+	/// <param name="file_descriptor">file descriptor, ktery odebirame</param>
+	/// <returns></returns>
+	kiv_os::NOS_Error Unregister_File_From_Process(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
+
 
 	/// <summary>
 	/// Funkce pro obsluhu IO pozadavku
 	/// </summary>
 	/// <param name="regs">Kontext</param>
-	void HandleIO(kiv_hal::TRegisters& regs);
+	void Handle_IO(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Vytvori psani z konzole a do konzole
 	/// </summary>
 	/// <returns>standardni vstup a vystup</returns>
-	auto CreateStdIO() -> std::pair<kiv_os::THandle, kiv_os::THandle>;
+	auto Create_Stdio() -> std::pair<kiv_os::THandle, kiv_os::THandle>;
+
 
 	/// <summary>
-	/// Registruje std_in a std_out handly pro dany proces. Pokud neexistuji vyhodi NOS_Error::IO_Error
+	/// Registruje pro proces stdio
 	/// </summary>
-	/// <param name="std_in">Handle pro stdin</param>
-	/// <param name="std_out">Handle pro stdout</param>
-	/// <returns>Success nebo IO_Error v pripade chyby</returns>
-	kiv_os::NOS_Error RegisterProcessStdIO(kiv_os::THandle std_in, kiv_os::THandle std_out);
-
-	kiv_os::NOS_Error UnregisterProcessStdIO(kiv_os::THandle std_in, kiv_os::THandle std_out);
+	/// <param name="pid">pid procesu</param>
+	/// <param name="std_in">standardni vstup</param>
+	/// <param name="std_out">standardni vystup</param>
+	/// <returns>success, pokud vse probehlo v poradku jinak chybu</returns>
+	kiv_os::NOS_Error Register_Process_Stdio(kiv_os::THandle pid, kiv_os::THandle std_in, kiv_os::THandle std_out);
 
 	/// <summary>
-	/// Odregistruje referenci na soubor o 1, pokud na soubor nic neukazuje smaze ho z mapy a nastavi handle removed na true
+	/// Odstrani stdio pro dany proces
 	/// </summary>
-	/// <param name="handle"></param>
-	/// <param name="handle_removed">Zprava o tom, zda-li se handle z mapy odstranilo</param>
-	/// <returns></returns>
-	void DecrementFileReference(kiv_os::THandle handle, bool& handle_removed);
+	/// <param name="pid">pid procesu</param>
+	/// <param name="std_in">standardni vstup</param>
+	/// <param name="std_out">standardni vystup</param>
+	/// <returns>success, pokud vse probehlo v poradku jinak chybu</returns>
+	kiv_os::NOS_Error UnregisterProcessStdIO(kiv_os::THandle pid, kiv_os::THandle std_in, kiv_os::THandle std_out);
 
 private:
 	/// <summary>
@@ -83,7 +131,7 @@ private:
 	/// </summary>
 	/// <param name="regs">Kontext</param>
 	///	<returns>Vysledek operace</returns>
-	kiv_os::NOS_Error PerformRead(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Read(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Provede zapis do souboru - pro soubor zavola metodu write().
@@ -92,37 +140,37 @@ private:
 	/// </summary>
 	/// <param name="regs">Kontext</param>
 	///	<returns>Vysledek operace</returns>
-	kiv_os::NOS_Error PerformWrite(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Write(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Vytvori novou pipe
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error PerformCreatePipe(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Create_Pipe(const kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Zavre handle - odstrani ho z tabulky otevrenych souboru
 	/// </summary>
 	/// <param name="regs">Kontext</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error PerformCloseHandle(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Close_Handle(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformSetWorkingDir(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Set_Working_Dir(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformGetWorkingDir(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Get_Working_Dir(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformGetFileAttribute(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Get_File_Attribute(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformOpenFile(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Open_File(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformDeleteFile(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Delete_File(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformSeek(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Seek(kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error PerformSetFileAttribute(const kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Syscall_Set_File_Attribute(const kiv_hal::TRegisters& regs);
 
-    kiv_os::NOS_Error OpenFile(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle &handle);
+	kiv_os::NOS_Error OpenFile(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle);
 
-    VFS *GetFileSystem(const std::string& disk);
+	VFS* GetFileSystem(const std::string& disk);
 };
