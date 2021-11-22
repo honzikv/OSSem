@@ -16,15 +16,14 @@ Path::Path(std::string file_path) {
  * Vytvori vector stringu jednotlivych slozek cesty, upravi podle "." a ".." (vynecha, resp. odstrani posledni)
  * @param file_path cesta zadana jako vektor znaku
  */
-void Path::Create_Path(std::string file_path) {
-    std::string cur_dir = "."; // soucasny adresat
-    std::string parent_dir = ".."; // nadrazeny adresar
-    char separator = '\\'; // separator
+void Path::Create_Path(const std::string file_path) {
+	const std::string cur_dir = "."; // soucasny adresat
+	const std::string parent_dir = ".."; // nadrazeny adresar
+	const char separator = '\\'; // separator
     std::vector<char> item;
     int pos = 0;
-    char c;
-    while (true) {
-        c = file_path[pos];
+	while (true) {
+        char c = file_path[pos];
         if (c == separator) {
             std::string item_string(item.begin(), item.end());
             if (item_string == parent_dir) {
@@ -62,7 +61,7 @@ void Path::Create_Path(std::string file_path) {
  * Vytvori jmeno slozky/souboru a priponu
  */
 void Path::Create_Name() {
-    char dot = '.'; // tecka
+	const char dot = '.'; // tecka
     extension.clear();
     name.clear();
     full_name = path_vector.back();
@@ -111,7 +110,7 @@ void Path::Return_Name_to_Path() {
  */
 std::string Path::To_String() {
     std::string res;
-    char separator = '\\';
+    const char separator = '\\';
     if (!is_relative) {
         res += disk_letter;
         res += ':';

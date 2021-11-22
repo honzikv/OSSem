@@ -371,11 +371,11 @@ kiv_os::NOS_Error IOManager::PerformSetWorkingDir(const kiv_hal::TRegisters &reg
 
 kiv_os::NOS_Error IOManager::PerformOpenFile(kiv_hal::TRegisters &regs) {
     char *file_name = reinterpret_cast<char *>(regs.rdx.r);
-    auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.l); // TODO check
-    auto attributes = static_cast<uint8_t>(regs.rdi.i);
+    const auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.l); // TODO check
+    const auto attributes = static_cast<uint8_t>(regs.rdi.i);
     kiv_os::THandle handle; //TODO vytvorit handle
 
-    Path path(file_name);
+    const Path path(file_name);
     if (path.is_relative) {
         //TODO dostat proces
         //Path working_dir = process->GetWorkingDir();
@@ -383,7 +383,7 @@ kiv_os::NOS_Error IOManager::PerformOpenFile(kiv_hal::TRegisters &regs) {
         //path = working_dir;
     }
 
-    auto res = OpenFile(path, flags, attributes, handle);
+    const auto res = OpenFile(path, flags, attributes, handle);
 
     if (res == kiv_os::NOS_Error::Success) {
         regs.rax.x = handle;
@@ -428,7 +428,7 @@ kiv_os::NOS_Error IOManager::OpenFile(Path path, kiv_os::NOpen_File flags, uint8
     }
 
     File f{};
-    auto res = fs->Open(path, flags, f, attributes);
+    const auto res = fs->Open(path, flags, f, attributes);
 
     if (res != kiv_os::NOS_Error::Success) {
         handle = kiv_os::Invalid_Handle;
@@ -438,6 +438,8 @@ kiv_os::NOS_Error IOManager::OpenFile(Path path, kiv_os::NOpen_File flags, uint8
     auto file = new Fs_File(fs, f);
     path.Return_Name_to_Path();
     f.name = &path.To_String()[0];
+
+    handle = HandleService::Get().CreateEmptyHandle();
 
     //TODO get handle - neco asi se da pouzit z handle service - pridat do mapy souboru
     return kiv_os::NOS_Error::Success;

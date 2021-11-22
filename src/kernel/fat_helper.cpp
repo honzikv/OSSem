@@ -17,10 +17,9 @@ namespace Fat_Helper {
      * @param start_index index zacatku tabulky
      * @return FAT tabulka
      */
-    std::vector<unsigned char> Load_Fat_Table(int start_index) {
-        std::vector<unsigned char> table;
+    std::vector<unsigned char> Load_Fat_Table(const int start_index) {
 
-        table = Read_From_Registers(kFatTableSectorCount, start_index);
+	    std::vector<unsigned char> table = Read_From_Registers(kFatTableSectorCount, start_index);
         return table;
     }
 
@@ -30,7 +29,7 @@ namespace Fat_Helper {
      * @param second_table druha FAT tabulka
      * @return true pokud jsou FAT tabulky totozne, jinak false
      */
-    bool Check_Fat_Consistency(std::vector<unsigned char> first_table, std::vector<unsigned char> second_table) {
+    bool Check_Fat_Consistency(const std::vector<unsigned char> first_table, const std::vector<unsigned char> second_table) {
         for (int i = 0; i < static_cast<int>(first_table.size()); ++i) {
             if (first_table.at(i) != second_table.at(i)) {
                 return false;
@@ -44,9 +43,8 @@ namespace Fat_Helper {
      * @return vektor zaznamu v adresari
      */
     std::vector<unsigned char> Load_Root_Directory() {
-        std::vector<unsigned char> root_dir;
 
-        root_dir = Read_From_Registers(kRootDirSize, kRootDirSectorStart);
+	    std::vector<unsigned char> root_dir = Read_From_Registers(kRootDirSize, kRootDirSectorStart);
 
         return root_dir;
     }
@@ -58,12 +56,11 @@ namespace Fat_Helper {
      * @param is_root je root slozka
      * @return data z clusteru
      */
-    std::vector<unsigned char> Read_Data_From_Cluster(int cluster_count, int start_cluster, bool is_root) {
-        std::vector<unsigned char> bytes;
-        // cluster 2 je prvni a je vlastne na pozici 33 (krome root)
-        int start_index = start_cluster + (is_root ? 0 : kDataSectorConversion);
+    std::vector<unsigned char> Read_Data_From_Cluster(const int cluster_count, const int start_cluster, const bool is_root) {
+	    // cluster 2 je prvni a je vlastne na pozici 33 (krome root)
+	    const int start_index = start_cluster + (is_root ? 0 : kDataSectorConversion);
 
-        bytes = Read_From_Registers(cluster_count, start_index);
+        std::vector<unsigned char> bytes = Read_From_Registers(cluster_count, start_index);
 
         return bytes;
     }
@@ -74,28 +71,29 @@ namespace Fat_Helper {
      * @param start_index index prvniho clusteru
      * @return prectene byty
      */
-    std::vector<unsigned char> Read_From_Registers(int cluster_count, int start_index) {
+    std::vector<unsigned char> Read_From_Registers(const int cluster_count, const int start_index) {
         std::vector<unsigned char> result;
 
         kiv_hal::TRegisters registers{};
-        kiv_hal::TDisk_Address_Packet addressPacket{};
+        kiv_hal::TDisk_Address_Packet address_packet{};
 
-        int size = cluster_count * kSectorSize;
+        const int size = cluster_count * kSectorSize;
 
         std::vector<unsigned char> sector_vec(size);
         unsigned char *sector = sector_vec.data(); //TODO size a typ
-        addressPacket.count = cluster_count;
-        addressPacket.sectors = (void *) sector;
-        addressPacket.lba_index = start_index;
+        address_packet.count = cluster_count;
+        address_packet.sectors = static_cast<void*>(sector);
+        address_packet.lba_index = start_index;
 
         registers.rdx.l = kDiskNum;
         registers.rax.h = static_cast<decltype(registers.rax.h)>(kiv_hal::NDisk_IO::Read_Sectors);
-        registers.rdi.r = reinterpret_cast<decltype(registers.rdi.r)>(&addressPacket);
+        registers.rdi.r = reinterpret_cast<decltype(registers.rdi.r)>(&address_packet);
 
         kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Disk_IO, registers); //TODO error
 
-        char *buffer = reinterpret_cast<char *>(addressPacket.sectors);
+        char *buffer = reinterpret_cast<char *>(address_packet.sectors);
 
+        result.reserve(size);
         for (int i = 0; i < size; ++i) {
             result.push_back(buffer[i]);
         }
@@ -108,8 +106,8 @@ namespace Fat_Helper {
      * @param start_cluster pocatecni cluster
      * @param is_root true pokud root, jinak false
      */
-    void Write_Data_To_Cluster(std::vector<char> buffer, int start_cluster, bool is_root) {
-        int start_index = start_cluster + (is_root ? 0 : kDataSectorConversion);
+    void Write_Data_To_Cluster(std::vector<char> buffer, const int start_cluster, const bool is_root) {
+	    const int start_index = start_cluster + (is_root ? 0 : kDataSectorConversion);
         Write_To_Registers(std::move(buffer), start_index);
     }
 
@@ -118,7 +116,7 @@ namespace Fat_Helper {
      * @param buffer data, ktera se maji zapsat
      * @param start_index index, kam se ma zapsat
      */
-    void Write_To_Registers(std::vector<char> buffer, int start_index) {
+    void Write_To_Registers(std::vector<char> buffer, const int start_index) {
         kiv_hal::TRegisters registers{};
         kiv_hal::TDisk_Address_Packet address_packet{};
 
@@ -131,17 +129,17 @@ namespace Fat_Helper {
 
 
         // cast posledniho sektoru nemusi byt vzdy prepsana - mohou tam byt jina data - nechat
-        int last_sector = static_cast<int>(address_packet.count) + start_index - 1;
-        std::vector<unsigned char> lastSectorData = Read_From_Registers(1, last_sector);
-        int keep = static_cast<int>(address_packet.count) * kSectorSize;
+        const int last_sector = static_cast<int>(address_packet.count) + start_index - 1;
+        const std::vector<unsigned char> last_sector_data = Read_From_Registers(1, last_sector);
+        const int keep = static_cast<int>(address_packet.count) * kSectorSize;
 
-        int last_taken = (int) buffer.size() % kSectorSize;
+        const int last_taken = static_cast<int>(buffer.size()) % kSectorSize;
 
-        size_t start = buffer.size();
+        const size_t start = buffer.size();
         int bytes_added = 0;
         for (size_t i = start; i < keep; ++i) {
             buffer.push_back(
-                    (char) lastSectorData.at(static_cast<size_t>(last_taken) + static_cast<size_t>(bytes_added)));
+                    static_cast<char>(last_sector_data.at(static_cast<size_t>(last_taken) + static_cast<size_t>(bytes_added))));
             bytes_added++;
         }
 
@@ -156,15 +154,15 @@ namespace Fat_Helper {
      * @param pos pozice do FAT
      * @return cislo clusteru
      */
-    uint16_t Get_Cluster_Num(std::vector<unsigned char> fat, int pos) {
-        int index = (int) (pos * kIndexToFatConversion);
+    uint16_t Get_Cluster_Num(const std::vector<unsigned char> fat, const int pos) {
+	    const int index = static_cast<int>(pos * kIndexToFatConversion);
         uint16_t cluster_num = 0;
         if (pos % 2 == 0) { // druha pulka druheho bytu + prvni byte cely
-            cluster_num |= ((uint16_t) fat.at(index + 1) & 0x0F) << kBitsInBytes;
-            cluster_num |= (uint16_t) fat.at(index);
+            cluster_num |= (static_cast<uint16_t>(fat.at(index + 1)) & 0x0F) << kBitsInBytes;
+            cluster_num |= static_cast<uint16_t>(fat.at(index));
         } else { // cely druhy byte + prvni pulka prvniho bytu
-            cluster_num |= (uint16_t) fat.at(index + 1) << kBitsInBytesHalved;
-            cluster_num |= ((uint16_t) fat.at(index) & 0xF0) >> kBitsInBytesHalved;
+            cluster_num |= static_cast<uint16_t>(fat.at(index + 1)) << kBitsInBytesHalved;
+            cluster_num |= (static_cast<uint16_t>(fat.at(index)) & 0xF0) >> kBitsInBytesHalved;
         }
         return cluster_num;
     }
@@ -174,10 +172,10 @@ namespace Fat_Helper {
      * @param bytes vektor bytu
      * @return int hodnota z vektoru bytu
      */
-    int Get_Int_From_Char_Vector(std::vector<unsigned char> bytes) {
+    int Get_Int_From_Char_Vector(const std::vector<unsigned char> bytes) {
         int res = 0;
-        for (int i = (int) bytes.size() - 1; i >= 0; i--) {
-            res |= (int) bytes.at(i) << (i * kBitsInBytes);
+        for (int i = static_cast<int>(bytes.size()) - 1; i >= 0; i--) {
+            res |= static_cast<int>(bytes.at(i)) << (i * kBitsInBytes);
         }
         return res;
     }
@@ -199,8 +197,9 @@ namespace Fat_Helper {
      * @param value hodnota
      * @return vektor bytu
      */
-    std::vector<unsigned char> Get_Bytes_From_Int_4(int value) {
+    std::vector<unsigned char> Get_Bytes_From_Int_4(const int value) {
         std::vector<unsigned char> res;
+        res.reserve(4);
         for (int i = 0; i < 4; ++i) { // obracene - little endian
             res.push_back((value >> i * kBitsInBytes) & 0xFF);
         }
@@ -213,17 +212,17 @@ namespace Fat_Helper {
      * @param fat FAT
      * @return index prvniho volneho clusteru, -1 pokud nenalezen
      */
-    uint16_t Get_Free_Index(std::vector<unsigned char> fat) {
+    uint16_t Get_Free_Index(const std::vector<unsigned char> fat) {
         for (int i = 0; i < fat.size(); i += 3) {
             uint16_t cluster_num = 0;
-            cluster_num |= ((uint16_t) fat.at(i + 1) & 0x0F) << kBitsInBytes;
-            cluster_num |= (uint16_t) fat.at(i);
+            cluster_num |= (static_cast<uint16_t>(fat.at(i + 1)) & 0x0F) << kBitsInBytes;
+            cluster_num |= static_cast<uint16_t>(fat.at(i));
             if (cluster_num == 0) {
                 return ceil(i / kIndexToFatConversion);
             }
             cluster_num = 0;
-            cluster_num |= (uint16_t) fat.at(i + 2) << kBitsInBytesHalved;
-            cluster_num |= ((uint16_t) fat.at(i + 1) & 0xF0) >> kBitsInBytesHalved;
+            cluster_num |= static_cast<uint16_t>(fat.at(i + 2)) << kBitsInBytesHalved;
+            cluster_num |= (static_cast<uint16_t>(fat.at(i + 1)) & 0xF0) >> kBitsInBytesHalved;
             if (cluster_num == 0) {
                 return ceil((i + 1) / kIndexToFatConversion);
             }
@@ -237,13 +236,13 @@ namespace Fat_Helper {
      * @param pos pozice
      * @param new_value nova hodnota
      */
-    void Write_Value_To_Fat(std::vector<unsigned char> &fat, int pos, int new_value) {
-        int index = (int) (pos * kIndexToFatConversion);
+    void Write_Value_To_Fat(std::vector<unsigned char> &fat, const int pos, int new_value) {
+	    const int index = static_cast<int>(pos * kIndexToFatConversion);
         if (pos % 2 == 0) {
             fat.at(index) = new_value & 0xFF;
-            fat.at(index + 1) = (uint16_t) fat.at(index + 1) & 0xF0 | (new_value & 0xF00) >> kBitsInBytes;
+            fat.at(index + 1) = static_cast<uint16_t>(fat.at(index + 1)) & 0xF0 | (new_value & 0xF00) >> kBitsInBytes;
         } else {
-            fat.at(index) = (uint16_t) fat.at(index) & 0x0F | (new_value & 0x0F) << kBitsInBytesHalved;
+            fat.at(index) = static_cast<uint16_t>(fat.at(index)) & 0x0F | (new_value & 0x0F) << kBitsInBytesHalved;
             fat.at(index + 1) = (new_value & 0xFF0) >> kBitsInBytesHalved;
         }
     }
@@ -254,8 +253,9 @@ namespace Fat_Helper {
      */
     void Save_Fat(const std::vector<unsigned char> &fat) {
         std::vector<char> fat_char;
-        for (unsigned char i: fat) {
-            fat_char.push_back((char) i);
+        fat_char.reserve(fat.size());
+        for (const unsigned char i: fat) {
+            fat_char.push_back(static_cast<char>(i));
         }
         Write_To_Registers(fat_char, 1); // 1.
         Write_To_Registers(fat_char, 1 + kFatTableSectorCount); // 2.
@@ -288,7 +288,7 @@ namespace Fat_Helper {
      * @param sectors_count pocet sektoru dane slozky
      * @return vektor polozek adresare
      */
-    std::vector<DirItem> Get_Directory_Items(std::vector<unsigned char> content, int sectors_count) {
+    std::vector<DirItem> Get_Directory_Items(const std::vector<unsigned char>& content, const int sectors_count) {
         std::vector<DirItem> dir_content;
 
         int i = 0;
@@ -311,7 +311,7 @@ namespace Fat_Helper {
                     i += kFileNameSize - j; // dopocteno do 8 bytu
                     break;
                 } else {
-                    dir_item.file_name.push_back((char) content.at(i));
+                    dir_item.file_name.push_back(static_cast<char>(content.at(i)));
                     i++;
                 }
             }
@@ -322,7 +322,7 @@ namespace Fat_Helper {
                     i += kFileExtensionSize - j; // dopocteno do 3 bytu
                     break;
                 } else {
-                    dir_item.extension.push_back((char) content.at(i));
+                    dir_item.extension.push_back(static_cast<char>(content.at(i)));
                     i++;
                 }
             }
@@ -362,9 +362,9 @@ namespace Fat_Helper {
      * @param start_sector cislo prvniho sektoru dane slozky
      * @return vektor polozek adresare v dane slozce
      */
-    std::vector<DirItem> Get_Folders_From_Dir(const std::vector<unsigned char> &fat, int start_sector) {
+    std::vector<DirItem> Get_Folders_From_Dir(const std::vector<unsigned char> &fat, const int start_sector) {
         if (start_sector == kRootDirSectorStart) { // root
-            std::vector<unsigned char> data_clusters = Read_Data_From_Cluster(kRootDirSize, kRootDirSectorStart, true);
+	        const std::vector<unsigned char> data_clusters = Read_Data_From_Cluster(kRootDirSize, kRootDirSectorStart, true);
 
             std::vector<DirItem> dir_items = Get_Directory_Items(data_clusters, kRootDirSize);
 
@@ -373,14 +373,12 @@ namespace Fat_Helper {
             return dir_items;
 
         } else {
-            std::vector<int> sectors_indexes = Get_Sectors_Indexes(fat, start_sector);
+	        const std::vector<int> sectors_indexes = Get_Sectors_Indexes(fat, start_sector);
 
-            std::vector<unsigned char> data_clusters;
-
-            std::vector<DirItem> dir_items;
+	        std::vector<DirItem> dir_items;
 
             for (int i = 0; i < sectors_indexes.size(); ++i) {
-                data_clusters = Read_Data_From_Cluster(1, sectors_indexes.at(i), false); // obsah jednoho clusteru
+                std::vector<unsigned char> data_clusters = Read_Data_From_Cluster(1, sectors_indexes.at(i), false); // obsah jednoho clusteru
                 std::vector<DirItem> content = Get_Directory_Items(data_clusters, 1);
 
                 // prvni cluster slozky - obsahuje i '.' a '..' - preskocit
@@ -414,7 +412,7 @@ namespace Fat_Helper {
         }
 
         std::vector<DirItem> cur_folder_items; // polozky v prave prochazene slozce
-        int directory_item_num;
+        int directory_item_num = -1;
         for (auto &path_part: path.path_vector) {
             cur_folder_items = Get_Folders_From_Dir(fat, start_cluster);
 
@@ -435,12 +433,12 @@ namespace Fat_Helper {
                 break;
             }
 
-            DirItem dirItem = cur_folder_items.at(directory_item_num);
+            DirItem dir_item = cur_folder_items.at(directory_item_num);
 
-            start_cluster = dirItem.first_cluster;
+            start_cluster = dir_item.first_cluster;
 
-            if (dirItem.first_cluster == 0) { // root, takze 19
-                dirItem.first_cluster = kRootDirSectorStart;
+            if (dir_item.first_cluster == 0) { // root, takze 19
+                dir_item.first_cluster = kRootDirSectorStart;
             }
 
         }
@@ -464,12 +462,12 @@ namespace Fat_Helper {
      * @param fat FAT
      * @return cislo clusteru / -1, pokud se nepodarilo
      */
-    int Allocate_New_Cluster(int start_cluster, std::vector<unsigned char> &fat) {
-        int free_index = Get_Free_Index(fat);
+    int Allocate_New_Cluster(const int start_cluster, std::vector<unsigned char> &fat) {
+	    const int free_index = Get_Free_Index(fat);
         if (free_index == -1) {
             return -1;
         } else {
-            std::vector<int> sectors_indexes = Get_Sectors_Indexes(fat, start_cluster);
+	        const std::vector<int> sectors_indexes = Get_Sectors_Indexes(fat, start_cluster);
 
             Write_Value_To_Fat(fat, free_index, kEndClusterInt); // zapise do FAT konec clusteru
             Write_Value_To_Fat(fat, sectors_indexes.back(), free_index); // zapise do FAT konec clusteru
@@ -520,18 +518,17 @@ namespace Fat_Helper {
      */
     std::vector<kiv_os::TDir_Entry> Read_Directory(const Path& path, const std::vector<unsigned char> &fat) {
         if (path.path_vector.empty()) { // root
-            std::vector<unsigned char> rootContent = Read_Data_From_Cluster(kRootDirSize, kRootDirSectorStart, true);
-            return Get_Directory_Entries(rootContent, kRootDirSize, true);
+	        const std::vector<unsigned char> root_content = Read_Data_From_Cluster(kRootDirSize, kRootDirSectorStart, true);
+            return Get_Directory_Entries(root_content, kRootDirSize, true);
         }
 
-        DirItem dir_item = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat);
-        std::vector<int> clusters_indexes = Get_Sectors_Indexes(fat, dir_item.first_cluster);
+        const DirItem dir_item = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat);
+        const std::vector<int> clusters_indexes = Get_Sectors_Indexes(fat, dir_item.first_cluster);
 
-        std::vector<unsigned char> cluster_data;
         std::vector<unsigned char> all_clusters_data;
 
-        for (int cluster_index: clusters_indexes) {
-            cluster_data = Read_Data_From_Cluster(1, cluster_index, false);
+        for (const int cluster_index: clusters_indexes) {
+            std::vector<unsigned char> cluster_data = Read_Data_From_Cluster(1, cluster_index, false);
             all_clusters_data.insert(all_clusters_data.end(), cluster_data.begin(),
                                      cluster_data.end()); //zkopirovat prvky na konec
         }
@@ -544,7 +541,7 @@ namespace Fat_Helper {
      * @param cur_index index aktualni slozky
      * @param parent_index index nadrazene slozky
      */
-    void Write_Current_And_Parent_Folder(int cur_index, int parent_index) {
+    void Write_Current_And_Parent_Folder(const int cur_index, int parent_index) {
         std::vector<char> buffer_to_write;
 
         // vytvoreni aktualni slozky '.'
@@ -565,8 +562,8 @@ namespace Fat_Helper {
         // cislo clusteru
         std::vector<unsigned char> bytes_from_cluster_num = Get_Bytes_From_Int(cur_index);
 
-        for (unsigned char &byte_from_int: bytes_from_cluster_num) {
-            buffer_to_write.push_back((char) byte_from_int);
+        for (const unsigned char &byte_from_int: bytes_from_cluster_num) {
+            buffer_to_write.push_back(static_cast<char>(byte_from_int));
         }
 
         // velikost souboru - pro slozku 0
@@ -597,8 +594,8 @@ namespace Fat_Helper {
         // cislo clusteru
         bytes_from_cluster_num = Get_Bytes_From_Int(parent_index);
 
-        for (unsigned char &byteFromInt: bytes_from_cluster_num) {
-            buffer_to_write.push_back((char) byteFromInt);
+        for (const unsigned char &byteFromInt: bytes_from_cluster_num) {
+            buffer_to_write.push_back(static_cast<char>(byteFromInt));
         }
 
         // velikost souboru - pro slozku 0
@@ -606,7 +603,7 @@ namespace Fat_Helper {
             buffer_to_write.push_back(0);
         }
 
-        for (int i = (int) buffer_to_write.size(); i < kSectorSize; ++i) {
+        for (int i = static_cast<int>(buffer_to_write.size()); i < kSectorSize; ++i) {
             buffer_to_write.push_back(0);
         }
 
@@ -621,7 +618,7 @@ namespace Fat_Helper {
      * @return vektor polozek adresare
      */
     std::vector<kiv_os::TDir_Entry>
-    Get_Directory_Entries(std::vector<unsigned char> content, size_t clusters_count, bool is_root) {
+    Get_Directory_Entries(std::vector<unsigned char> content, const size_t clusters_count, const bool is_root) {
         std::vector<kiv_os::TDir_Entry> dir_content;
 
         int i = 0;
@@ -645,7 +642,7 @@ namespace Fat_Helper {
                     file_name_pos = j;
                     break;
                 } else {
-                    dir_entry.file_name[j] = (char) content.at(i);
+                    dir_entry.file_name[j] = static_cast<char>(content.at(i));
                     i++;
                 }
             }
@@ -658,7 +655,7 @@ namespace Fat_Helper {
                     file_name_pos += j;
                     break;
                 } else {
-                    dir_entry.file_name[file_name_pos++] = (char) content.at(i);
+                    dir_entry.file_name[file_name_pos++] = static_cast<char>(content.at(i));
                     i++;
                 }
             }
@@ -696,19 +693,19 @@ namespace Fat_Helper {
      * @param is_dir true pokud se jedna o slozku
      * @return vysledek operace - uspech/neuspech
      */
-    kiv_os::NOS_Error Create_File_Or_Dir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir) {
+    kiv_os::NOS_Error Create_File_Or_Dir(Path &path, const uint8_t attributes, std::vector<unsigned char> &fat, const bool is_dir) {
         std::string folder_name = path.full_name;
 
         path.Delete_Name_From_Path(); // cesta, tzn. bez posledni polozky (jmena)
 
         std::vector<int> sectors_indexes;
         bool is_root;
-        int start_sector = Get_Start_Sector(path, fat, is_root, sectors_indexes);
+        const int start_sector = Get_Start_Sector(path, fat, is_root, sectors_indexes);
 
-        std::vector<DirItem> directory_items = Get_Folders_From_Dir(fat, start_sector);
+        const std::vector<DirItem> directory_items = Get_Folders_From_Dir(fat, start_sector);
 
         // nalezt 1 volny cluster
-        int free_index = Get_Free_Index(fat);
+        const int free_index = Get_Free_Index(fat);
 
         if (free_index == -1) { // neni misto
             return kiv_os::NOS_Error::Not_Enough_Disk_Space;
@@ -718,12 +715,11 @@ namespace Fat_Helper {
         }
 
         std::vector<unsigned char> buffer_to_write;
-        std::vector<char> buffer_to_save;
 
         // pridat jmeno souboru
         buffer_to_write.insert(buffer_to_write.end(), path.name.begin(), path.name.end());
 
-        for (int i = (int) path.name.size(); i < kFileNameSize; i++) { //doplnit na 8 bytu
+        for (int i = static_cast<int>(path.name.size()); i < kFileNameSize; i++) { //doplnit na 8 bytu
             buffer_to_write.push_back(kSpaceChar);
         }
 
@@ -731,7 +727,7 @@ namespace Fat_Helper {
 
         buffer_to_write.insert(buffer_to_write.end(), path.extension.begin(), path.extension.end());
 
-        for (int i = (int) path.extension.size(); i < kFileExtensionSize; i++) { //doplnit na 3 bytu
+        for (int i = static_cast<int>(path.extension.size()); i < kFileExtensionSize; i++) { //doplnit na 3 bytu
             buffer_to_write.push_back(kSpaceChar);
         }
 
@@ -767,7 +763,7 @@ namespace Fat_Helper {
         } else { // ne root
             extra_dir_item += 2; // navic '.' a '..'
             if ((directory_items.size() + extra_dir_item) > (sectors_indexes.size() * kMaxItemsPerCluster)) {
-                int new_cluster_pos = Allocate_New_Cluster(start_sector, fat);
+	            const int new_cluster_pos = Allocate_New_Cluster(start_sector, fat);
                 if (new_cluster_pos == -1) { // nepovedlo se alokovat novy cluster - nelze pridat
                     can_add = false;
                 } else {
@@ -776,10 +772,12 @@ namespace Fat_Helper {
             }
         }
 
-        if (can_add) { // muzu pridat tak pridam
-            size_t cluster_pos = (directory_items.size() + extra_dir_item - 1) /
+        if (can_add) {
+	        std::vector<char> buffer_to_save;
+	        // muzu pridat tak pridam
+	        const size_t cluster_pos = (directory_items.size() + extra_dir_item - 1) /
                                  kMaxItemsPerCluster; // poradi clusteru - jeden pojme 16 polozek
-            size_t item_pos =
+	        const size_t item_pos =
                     (directory_items.size() + extra_dir_item - 1) % kMaxItemsPerCluster; // poradi v ramci clusteru
 
             std::vector<unsigned char> cluster_data = Read_Data_From_Cluster(1, sectors_indexes.at(cluster_pos),
@@ -789,8 +787,9 @@ namespace Fat_Helper {
                 cluster_data.at(item_pos * kDirItemSize + j) = buffer_to_write.at(j);
             }
 
-            for (unsigned char &data: cluster_data) {
-                buffer_to_save.push_back((char) data);
+	        buffer_to_save.reserve(cluster_data.size());
+	        for (const unsigned char &data: cluster_data) {
+                buffer_to_save.push_back(static_cast<char>(data));
             }
             Write_Data_To_Cluster(buffer_to_save, sectors_indexes.at(cluster_pos), is_root);
         } else { // nelze alokovat cluster
@@ -812,24 +811,23 @@ namespace Fat_Helper {
      * @param new_size nova velikost
      * @param fat FAT
      */
-    void Change_File_Size(const char *file_name, size_t new_size, const std::vector<unsigned char> &fat) {
+    void Change_File_Size(const char *file_name, const size_t new_size, const std::vector<unsigned char> &fat) {
         Path path(file_name);
         path.Delete_Name_From_Path();
 
         std::vector<int> sectors_indexes;
         bool is_root;
-        int start_sector = Get_Start_Sector(path, fat, is_root, sectors_indexes);
+        const int start_sector = Get_Start_Sector(path, fat, is_root, sectors_indexes);
 
-        int item_index = Get_Item_Index(path, start_sector, fat);
+        const int item_index = Get_Item_Index(path, start_sector, fat);
 
-        std::vector<unsigned char> file_size_bytes = Get_Bytes_From_Int_4(static_cast<int>(new_size));
+        const std::vector<unsigned char> file_size_bytes = Get_Bytes_From_Int_4(static_cast<int>(new_size));
 
-        size_t cluster_pos = item_index / kMaxItemsPerCluster; // poradi slozky
-        size_t item_pos = item_index % kMaxItemsPerCluster; // poradi v ramci clusteru
+        const size_t cluster_pos = item_index / kMaxItemsPerCluster; // poradi slozky
+        const size_t item_pos = item_index % kMaxItemsPerCluster; // poradi v ramci clusteru
 
-        std::vector<unsigned char> data_folder;
-
-        data_folder = Read_Data_From_Cluster(1, sectors_indexes.at(cluster_pos), path.path_vector.empty());
+        std::vector<unsigned char> data_folder = Read_Data_From_Cluster(1, sectors_indexes.at(cluster_pos),
+                                                                        path.path_vector.empty());
         // vlozit novou velikost
         for (int i = kDirItemFileSizePos; i < kDirItemFileSizePos + kDirItemFileSizeBytes; ++i) {
             data_folder.at(item_pos * kDirItemSize + i) = file_size_bytes.at(i - kDirItemFileSizePos);
@@ -866,25 +864,24 @@ namespace Fat_Helper {
      * @return vysledek operace - uspech/neuspech
      */
     kiv_os::NOS_Error
-    Get_Or_Set_Attributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, bool read) {
+    Get_Or_Set_Attributes(Path path, uint8_t &attributes, const std::vector<unsigned char> &fat, const bool read) {
         path.Delete_Name_From_Path(); // smazat jmeno z cesty
 
         std::vector<int> sectors_indexes;
         bool is_root;
-        int start_sector = Get_Start_Sector(path, fat, is_root, sectors_indexes); // cislo sektoru
+        const int start_sector = Get_Start_Sector(path, fat, is_root, sectors_indexes); // cislo sektoru
 
-        int item_index = Get_Item_Index(path, start_sector, fat);
+        const int item_index = Get_Item_Index(path, start_sector, fat);
 
         if (item_index == -1) { // nenalezen
             return kiv_os::NOS_Error::File_Not_Found;
         }
 
 
-        size_t cluster_pos = item_index / kMaxItemsPerCluster; // poradi slozky
-        size_t item_pos = item_index % kMaxItemsPerCluster; // poradi v ramci clusteru
+        const size_t cluster_pos = item_index / kMaxItemsPerCluster; // poradi slozky
+        const size_t item_pos = item_index % kMaxItemsPerCluster; // poradi v ramci clusteru
 
-        std::vector<unsigned char> folder_data;
-        folder_data = Read_Data_From_Cluster(1, sectors_indexes.at(cluster_pos), is_root);
+        std::vector<unsigned char> folder_data = Read_Data_From_Cluster(1, sectors_indexes.at(cluster_pos), is_root);
 
         if (read) { // cteme
             attributes = folder_data.at(item_pos * kDirItemSize + kDirItemAttributesPos);
@@ -919,7 +916,7 @@ namespace Fat_Helper {
             }
         } else {
             is_root = false;
-            DirItem dir_item = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat);
+            const DirItem dir_item = Get_Dir_Item_Cluster(kRootDirSectorStart, path, fat);
             sectors_indexes = Get_Sectors_Indexes(fat, dir_item.first_cluster);
             start_sector = sectors_indexes.at(0);
         }
@@ -933,8 +930,8 @@ namespace Fat_Helper {
      * @param fat FAT
      * @return index souboru/adresare v polozkach adresare, -1 pokud nenalezen
      */
-    int Get_Item_Index(const Path &path, int start_sector, const std::vector<unsigned char> &fat) {
-        std::vector<DirItem> directory_items = Get_Folders_From_Dir(fat, start_sector);
+    int Get_Item_Index(const Path &path, const int start_sector, const std::vector<unsigned char> &fat) {
+	    const std::vector<DirItem> directory_items = Get_Folders_From_Dir(fat, start_sector);
 
         int item_index = -1;
         for (int i = 0; i < directory_items.size(); ++i) {
