@@ -249,6 +249,44 @@ void IOManager::Init_Filesystems() {
 	}
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
+bool IOManager::Is_File_Descriptor_Accessible(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
+	return process_to_file_mapping.count(pid) != 0 && process_to_file_mapping[pid].count(file_descriptor) != 0;
+}
+
+kiv_os::NOS_Error IOManager::Increment_File_Descriptor_Count(const kiv_os::THandle file_descriptor) {
+	if (open_files.count(file_descriptor) == 0) {
+		return kiv_os::NOS_Error::File_Not_Found;
+	}
+
+	auto [count, file] = open_files[file_descriptor];
+	open_files[file_descriptor] = {count + 1, file}; // zvysime pocet o 1
+	return kiv_os::NOS_Error::Success;
+}
+
+kiv_os::NOS_Error IOManager::Register_File_To_Process(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
+	auto lock = std::scoped_lock(mutex);
+
+	// Nejprve chceme zjistit jestli dava operace vubec smysl - file uz musi byt otevreny
+	// Pokud increment file descriptor selze nebudeme nic delat a vratime chybu
+	if (const auto op_result = Increment_File_Descriptor_Count(file_descriptor);
+		op_result != kiv_os::NOS_Error::Success) {
+		return op_result;
+	}
+
+	// Pokud neni pid v mape, musime vytvorit novy set, do ktereho rovnou umistime file descriptor
+	if (process_to_file_mapping.count(pid) == 0) {
+		// NOLINT(bugprone-branch-clone)
+		process_to_file_mapping[pid] = {file_descriptor};
+	}
+	else {
+		// Jinak pouze emplace
+		process_to_file_mapping[pid].emplace(file_descriptor);
+	}
+
+	// Jinak success
+	return kiv_os::NOS_Error::Success;
+}
 
 kiv_os::NOS_Error IOManager::Register_Process_Stdio(const kiv_os::THandle pid, const kiv_os::THandle std_in,
                                                     const kiv_os::THandle std_out) {
