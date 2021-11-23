@@ -45,7 +45,6 @@ size_t InitProcess::InitFun(const kiv_hal::TRegisters& regs) {
 
 	// Pockame az skonci shell
 	Wait_For(shell_pid);
-	Read_Shell_Exit_Code(shell_pid); // Jinak staci precist exit code shellu
 
 	return 0;
 }

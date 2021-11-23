@@ -63,7 +63,7 @@ private:
 
 	std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
 
-	size_t processes_running = 0;
+	int32_t processes_running = 0;
 
 	/// <summary>
 	/// Callback pro probuzeni Init procesu pro ukonceni OS

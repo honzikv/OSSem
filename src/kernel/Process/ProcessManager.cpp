@@ -333,6 +333,7 @@ void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 	Add_Thread(init_main_thread, tid);
 	std_thread_id_to_kiv_handle[std_thread_id] = tid;
 	kiv_handle_to_std_thread_id[tid] = std_thread_id;
+	processes_running += 1;
 }
 
 HandleType ProcessManager::Get_Handle_Type(const kiv_os::THandle id) {
@@ -649,5 +650,6 @@ void ProcessManager::On_Thread_Finish(const kiv_os::THandle tid) {
 
 void ProcessManager::On_Shutdown() {
 	// Pockame, dokud se vsechny procesy nedokonci
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex, shutdown_mutex);
 	shutdown_semaphore->Acquire();
 }
