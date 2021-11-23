@@ -202,6 +202,7 @@ kiv_os::NOS_Error ProcessManager::Create_Process(kiv_hal::TRegisters& regs) {
 	// Pridame proces a vlakno do tabulky
 	Add_Process(process, pid);
 	Add_Thread(main_thread, tid);
+	processes_running += 1;
 
 	// Pridame defaultni signal handler
 	process->SetSignalCallback(kiv_os::NSignal_Id::Terminate, Default_Signal_Callback);
@@ -563,6 +564,10 @@ void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 	IOManager::Get().Unregister_Process_Stdio(pid, process->GetStdIn(), process->GetStdOut()); // zavreme stdin a stdout
 	process->Notify_Subscribers(pid); // Notifikujeme vsechny cekajici
 	process->Set_Readable_Exit_Code(); // Exit code lze nyni precist
+	processes_running -= 1;
+	if (processes_running == 0) {
+		shutdown_semaphore->Release();
+	}
 }
 
 
@@ -607,6 +612,11 @@ void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t
 	// Zmenime stav na readable exit code
 	process->Set_Readable_Exit_Code();
 	Log_Debug("On Process Finish pid: " + std::to_string(pid));
+
+	processes_running -= 1;
+	if (processes_running == 0) {
+		shutdown_semaphore->Release();
+	}
 }
 
 void ProcessManager::On_Thread_Finish(const kiv_os::THandle tid) {
@@ -638,6 +648,6 @@ void ProcessManager::On_Thread_Finish(const kiv_os::THandle tid) {
 }
 
 void ProcessManager::On_Shutdown() {
-	// Pouze pockame, dokud nedostaneme pristup k mutexum aby bylo jasne, ze se vsechno ukoncilo korektne
-	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex, shutdown_mutex);
+	// Pockame, dokud se vsechny procesy nedokonci
+	shutdown_semaphore->Acquire();
 }

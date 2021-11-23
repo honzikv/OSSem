@@ -89,6 +89,9 @@ auto IOManager::Create_Stdio() -> std::pair<kiv_os::THandle, kiv_os::THandle> {
 kiv_os::NOS_Error IOManager::Syscall_Read(kiv_hal::TRegisters& regs) {
 	std::shared_ptr<IFile> file;
 	const auto process = ProcessManager::Get().Get_Current_Process();
+	if (process == nullptr) {
+		return kiv_os::NOS_Error::Permission_Denied;
+	}
 	{
 		const auto file_descriptor = regs.rdx.x;
 		auto lock = std::scoped_lock(mutex);
@@ -267,7 +270,8 @@ kiv_os::NOS_Error IOManager::Increment_File_Descriptor_Count(const kiv_os::THand
 	return kiv_os::NOS_Error::Success;
 }
 
-kiv_os::NOS_Error IOManager::Register_File_To_Process(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
+kiv_os::NOS_Error
+IOManager::Register_File_To_Process(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
 	auto lock = std::scoped_lock(mutex);
 
 	// Nejprve chceme zjistit jestli dava operace vubec smysl - file uz musi byt otevreny
@@ -307,7 +311,7 @@ kiv_os::NOS_Error IOManager::Register_Process_Stdio(const kiv_os::THandle pid, c
 }
 
 kiv_os::NOS_Error IOManager::Unregister_Process_Stdio(const kiv_os::THandle pid, const kiv_os::THandle std_in,
-                                                    const kiv_os::THandle std_out) {
+                                                      const kiv_os::THandle std_out) {
 	if (const auto std_in_register_result = Unregister_File_From_Process(pid, std_in);
 		std_in_register_result != kiv_os::NOS_Error::Success) {
 		return std_in_register_result;
