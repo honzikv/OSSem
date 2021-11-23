@@ -121,7 +121,7 @@ public:
 	/// <param name="std_in">standardni vstup</param>
 	/// <param name="std_out">standardni vystup</param>
 	/// <returns>success, pokud vse probehlo v poradku jinak chybu</returns>
-	kiv_os::NOS_Error UnregisterProcessStdIO(kiv_os::THandle pid, kiv_os::THandle std_in, kiv_os::THandle std_out);
+	kiv_os::NOS_Error Unregister_Process_Stdio(kiv_os::THandle pid, kiv_os::THandle std_in, kiv_os::THandle std_out);
 
 private:
 	/// <summary>

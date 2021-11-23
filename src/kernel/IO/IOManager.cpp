@@ -88,7 +88,7 @@ auto IOManager::Create_Stdio() -> std::pair<kiv_os::THandle, kiv_os::THandle> {
 
 kiv_os::NOS_Error IOManager::Syscall_Read(kiv_hal::TRegisters& regs) {
 	std::shared_ptr<IFile> file;
-	const auto process = ProcessManager::Get().GetCurrentProcess();
+	const auto process = ProcessManager::Get().Get_Current_Process();
 	{
 		const auto file_descriptor = regs.rdx.x;
 		auto lock = std::scoped_lock(mutex);
@@ -119,7 +119,10 @@ kiv_os::NOS_Error IOManager::Syscall_Read(kiv_hal::TRegisters& regs) {
 
 kiv_os::NOS_Error IOManager::Syscall_Write(kiv_hal::TRegisters& regs) {
 	std::shared_ptr<IFile> file;
-	const auto process = ProcessManager::Get().GetCurrentProcess();
+	const auto process = ProcessManager::Get().Get_Current_Process();
+	if (process == nullptr) {
+		return kiv_os::NOS_Error::Permission_Denied;
+	}
 	{
 		const auto file_descriptor = regs.rdx.x;
 		auto lock = std::scoped_lock(mutex);
@@ -200,7 +203,7 @@ kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs
 		auto lock = std::scoped_lock(mutex);
 		open_files[pipe_write] = {0, std::static_pointer_cast<IFile>(writable_pipe)};
 		open_files[pipe_read] = {0, std::static_pointer_cast<IFile>(readable_pipe)};
-		LogDebug("Input fd: " + std::to_string(pipe_write) + " Output fd: " + std::to_string(pipe_read));
+		Log_Debug("Input fd: " + std::to_string(pipe_write) + " Output fd: " + std::to_string(pipe_read));
 	}
 
 	// Zapiseme vysledky zpet do pole
@@ -214,7 +217,7 @@ kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& reg
 	auto lock = std::scoped_lock(mutex);
 
 	// Ziskame aktualni proces
-	const auto current_process = ProcessManager::Get().GetCurrentProcess();
+	const auto current_process = ProcessManager::Get().Get_Current_Process();
 
 	// Pokud proces nema pristup k handlu vratime chybu
 	if (!Is_File_Descriptor_Accessible(current_process->Get_Pid(), file_descriptor)) {
@@ -303,7 +306,7 @@ kiv_os::NOS_Error IOManager::Register_Process_Stdio(const kiv_os::THandle pid, c
 	return kiv_os::NOS_Error::Success;
 }
 
-kiv_os::NOS_Error IOManager::UnregisterProcessStdIO(const kiv_os::THandle pid, const kiv_os::THandle std_in,
+kiv_os::NOS_Error IOManager::Unregister_Process_Stdio(const kiv_os::THandle pid, const kiv_os::THandle std_in,
                                                     const kiv_os::THandle std_out) {
 	if (const auto std_in_register_result = Unregister_File_From_Process(pid, std_in);
 		std_in_register_result != kiv_os::NOS_Error::Success) {
@@ -396,7 +399,7 @@ kiv_os::NOS_Error IOManager::Syscall_Get_Working_Dir(kiv_hal::TRegisters& regs) 
 	char* buffer = reinterpret_cast<char*>(regs.rdx.r);
 	auto buffer_size = static_cast<size_t>(regs.rcx.r);
 	//TODO najit proces vlakna, kopirovat buffer do working dir, nastavit written
-	const std::shared_ptr<Process> process = ProcessManager::Get().GetCurrentProcess();
+	const std::shared_ptr<Process> process = ProcessManager::Get().Get_Current_Process();
 	strcpy_s(buffer, buffer_size, process->GetWorkingDir().To_String().c_str());
 	const size_t written = min(process->GetWorkingDir().To_String().length(), buffer_size);
 	regs.rax.r = written;
@@ -434,7 +437,7 @@ kiv_os::NOS_Error IOManager::Syscall_Open_File(kiv_hal::TRegisters& regs) {
 
 	Path path(file_name);
 	if (path.is_relative) {
-		std::shared_ptr<Process> process = ProcessManager::Get().GetCurrentProcess();
+		std::shared_ptr<Process> process = ProcessManager::Get().Get_Current_Process();
 		Path working_dir = process->GetWorkingDir();
 		working_dir.Append_Path(path);
 		path = working_dir;
@@ -507,7 +510,7 @@ kiv_os::NOS_Error IOManager::Syscall_Get_File_Attribute(kiv_hal::TRegisters& reg
 
 	Path path(file_name);
 	if (path.is_relative) {
-		std::shared_ptr<Process> process = ProcessManager::Get().GetCurrentProcess();
+		std::shared_ptr<Process> process = ProcessManager::Get().Get_Current_Process();
 		Path working_dir = process->GetWorkingDir();
 		working_dir.Append_Path(path);
 		path = working_dir;
@@ -533,7 +536,7 @@ kiv_os::NOS_Error IOManager::Syscall_Set_File_Attribute(const kiv_hal::TRegister
 
 	Path path(file_name);
 	if (path.is_relative) {
-		std::shared_ptr<Process> process = ProcessManager::Get().GetCurrentProcess();
+		std::shared_ptr<Process> process = ProcessManager::Get().Get_Current_Process();
 		Path working_dir = process->GetWorkingDir();
 		working_dir.Append_Path(path);
 		path = working_dir;
@@ -554,7 +557,7 @@ kiv_os::NOS_Error IOManager::Syscall_Delete_File(const kiv_hal::TRegisters& regs
 
 	Path path(file_name);
 	if (path.is_relative) {
-		std::shared_ptr<Process> process = ProcessManager::Get().GetCurrentProcess();
+		std::shared_ptr<Process> process = ProcessManager::Get().Get_Current_Process();
 		Path working_dir = process->GetWorkingDir();
 		working_dir.Append_Path(path);
 		path = working_dir;

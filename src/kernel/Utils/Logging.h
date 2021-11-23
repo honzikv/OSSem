@@ -7,7 +7,7 @@
 
 /// Jednoduche funkce pro logovani. Pokud je debug vypnuty, funkce nic nedelaji (resp. compiler by ani nemel funkce vytvorit)
 
-inline void LogDebug(const std::string& str) {
+inline void Log_Debug(const std::string& str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
 	string_stream << "kernel_debug:\t" << str << std::endl;
@@ -15,7 +15,7 @@ inline void LogDebug(const std::string& str) {
 #endif
 }
 
-inline void LogDebug(const char* str) {
+inline void Log_Debug(const char* str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
 	string_stream << "kernel_debug:\t" << str << std::endl;

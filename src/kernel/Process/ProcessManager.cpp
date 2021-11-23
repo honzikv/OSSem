@@ -6,9 +6,9 @@
 #include "../kernel.h"
 #include "../IO/IOManager.h"
 
-size_t DefaultSignalCallback(const kiv_hal::TRegisters& regs) {
+size_t Default_Signal_Callback(const kiv_hal::TRegisters& regs) {
 	const auto signal_val = static_cast<int>(regs.rcx.r);
-	LogDebug("Default callback call performed");
+	Log_Debug("Default callback call performed");
 	return 0;
 }
 
@@ -17,7 +17,7 @@ ProcessManager& ProcessManager::Get() {
 	return instance;
 }
 
-kiv_os::THandle ProcessManager::GetFreePid() const {
+kiv_os::THandle ProcessManager::Get_Free_Pid() const {
 	for (uint16_t i = 0; i < static_cast<uint16_t>(process_table.size()); i += 1) {
 		if (process_table[i] == nullptr) {
 			return i + PID_RANGE_START;
@@ -26,7 +26,7 @@ kiv_os::THandle ProcessManager::GetFreePid() const {
 	return NO_FREE_ID;
 }
 
-kiv_os::THandle ProcessManager::GetFreeTid() const {
+kiv_os::THandle ProcessManager::Get_Free_Tid() const {
 	for (uint16_t i = 0; i < static_cast<uint16_t>(thread_table.size()); i += 1) {
 		if (thread_table[i] == nullptr) {
 			return i + TID_RANGE_START;
@@ -35,38 +35,38 @@ kiv_os::THandle ProcessManager::GetFreeTid() const {
 	return NO_FREE_ID;
 }
 
-std::shared_ptr<Process> ProcessManager::GetProcess(const kiv_os::THandle pid) {
+std::shared_ptr<Process> ProcessManager::Get_Process(const kiv_os::THandle pid) {
 	if (pid >= PID_RANGE_START && pid < PID_RANGE_END) {
 		return process_table[pid - PID_RANGE_START];
 	}
 	return nullptr;
 }
 
-void ProcessManager::AddProcess(const std::shared_ptr<Process> process, const kiv_os::THandle pid) {
+void ProcessManager::Add_Process(const std::shared_ptr<Process> process, const kiv_os::THandle pid) {
 	process_table[pid] = process;
 }
 
-std::shared_ptr<Thread> ProcessManager::GetThread(const kiv_os::THandle tid) {
+std::shared_ptr<Thread> ProcessManager::Get_Thread(const kiv_os::THandle tid) {
 	if (tid >= TID_RANGE_START && tid < TID_RANGE_END) {
 		return thread_table[tid - TID_RANGE_START];
 	}
 	return nullptr;
 }
 
-auto ProcessManager::AddThread(const std::shared_ptr<Thread> thread, const kiv_os::THandle tid) -> void {
+auto ProcessManager::Add_Thread(const std::shared_ptr<Thread> thread, const kiv_os::THandle tid) -> void {
 	thread_table[tid - TID_RANGE_START] = thread;
 }
 
-bool ProcessManager::TaskNotifiable(const kiv_os::THandle task_handle) {
-	const auto handle_type = GetHandleType(task_handle);
+bool ProcessManager::Is_Task_Notifiable(const kiv_os::THandle task_handle) {
+	const auto handle_type = Get_Handle_Type(task_handle);
 	if (handle_type == HandleType::Process) {
-		return GetProcess(task_handle) != nullptr;
+		return Get_Process(task_handle) != nullptr;
 	}
 
-	return handle_type == HandleType::Thread ? GetThread(task_handle) != nullptr : false;
+	return handle_type == HandleType::Thread ? Get_Thread(task_handle) != nullptr : false;
 }
 
-void ProcessManager::ProcessSyscall(kiv_hal::TRegisters& regs) {
+void ProcessManager::Syscall(kiv_hal::TRegisters& regs) {
 	// Spustime jednotlive funkce podle operace
 	auto operation = regs.rax.l;
 	auto operation_result = kiv_os::NOS_Error::Success;
@@ -115,10 +115,10 @@ void ProcessManager::ProcessSyscall(kiv_hal::TRegisters& regs) {
 kiv_os::NOS_Error ProcessManager::Syscall_Clone(kiv_hal::TRegisters& regs) {
 	const auto operationType = static_cast<kiv_os::NClone>(regs.rcx.l);
 	if (operationType == kiv_os::NClone::Create_Process) {
-		return CreateNewProcess(regs);
+		return Create_Process(regs);
 	}
 	if (operationType == kiv_os::NClone::Create_Thread) {
-		return CreateNewThread(regs);
+		return Create_Thread(regs);
 	}
 
 	// Jinak vratime invalid argument
@@ -126,7 +126,7 @@ kiv_os::NOS_Error ProcessManager::Syscall_Clone(kiv_hal::TRegisters& regs) {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-kiv_os::THandle ProcessManager::FindParentPid() {
+kiv_os::THandle ProcessManager::Find_Parent_Pid() {
 	const auto current_thread_handle = std::this_thread::get_id();
 	// Pokud nelze tid prevest vratime invalid handle
 	if (std_thread_id_to_kiv_handle.count(current_thread_handle) == 0) {
@@ -135,18 +135,18 @@ kiv_os::THandle ProcessManager::FindParentPid() {
 
 	// Jinak ziskame vlakno z tabulky a pid jeho procesu
 	const auto tid = std_thread_id_to_kiv_handle[current_thread_handle];
-	return thread_table[tid - TID_RANGE_START]->GetPid();
+	return thread_table[tid - TID_RANGE_START]->Get_Pid();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-kiv_os::THandle ProcessManager::GetCurrentTid() {
+kiv_os::THandle ProcessManager::Get_Current_Tid() {
 	const auto current_thread = std::this_thread::get_id();
 	return std_thread_id_to_kiv_handle.count(current_thread) == 0
 		       ? kiv_os::Invalid_Handle
 		       : std_thread_id_to_kiv_handle[current_thread];
 }
 
-kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error ProcessManager::Create_Process(kiv_hal::TRegisters& regs) {
 	// Ziskame jmeno programu a argumenty
 	const auto program_name = reinterpret_cast<char*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	const auto program_args = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
@@ -173,8 +173,8 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	// Vytvorime zamek, protoze ziskame pid a tid, ktere nam nesmi nikdo sebrat
 	auto lock = std::scoped_lock(tasks_mutex);
 	// Nejprve provedeme check zda-li muzeme vytvorit novy proces - musi existovat volny pid a tid
-	const auto pid = GetFreePid();
-	const auto tid = GetFreeTid();
+	const auto pid = Get_Free_Pid();
+	const auto tid = Get_Free_Tid();
 
 	if (pid == NO_FREE_ID || tid == NO_FREE_ID) {
 		return kiv_os::NOS_Error::Out_Of_Memory;
@@ -191,23 +191,23 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 
 	// Zjistime, zda-li vlakno, ve kterem se proces vytvari ma nejakeho rodice a nastavime ho (pokud existuje
 	// jinak se nastavi invalid value)
-	const auto parent_process_pid = FindParentPid();
+	const auto parent_process_pid = Find_Parent_Pid();
 	auto working_dir = Path(DEFAULT_PROCESS_WORKING_DIR);
 	if (parent_process_pid != kiv_os::Invalid_Handle) {
-		const auto parent = GetProcess(parent_process_pid);
+		const auto parent = Get_Process(parent_process_pid);
 		working_dir = parent->GetWorkingDir();
 	}
 	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out, working_dir);
 
 	// Pridame proces a vlakno do tabulky
-	AddProcess(process, pid);
-	AddThread(main_thread, tid);
+	Add_Process(process, pid);
+	Add_Thread(main_thread, tid);
 
 	// Pridame defaultni signal handler
-	process->SetSignalCallback(kiv_os::NSignal_Id::Terminate, DefaultSignalCallback);
+	process->SetSignalCallback(kiv_os::NSignal_Id::Terminate, Default_Signal_Callback);
 
 	const auto command = std::string(program_name);
-	LogDebug("Creating new process for command: " + command + " with pid: "
+	Log_Debug("Creating new process for command: " + command + " with pid: "
 		+ std::to_string(pid) + ", tid: "
 		+ std::to_string(tid) + " and parent pid: " + std::to_string(parent_process_pid));
 
@@ -226,7 +226,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewProcess(kiv_hal::TRegisters& regs) {
 	return kiv_os::NOS_Error::Success;
 }
 
-kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
+kiv_os::NOS_Error ProcessManager::Create_Thread(kiv_hal::TRegisters& regs) {
 	// Ziskame jmeno programu a argumenty
 	const auto program_name = reinterpret_cast<char*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	const auto program_args = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
@@ -248,7 +248,7 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 
 	// Vytvorime zamek, protoze ziskame tid, ktery by nikdo nemel sebrat
 	auto lock = std::scoped_lock(tasks_mutex);
-	auto tid = GetFreeTid();
+	auto tid = Get_Free_Tid();
 	if (tid == NO_FREE_ID) {
 		return kiv_os::NOS_Error::Out_Of_Memory;
 	}
@@ -260,13 +260,13 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 	thread_context.rbx.x = std_out;
 
 	// Ziskame aktualni proces
-	const auto current_thread = GetThread(GetCurrentTid());
+	const auto current_thread = Get_Thread(Get_Current_Tid());
 	if (current_thread == nullptr) {
 		// toto by nastat nicmene nemelo
 		return kiv_os::NOS_Error::File_Not_Found;
 	}
 
-	const auto current_process = GetProcess(current_thread->GetPid());
+	const auto current_process = Get_Process(current_thread->Get_Pid());
 	if (current_process == nullptr) {
 		// toto by nastat nicmene nemelo
 		return kiv_os::NOS_Error::File_Not_Found;
@@ -276,9 +276,9 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 	                                             program_args, false);
 
 	// Pridame vlakno do tabulky a spustime
-	LogDebug("Creating new non-main thread for process with pid: " +
+	Log_Debug("Creating new non-main thread for process with pid: " +
 		std::to_string(current_process->Get_Pid()) + " and tid: " + std::to_string(tid));
-	AddThread(thread, tid);
+	Add_Thread(thread, tid);
 	current_process->AddThread(tid); // Pridame vlakno k procesu
 	const auto std_thread_id = thread->Dispatch();
 
@@ -291,18 +291,21 @@ kiv_os::NOS_Error ProcessManager::CreateNewThread(kiv_hal::TRegisters& regs) {
 }
 
 
-std::shared_ptr<Process> ProcessManager::GetCurrentProcess() {
+std::shared_ptr<Process> ProcessManager::Get_Current_Process() {
 	auto lock = std::scoped_lock(tasks_mutex);
-	const auto current_tid = GetCurrentTid();
-	const auto thread = GetThread(current_tid);
+	const auto current_tid = Get_Current_Tid();
+	const auto thread = Get_Thread(current_tid);
+	if (thread == nullptr) {
+		return nullptr;
+	}
 
-	return GetProcess(thread->GetPid());
+	return Get_Process(thread->Get_Pid());
 }
 
-void ProcessManager::RunInitProcess(kiv_os::TThread_Proc init_main) {
+void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
-	const auto pid = GetFreePid(); // Init process ma vzdy 0
-	const auto tid = GetFreeTid();
+	const auto pid = Get_Free_Pid(); // Init process ma vzdy 0
+	const auto tid = Get_Free_Tid();
 
 	const auto [std_in, std_out] = IOManager::Get().Create_Stdio();
 	IOManager::Get().Register_Process_Stdio(pid, std_in, std_out);
@@ -325,13 +328,13 @@ void ProcessManager::RunInitProcess(kiv_os::TThread_Proc init_main) {
 
 	auto std_thread_id = init_main_thread->Dispatch();
 	// Pridame do tabulky
-	AddProcess(init_process, pid);
-	AddThread(init_main_thread, tid);
+	Add_Process(init_process, pid);
+	Add_Thread(init_main_thread, tid);
 	std_thread_id_to_kiv_handle[std_thread_id] = tid;
 	kiv_handle_to_std_thread_id[tid] = std_thread_id;
 }
 
-HandleType ProcessManager::GetHandleType(const kiv_os::THandle id) {
+HandleType ProcessManager::Get_Handle_Type(const kiv_os::THandle id) {
 	if (id >= PID_RANGE_START && id < PID_RANGE_END) {
 		// Pokud je handle mezi 0 - PID_RANGE_END jedna se o proces
 		return HandleType::Process;
@@ -340,17 +343,17 @@ HandleType ProcessManager::GetHandleType(const kiv_os::THandle id) {
 	return id >= TID_RANGE_START && id < TID_RANGE_END ? HandleType::Thread : HandleType::INVALID;
 }
 
-void ProcessManager::AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_array,
+void ProcessManager::Add_Current_Thread_As_Subscriber(const kiv_os::THandle* handle_array,
                                                   const uint32_t handle_array_size,
                                                   const kiv_os::THandle current_tid) {
 	for (uint32_t i = 0; i < handle_array_size; i += 1) {
 		const auto handle = handle_array[i];
-		const auto handle_type = GetHandleType(handle);
+		const auto handle_type = Get_Handle_Type(handle);
 
 		if (handle_type == HandleType::Process) {
 			// Pokud se jedna o proces, tak do nej pridame subscribera do nej
 			// Proces po dobehnuti vsechny subscribery probudi
-			const auto process = GetProcess(handle);
+			const auto process = Get_Process(handle);
 			if (process == nullptr) { continue; }
 			process->AddSubscriber(current_tid);
 			continue;
@@ -358,7 +361,7 @@ void ProcessManager::AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_
 
 		if (handle_type == HandleType::Thread) {
 			// Pokud se jedna o vlakno, udelame to same, ale staci aby dobehlo vlakno
-			const auto thread = GetThread(handle);
+			const auto thread = Get_Thread(handle);
 			if (thread == nullptr) { continue; }
 			thread->AddSubscriber(current_tid);
 		}
@@ -374,13 +377,13 @@ kiv_os::NOS_Error ProcessManager::Syscall_Wait_For(kiv_hal::TRegisters& regs) {
 	std::shared_ptr<SuspendCallback> callback;
 	{
 		auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
-		current_tid = GetCurrentTid();
+		current_tid = Get_Current_Tid();
 		if (current_tid == kiv_os::Invalid_Handle) {
 			return kiv_os::NOS_Error::Invalid_Argument;
 		}
 
 		// Pridame vlakno do vsech existujicich procesu/vlaken v handle_array
-		AddCurrentThreadAsSubscriber(handle_array, handle_count, current_tid);
+		Add_Current_Thread_As_Subscriber(handle_array, handle_count, current_tid);
 
 		// Nastavime vychozi hodnotu na invalid value, pokud se na neco opravdu cekalo prenastavime
 		regs.rax.x = static_cast<decltype(regs.rax.x)>(kiv_os::Invalid_Handle);
@@ -397,7 +400,7 @@ kiv_os::NOS_Error ProcessManager::Syscall_Wait_For(kiv_hal::TRegisters& regs) {
 	callback->Suspend();
 
 	// Ziskame id vlakna/procesu, ktery toto vlakno vzbudil
-	regs.rax.x = callback->GetNotifierId();
+	regs.rax.x = callback->Get_Notifier_Id();
 
 	// Smazeme zaznam z mapy callbacku
 	{
@@ -408,19 +411,19 @@ kiv_os::NOS_Error ProcessManager::Syscall_Wait_For(kiv_hal::TRegisters& regs) {
 	return kiv_os::NOS_Error::Success;
 }
 
-void ProcessManager::RemoveProcessFromTable(const std::shared_ptr<Process> process) {
+void ProcessManager::Remove_Process_From_Table(const std::shared_ptr<Process> process) {
 	// Odstranime vlakna procesu
-	for (const auto& tid : process->GetProcessThreads()) {
-		if (const auto thread = GetThread(tid); thread != nullptr) {
-			RemoveThreadFromTable(thread);
+	for (const auto& tid : process->Get_Process_Threads()) {
+		if (const auto thread = Get_Thread(tid); thread != nullptr) {
+			Remove_Thread_From_Table(thread);
 		}
 	}
 	process_table[process->Get_Pid() - PID_RANGE_START] = nullptr; // odstranime proces z tabulky
 	suspend_callbacks.erase(process->Get_Pid());
 }
 
-void ProcessManager::RemoveThreadFromTable(const std::shared_ptr<Thread> thread) {
-	const auto tid = thread->GetTid();
+void ProcessManager::Remove_Thread_From_Table(const std::shared_ptr<Thread> thread) {
+	const auto tid = thread->Get_Tid();
 	// Odstranime vlakno
 	thread_table[tid - TID_RANGE_START] = nullptr;
 	const auto native_tid = kiv_handle_to_std_thread_id[tid];
@@ -430,7 +433,7 @@ void ProcessManager::RemoveThreadFromTable(const std::shared_ptr<Thread> thread)
 	std_thread_id_to_kiv_handle.erase(native_tid);
 
 	// Smazeme callback
-	suspend_callbacks.erase(thread->GetTid());
+	suspend_callbacks.erase(thread->Get_Tid());
 }
 
 kiv_os::NOS_Error ProcessManager::Syscall_Read_Exit_Code(kiv_hal::TRegisters& regs) {
@@ -438,23 +441,23 @@ kiv_os::NOS_Error ProcessManager::Syscall_Read_Exit_Code(kiv_hal::TRegisters& re
 	const auto handle = regs.rdx.x;
 
 	// Zjistime, zda-li se jedna o vlakno nebo proces
-	const auto handle_type = GetHandleType(handle);
+	const auto handle_type = Get_Handle_Type(handle);
 
 	// Ziskame vlakno / proces, pro ktery exit code cteme a odstranime jeho zaznamy z tabulky
 	std::shared_ptr<Task> task = nullptr;
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
-	LogDebug("Reading exit code by: " + std::to_string(GetCurrentTid()));
+	Log_Debug("Reading exit code by: " + std::to_string(Get_Current_Tid()));
 	if (handle_type == HandleType::Process) {
 		// NOLINT(bugprone-branch-clone)
-		task = GetProcess(handle);
+		task = Get_Process(handle);
 		if (task != nullptr) {
-			RemoveProcessFromTable(std::static_pointer_cast<Process>(task)); // pretypovani Task na Process shared ptr
+			Remove_Process_From_Table(std::static_pointer_cast<Process>(task)); // pretypovani Task na Process shared ptr
 		}
 	}
 	else if (handle_type == HandleType::Thread) {
-		task = GetThread(handle);
+		task = Get_Thread(handle);
 		if (task != nullptr) {
-			RemoveThreadFromTable(std::static_pointer_cast<Thread>(task)); // pretypovani Task na Thread shared ptr
+			Remove_Thread_From_Table(std::static_pointer_cast<Thread>(task)); // pretypovani Task na Thread shared ptr
 		}
 	}
 
@@ -466,14 +469,14 @@ kiv_os::NOS_Error ProcessManager::Syscall_Read_Exit_Code(kiv_hal::TRegisters& re
 	}
 
 	// Zjistime exit code a vratime se
-	const auto exit_code = task->GetTaskExitCode();
+	const auto exit_code = task->Get_Task_Exit_Code();
 	regs.rcx.x = static_cast<decltype(regs.rcx.x)>(exit_code);
 	return kiv_os::NOS_Error::Success;
 }
 
 kiv_os::NOS_Error ProcessManager::Syscall_Exit_Task(const kiv_hal::TRegisters& regs) {
 	auto scoped_lock = std::scoped_lock(tasks_mutex);
-	const auto tid = GetCurrentTid();
+	const auto tid = Get_Current_Tid();
 	const auto exit_code = regs.rcx.x;
 	// TODO terminate thread
 	return kiv_os::NOS_Error::Success;
@@ -489,13 +492,13 @@ kiv_os::NOS_Error ProcessManager::Syscall_Shutdown(const kiv_hal::TRegisters& re
 	shutdown_triggered = true;
 
 	// Ziskame aktualni pid, protoze ten se ukonci po zavolani shutdownu
-	const auto current_tid = GetCurrentTid();
-	const auto this_thread_pid = GetThread(current_tid)->GetPid();
+	const auto current_tid = Get_Current_Tid();
+	const auto this_thread_pid = Get_Thread(current_tid)->Get_Pid();
 
 	// Budeme projizdet vsechny pidy a pro obsazene procesy zabijeme pomoci Terminate_Process metody
 	for (auto pid = PID_RANGE_START + 1; pid < PID_RANGE_END; pid += 1) {
 		// Pokud je proces nullptr a nebo tento nebudeme nic delat
-		if (pid == this_thread_pid || GetProcess(pid) == nullptr) {
+		if (pid == this_thread_pid || Get_Process(pid) == nullptr) {
 			continue;
 		}
 
@@ -510,30 +513,30 @@ kiv_os::NOS_Error ProcessManager::Syscall_Register_Signal_Handler(const kiv_hal:
 	const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
 	
 	// funkce pro signal  // NOLINT(performance-no-int-to-ptr)
-	const auto callback = regs.rdx.r == 0 ? DefaultSignalCallback : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r);
+	const auto callback = regs.rdx.r == 0 ? Default_Signal_Callback : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r);
 
 	// zamkneme
 	auto lock = std::scoped_lock(tasks_mutex);
-	const auto current_tid = GetCurrentTid();
+	const auto current_tid = Get_Current_Tid();
 	if (current_tid == kiv_os::Invalid_Handle) {
 		return kiv_os::NOS_Error::Permission_Denied;
 	}
 
 	// Nastavime signal handler
-	const auto thread = GetThread(current_tid);
-	const auto process = GetProcess(thread->GetPid());
+	const auto thread = Get_Thread(current_tid);
+	const auto process = Get_Process(thread->Get_Pid());
 	process->SetSignalCallback(signal, callback);
 	return kiv_os::NOS_Error::Success;
 }
 
-void ProcessManager::InitializeSuspendCallback(const kiv_os::THandle subscriber_handle) {
+void ProcessManager::Initialize_Suspend_Callback(const kiv_os::THandle subscriber_handle) {
 	if (suspend_callbacks.count(subscriber_handle) == 0 || suspend_callbacks[subscriber_handle] == nullptr) {
 		suspend_callbacks[subscriber_handle] = std::make_shared<SuspendCallback>();
 	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_handle, const kiv_os::THandle notifier_handle) {
+void ProcessManager::Trigger_Suspend_Callback(const kiv_os::THandle subscriber_handle, const kiv_os::THandle notifier_handle) {
 	if (suspend_callbacks.count(subscriber_handle) == 0 || suspend_callbacks[subscriber_handle] == nullptr) {
 		return; // Pokud callback neni v mape vratime se
 	}
@@ -546,36 +549,38 @@ void ProcessManager::TriggerSuspendCallback(const kiv_os::THandle subscriber_han
 
 void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 	// Nic nelockujeme, tato funkce se muze zavolat pouze z shutdownu
-	const auto process = GetProcess(pid);
+	const auto process = Get_Process(pid);
 
 	// Pokud je proces null nebo uz se proces terminoval nic nedelame
-	if (process == nullptr || process->GetTaskState() == TaskState::ReadableExitCode) {
+	if (process == nullptr || process->Get_Task_State() == TaskState::ReadableExitCode) {
 		return;
 	}
 
 	// V logice OS jsme proces ukoncili pomoci signalu, takze signal provedeme
-	process->ExecuteCallback(kiv_os::NSignal_Id::Terminate);
-	IOManager::Get().UnregisterProcessStdIO(pid, process->GetStdIn(), process->GetStdOut());
+	process->Execute_Signal_Callback(kiv_os::NSignal_Id::Terminate);
 
-	// process->NotifySubscribers(pid);
+	// TODO asi by se meli zavrit uplne vsechny handly, ktere jsou procesu prideleny
+	IOManager::Get().Unregister_Process_Stdio(pid, process->GetStdIn(), process->GetStdOut()); // zavreme stdin a stdout
+	process->Notify_Subscribers(pid); // Notifikujeme vsechny cekajici
+	process->Set_Readable_Exit_Code(); // Exit code lze nyni precist
 }
 
 
 
 void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t main_thread_exit_code) {
 	// Nic nelockujeme, tato funkce zavola pouze z metody OnThreadFinish, ktera mutexy uz lockne
-	const auto process = GetProcess(pid);
+	const auto process = Get_Process(pid);
 
 	// Pokud je process null nebo uz se OnProcessFinish zavolal vratime se
-	if (process == nullptr || process->GetTaskState() == TaskState::ReadableExitCode) {
+	if (process == nullptr || process->Get_Task_State() == TaskState::ReadableExitCode) {
 		return;
 	}
 
 	// Ukoncime ostatni non-main vlakna "nasilim"
 	// Pro vlakno, ktere se stihne ukoncit vcas se provede OnThreadFinish a tento kod nic neudela
-	for (const auto tid : process->GetProcessThreads()) {
-		const auto thread = GetThread(tid);
-		if (thread == nullptr || thread->IsMainThread()) {
+	for (const auto tid : process->Get_Process_Threads()) {
+		const auto thread = Get_Thread(tid);
+		if (thread == nullptr || thread->Is_Main_Thread()) {
 			// hlavni vlakno nemuzeme vypnout, protoze vola tuto metodu
 			continue;
 		}
@@ -583,33 +588,33 @@ void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t
 		thread->TerminateIfRunning(ForcefullyEndedTaskExitCode);
 
 		// Notifikujeme subscribery vlakna
-		thread->NotifySubscribers(thread->GetTid());
+		thread->Notify_Subscribers(thread->Get_Tid());
 
 		// Nastavime exit code na readable
-		thread->SetReadableExitCode();
+		thread->Set_Readable_Exit_Code();
 	}
 
 	// TODO zavreme vsechny otevrene soubory pro proces
 	// TODO - zatim uzavreme pouze stdio
-	IOManager::Get().UnregisterProcessStdIO(pid, process->GetStdIn(), process->GetStdOut());
+	IOManager::Get().Unregister_Process_Stdio(pid, process->GetStdIn(), process->GetStdOut());
 
 	// Provedeme notifikaci cekajich objektu na tento proces
-	process->NotifySubscribers(process->Get_Pid());
+	process->Notify_Subscribers(process->Get_Pid());
 
 	// Nastavime exit code
-	process->SetExitCode(main_thread_exit_code);
+	process->Set_Exit_Code(main_thread_exit_code);
 
 	// Zmenime stav na readable exit code
-	process->SetReadableExitCode();
-	LogDebug("On Process Finish pid: " + std::to_string(pid));
+	process->Set_Readable_Exit_Code();
+	Log_Debug("On Process Finish pid: " + std::to_string(pid));
 }
 
-void ProcessManager::OnThreadFinish(const kiv_os::THandle tid) {
+void ProcessManager::On_Thread_Finish(const kiv_os::THandle tid) {
 	// Protoze manipulujeme s vlaknem strukturu zavreme
 	auto tasks_lock = std::scoped_lock(tasks_mutex);
 
 	// Ziskame vlakno
-	const auto thread = GetThread(tid);
+	const auto thread = Get_Thread(tid);
 
 	// Pokud je vlakno null nebo uz bylo zavolano on finish (coz pozname podle stavu) vratime se
 	if (thread == nullptr || thread->GetState() == TaskState::ReadableExitCode) {
@@ -618,21 +623,21 @@ void ProcessManager::OnThreadFinish(const kiv_os::THandle tid) {
 
 	// Jinak provedeme notifikaci cekajicich objektu na toto vlakno
 	auto callbacks_lock = std::scoped_lock(suspend_callbacks_mutex);
-	thread->NotifySubscribers(thread->GetTid());
+	thread->Notify_Subscribers(thread->Get_Tid());
 
 	// Exit code se nastavil sam, staci zmenit stav na readable exit code
-	thread->SetReadableExitCode();
+	thread->Set_Readable_Exit_Code();
 
-	const auto was_main = thread->IsMainThread() ? " thread was main" : "";
-	LogDebug("Thread with tid: " + std::to_string(tid) + " and pid: " + std::to_string(thread->GetPid()) + " finished"
+	const auto was_main = thread->Is_Main_Thread() ? " thread was main" : "";
+	Log_Debug("Thread with tid: " + std::to_string(tid) + " and pid: " + std::to_string(thread->Get_Pid()) + " finished"
 		+ was_main);
 	// Pokud je vlakno main provedeme OnProcessFinish
-	if (thread->IsMainThread()) {
-		On_Process_Finish(thread->GetPid(), thread->GetTaskExitCode());
+	if (thread->Is_Main_Thread()) {
+		On_Process_Finish(thread->Get_Pid(), thread->Get_Task_Exit_Code());
 	}
 }
 
-void ProcessManager::OnShutdown() {
+void ProcessManager::On_Shutdown() {
 	// Pouze pockame, dokud nedostaneme pristup k mutexum aby bylo jasne, ze se vsechno ukoncilo korektne
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex, shutdown_mutex);
 }

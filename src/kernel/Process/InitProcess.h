@@ -19,6 +19,6 @@ public:
 	/// </summary>
 	static void Start();
 
-	void NotifySubscribers(kiv_os::THandle this_task_handle) override;
+	void Notify_Subscribers(kiv_os::THandle this_task_handle) override;
 	
 };

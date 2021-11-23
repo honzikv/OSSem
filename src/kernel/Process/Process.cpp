@@ -39,8 +39,8 @@ bool Process::HasCallbackForSignal(int signal_number) const {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void Process::ExecuteCallback(kiv_os::NSignal_Id signal_id) {
-	LogDebug("Executing signal callback");
+void Process::Execute_Signal_Callback(kiv_os::NSignal_Id signal_id) {
+	Log_Debug("Executing signal callback");
 	auto regs = kiv_hal::TRegisters();
 	regs.rcx.r = static_cast<decltype(regs.rcx.r)>(signal_id);
 	signal_callbacks[signal_id](regs);

@@ -5,7 +5,7 @@
 Pipe::Pipe(const size_t buffer_size): write(std::make_shared<Semaphore>(buffer_size)),
                                       read(std::make_shared<Semaphore>()) {
 	buffer.resize(buffer_size);
-	LogDebug("New Pipe with buffer size: " + std::to_string(buffer.size()));
+	Log_Debug("New Pipe with buffer size: " + std::to_string(buffer.size()));
 }
 
 bool Pipe::Empty() const {
@@ -119,14 +119,14 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 
 
 void Pipe::CloseForReading() {
-	LogDebug("Closing pipe for reading");
+	Log_Debug("Closing pipe for reading");
 	auto lock = std::scoped_lock(pipe_access);
 	reading_closed = true;
 	write->Release();
 }
 
 void Pipe::CloseForWriting() {
-	LogDebug("Closing pipe for writing");
+	Log_Debug("Closing pipe for writing");
 	auto eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
 	auto bytes_written = size_t{0};
 	Write(std::addressof(eof), 1, bytes_written); // toto nastavi flag writing closed za nas

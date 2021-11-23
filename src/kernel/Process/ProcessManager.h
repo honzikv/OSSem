@@ -96,41 +96,41 @@ private:
 	/// Ziska prvni volny pid, pokud neni vrati NO_FREE_ID
 	/// </summary>
 	/// <returns>Volny pid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	[[nodiscard]] kiv_os::THandle GetFreePid() const;
+	[[nodiscard]] kiv_os::THandle Get_Free_Pid() const;
 
 	/// <summary>
 	/// Ziska prvni volny tid, pokud neni vrati NO_FREE_ID
 	/// </summary>
 	/// <returns>Volny tid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	[[nodiscard]] kiv_os::THandle GetFreeTid() const;
+	[[nodiscard]] kiv_os::THandle Get_Free_Tid() const;
 
 	/// <summary>
 	/// Getter pro proces podle pidu
 	/// </summary>
 	/// <param name="pid">pid</param>
 	/// <returns>Pointer na proces</returns>
-	std::shared_ptr<Process> GetProcess(kiv_os::THandle pid);
+	std::shared_ptr<Process> Get_Process(kiv_os::THandle pid);
 
 	/// <summary>
 	/// Prida proces do tabulky
 	/// </summary>
 	/// <param name="process">Pointer na proces</param>
 	/// <param name="pid">pid procesu</param>
-	void AddProcess(std::shared_ptr<Process> process, kiv_os::THandle pid);
+	void Add_Process(std::shared_ptr<Process> process, kiv_os::THandle pid);
 
 	/// <summary>
 	/// Prida vlakno do tabulky
 	/// </summary>
 	/// <param name="thread">Pointer na vlakno</param>
 	/// <param name="tid">tid vlakna</param>
-	void AddThread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
+	void Add_Thread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
 
 	/// <summary>
 	/// Zjisti, zda-li task existuje
 	/// </summary>
 	/// <param name="task_handle"></param>
 	/// <returns></returns>
-	bool TaskNotifiable(kiv_os::THandle task_handle);
+	bool Is_Task_Notifiable(kiv_os::THandle task_handle);
 	
 
 	/// <summary>
@@ -152,14 +152,14 @@ private:
 	/// Najde PID rodice pro dane vlakno
 	/// </summary>
 	/// <returns></returns>
-	kiv_os::THandle FindParentPid();
+	kiv_os::THandle Find_Parent_Pid();
 
 	/// <summary>
 	/// Ziska THandle pro aktualne bezici vlakno. Bezici vlakno musi byt umistene v tabulce, jinak
 	///	metoda vyhodi runtime exception
 	/// </summary>
 	/// <returns>Tid aktualne beziciho vlakna</returns>
-	kiv_os::THandle GetCurrentTid();
+	kiv_os::THandle Get_Current_Tid();
 
 public:
 	/// <summary>
@@ -167,32 +167,32 @@ public:
 	/// </summary>
 	/// <param name="regs">registry</param>
 	/// <returns>vysledek operace</returns>
-	void ProcessSyscall(kiv_hal::TRegisters& regs);
+	void Syscall(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Spusti
 	/// </summary>
 	/// <param name="subscriber_handle"></param>
 	/// <param name="notifier_handle"></param>
-	void TriggerSuspendCallback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
+	void Trigger_Suspend_Callback(kiv_os::THandle subscriber_handle, kiv_os::THandle notifier_handle);
 
 	/// <summary>
 	/// Vytvori callback pro vzbuzeni vlakna (pokud neexistuje)
 	/// </summary>
 	/// <param name="subscriber_handle">tid vlakna, ktere se ma vzbudit</param>
-	void InitializeSuspendCallback(kiv_os::THandle subscriber_handle);
+	void Initialize_Suspend_Callback(kiv_os::THandle subscriber_handle);
 
 	/// <summary>
 	/// Vrati aktualne bezici proces
 	/// </summary>
-	std::shared_ptr<Process> GetCurrentProcess();
+	std::shared_ptr<Process> Get_Current_Process();
 
 private:
 	/// <summary>
 	/// Spusti init proces
 	/// </summary>
 	/// <param name="init_main">odkaz na funkci s mainem pro init proces</param>
-	void RunInitProcess(kiv_os::TThread_Proc init_main);
+	void Run_Init_Process(kiv_os::TThread_Proc init_main);
 
 	/// <summary>
 	/// Provede klonovani procesu nebo vlakna
@@ -206,28 +206,28 @@ private:
 	/// </summary>
 	/// <param name="tid">tid</param>
 	/// <returns>Pointer na vlakno</returns>
-	std::shared_ptr<Thread> GetThread(kiv_os::THandle tid);
+	std::shared_ptr<Thread> Get_Thread(kiv_os::THandle tid);
 
 	/// <summary>
 	/// Vytvori proces s hlavnim vlaknem a prida je do tabulek
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error CreateNewProcess(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Create_Process(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Vytvori nove vlakno pro aktualne bezici proces
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns>Vysledek operace</returns>
-	kiv_os::NOS_Error CreateNewThread(kiv_hal::TRegisters& regs);
+	kiv_os::NOS_Error Create_Thread(kiv_hal::TRegisters& regs);
 
 	/// <summary>
 	/// Vrati typ handle pro  dane id
 	/// </summary>
 	/// <param name="id">id, pro ktere chceme typ handle dostat</param>
 	/// <returns>typ handle</returns>
-	static HandleType GetHandleType(kiv_os::THandle id);
+	static HandleType Get_Handle_Type(kiv_os::THandle id);
 
 	/// <summary>
 	/// Prida proces pro ostatni handles (proces/vlakno) jako subscribera, ktereho musi handles po dokonceni vzbudit
@@ -235,7 +235,7 @@ private:
 	/// <param name="handle_array">pointer na pole handlu</param>
 	/// <param name="handle_array_size">velikost pole</param>
 	/// <param name="current_tid">tid aktualniho vlakna</param>
-	void AddCurrentThreadAsSubscriber(const kiv_os::THandle* handle_array, uint32_t handle_array_size,
+	void Add_Current_Thread_As_Subscriber(const kiv_os::THandle* handle_array, uint32_t handle_array_size,
 	                                  kiv_os::THandle current_tid);
 
 	/// <summary>
@@ -249,13 +249,13 @@ private:
 	/// Odstrani proces z tabulky
 	/// </summary>
 	/// <param name="process">Reference na proces</param>
-	void RemoveProcessFromTable(std::shared_ptr<Process> process);
+	void Remove_Process_From_Table(std::shared_ptr<Process> process);
 
 	/// <summary>
 	/// Odstrani vlakno z tabulky a lookup map
 	/// </summary>
 	/// <param name="thread">Reference na vlakno</param>
-	void RemoveThreadFromTable(std::shared_ptr<Thread> thread);
+	void Remove_Thread_From_Table(std::shared_ptr<Thread> thread);
 
 	/// <summary>
 	/// Provede cteni exit codu
@@ -291,10 +291,10 @@ public:
 	/// <summary>
 	/// Dokonceni zivotniho cyklu vlakna - provede zavolani metod a dokonceni
 	/// </summary>
-	void OnThreadFinish(kiv_os::THandle tid);
+	void On_Thread_Finish(kiv_os::THandle tid);
 
 	/// <summary>
 	/// Synchronizace main vlakna
 	/// </summary>
-	void OnShutdown();
+	void On_Shutdown();
 };

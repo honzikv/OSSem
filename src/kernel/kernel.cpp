@@ -18,7 +18,7 @@ void SysCall(kiv_hal::TRegisters& regs) {
 		break;
 
 	case kiv_os::NOS_Service_Major::Process:
-		ProcessManager::Get().ProcessSyscall(regs);
+		ProcessManager::Get().Syscall(regs);
 		break;
 	}
 
@@ -33,7 +33,7 @@ void ShutdownKernel() {
 }
 
 void HandleSignal(int signum) {
-	LogDebug("Hello signal");
+	Log_Debug("Hello signal");
 }
 
 
@@ -52,7 +52,7 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 
 	// Pokud jsme se dostali az sem OS se bude vypinat
 	// Zavolame OnShutdown process manageru, coz nam sesynchronizuje main s ukoncenim init procesu
-	ProcessManager::Get().OnShutdown();
+	ProcessManager::Get().On_Shutdown();
 
 	ShutdownKernel();
 }

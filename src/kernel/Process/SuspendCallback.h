@@ -47,5 +47,5 @@ public:
 	///	Vrati id vlakna/procesu, ktere triggernulo tento callback
 	/// </summary>
 	/// <returns></returns>
-	[[nodiscard]] kiv_os::THandle GetNotifierId() const;
+	[[nodiscard]] kiv_os::THandle Get_Notifier_Id() const;
 };

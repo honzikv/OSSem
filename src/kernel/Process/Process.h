@@ -80,7 +80,7 @@ public:
 	/// <param name="callback">Callback, ktery se ma provest</param>
 	void SetSignalCallback(kiv_os::NSignal_Id signal, kiv_os::TThread_Proc callback);
 
-	[[nodiscard]] inline const std::vector<kiv_os::THandle>& GetProcessThreads() const { return threads; }
+	[[nodiscard]] inline const std::vector<kiv_os::THandle>& Get_Process_Threads() const { return threads; }
 
 	/// <summary>
 	/// Vrati, zda-li existuje pro signal dany callback
@@ -93,6 +93,6 @@ public:
 	/// Provede callback na dany signal
 	/// </summary>
 	/// <param name="signal_id">Cislo signalu</param>
-	void ExecuteCallback(kiv_os::NSignal_Id signal_id);
+	void Execute_Signal_Callback(kiv_os::NSignal_Id signal_id);
 
 };

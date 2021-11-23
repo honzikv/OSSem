@@ -21,7 +21,7 @@ void Thread::ThreadFunc() {
 		return;
 	}
 	task_state = TaskState::ProgramFinished;
-	ProcessManager::Get().OnThreadFinish(tid);
+	ProcessManager::Get().On_Thread_Finish(tid);
 }
 
 Thread::Thread(const kiv_os::TThread_Proc program, kiv_hal::TRegisters context, const kiv_os::THandle tid,

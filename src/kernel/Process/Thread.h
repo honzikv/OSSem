@@ -83,9 +83,9 @@ public:
 	/// </summary>
 	void ThreadFunc();
 
-	[[nodiscard]] inline kiv_os::THandle GetTid() const { return tid; }
-	[[nodiscard]] inline kiv_os::THandle GetPid() const { return pid; }
-	[[nodiscard]] inline bool IsMainThread() const { return main_thread; }
+	[[nodiscard]] inline kiv_os::THandle Get_Tid() const { return tid; }
+	[[nodiscard]] inline kiv_os::THandle Get_Pid() const { return pid; }
+	[[nodiscard]] inline bool Is_Main_Thread() const { return main_thread; }
 
 	[[nodiscard]] TaskState GetState() const;
 
