@@ -76,12 +76,12 @@ private:
 	/// <summary>
 	/// Posune read index o 1 dopredu. Pokud prekroci max index vrati se na zacatek
 	/// </summary>
-	void AdvanceReadingIdx();
+	void Advance_Reading_Idx();
 
 	/// <summary>
 	/// Posune write index o 1 dopredu. Pokud prekroci max index vrati se na zacatek
 	/// </summary>
-	void AdvanceWritingIdx();
+	void Advance_Writing_Idx();
 
 public:
 	/// <summary>
@@ -108,7 +108,7 @@ public:
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error Write(const char* source_buffer, size_t buffer_size, size_t& bytes_written);
 
-	void CloseForReading();
-	void CloseForWriting();
+	void Close_For_Reading();
+	void Close_For_Writing();
 
 };

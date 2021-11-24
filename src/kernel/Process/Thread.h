@@ -50,7 +50,7 @@ class Thread final : public Task {
 	/// Pid procesu, ke kteremu toto vlakno patri
 	/// </summary>
 	const kiv_os::THandle pid;
-	
+
 
 public:
 
@@ -76,7 +76,7 @@ public:
 	/// </summary>
 	/// <param name="native_thread_handle"></param>
 	/// <param name="exit_code">Exit code, ktery se nastavi po ukonceni</param>
-	void TerminateIfRunning(uint16_t exit_code);
+	void Terminate_If_Running(uint16_t exit_code);
 
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne

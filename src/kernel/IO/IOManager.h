@@ -28,7 +28,7 @@ private:
 	/// <summary>
 	/// Mutex pro pristup
 	/// </summary>
-	std::recursive_mutex mutex;
+	std::mutex mutex;
 
 	/// <summary>
 	/// Otevrene soubory - obsahuje dvojici pocet alokaci a referenci na soubor
@@ -58,7 +58,8 @@ public:
 	/// Vrati zda-li ma proces pristup k file descriptoru
 	/// </summary>
 	/// <param name="pid"></param>
-	/// <returns></returns>
+	/// <param name="file_descriptor">file descriptor</param>
+	/// <returns>True pokud ano, jinak false</returns>
 	bool Is_File_Descriptor_Accessible(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
 
 	/// <summary>
@@ -122,6 +123,12 @@ public:
 	/// <param name="std_out">standardni vystup</param>
 	/// <returns>success, pokud vse probehlo v poradku jinak chybu</returns>
 	kiv_os::NOS_Error Unregister_Process_Stdio(kiv_os::THandle pid, kiv_os::THandle std_in, kiv_os::THandle std_out);
+
+	/// <summary>
+	/// Zavre vsechny file descriptory, ktere patri procesu s danym pidem
+	/// </summary>
+	/// <param name="pid">pid procesu</param>
+	void Close_Process_File_Descriptors(kiv_os::THandle pid);
 
 private:
 	/// <summary>

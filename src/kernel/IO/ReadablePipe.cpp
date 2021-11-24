@@ -11,7 +11,7 @@ kiv_os::NOS_Error ReadablePipe::Write(const char* source_buffer, size_t buffer_s
 }
 
 kiv_os::NOS_Error ReadablePipe::Close() {
-	pipe->CloseForReading();
+	pipe->Close_For_Reading();
 	return kiv_os::NOS_Error::Success;
 }
 

@@ -33,16 +33,16 @@ class ProcessManager {
 public:
 	// Konstanty pro rozsahy pidu a tidu
 
-	static constexpr uint16_t PID_RANGE_START = 0;
-	static constexpr uint16_t PID_RANGE_END = 4096;
-	static constexpr uint16_t TID_RANGE_START = 4096;
-	static constexpr uint16_t TID_RANGE_END = 8192;
-	static constexpr uint16_t NO_FREE_ID = -1;
+	static constexpr uint16_t PidRangeStart = 0;
+	static constexpr uint16_t PidRangeEnd = 4096;
+	static constexpr uint16_t TidRangeStart = 4096;
+	static constexpr uint16_t TidRangeEnd = 8192;
+	static constexpr uint16_t NoFreeId = -1;
 
 	/// <summary>
 	/// Vychozi pracovni adresar, pokud neni zadny 
 	/// </summary>
-	inline static const std::string DEFAULT_PROCESS_WORKING_DIR = "C:\\";
+	inline static const std::string DefaultProcessWorkingDir = "C:\\";
 
 	/// <summary>
 	/// Singleton ziskani objektu. Provede lazy inicializaci a vrati referenci
@@ -64,6 +64,7 @@ private:
 	std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
 
 	int32_t processes_running = 0;
+	int32_t threads_running = 0;
 
 	/// <summary>
 	/// Callback pro probuzeni Init procesu pro ukonceni OS
@@ -73,12 +74,12 @@ private:
 	/// <summary>
 	/// Tabulka procesu
 	/// </summary>
-	std::array<std::shared_ptr<Process>, PID_RANGE_END - PID_RANGE_START> process_table = {};
+	std::array<std::shared_ptr<Process>, PidRangeEnd - PidRangeStart> process_table = {};
 
 	/// <summary>
 	/// Tabulka vlaken
 	/// </summary>
-	std::array<std::shared_ptr<Thread>, TID_RANGE_END - TID_RANGE_START> thread_table = {};
+	std::array<std::shared_ptr<Thread>, TidRangeEnd - TidRangeStart> thread_table = {};
 
 	/// <summary>
 	/// TID -> Handle
@@ -270,26 +271,20 @@ private:
 
 	kiv_os::NOS_Error Syscall_Exit_Task(const kiv_hal::TRegisters& regs);
 
+	void Terminate_Thread(kiv_os::THandle tid);
+	void Terminate_Process(kiv_os::THandle pid);
+
 	kiv_os::NOS_Error Syscall_Shutdown(const kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error Syscall_Register_Signal_Handler(const kiv_hal::TRegisters& regs);
 
-
-	// Update 22.11
-
 	/// <summary>
-	/// Nasilne ukonci 
+	///
+	///	<param name="pid">pid</param>
+	///	<param name="main_thread_exit_code">exit code procesu</param>
+	///	<param name="triggered_by_main_thread">zda-li zavolalo metodu hlavni vlakno</param>
 	/// </summary>
-	/// <param name="pid"></param>
-	void Terminate_Process(kiv_os::THandle pid);
-
-	void Terminate_Thread_Forcefully(std::shared_ptr<Thread> thread);
-
-	/// <summary>
-	/// Dokonceni zivotniho cyklu procesu - metodu zavola main vlakno po skonceni
-	/// </summary>
-	void On_Process_Finish(const kiv_os::THandle pid, const uint16_t main_thread_exit_code);
-
+	void On_Process_Finish(kiv_os::THandle pid, uint16_t main_thread_exit_code, bool triggered_by_main_thread);
 
 public:
 	/// <summary>

@@ -16,25 +16,25 @@ void Process::AddThread(const kiv_os::THandle tid) {
 
 kiv_os::THandle Process::Get_Pid() const { return pid; }
 
-kiv_os::THandle Process::GetParentPid() const { return parent_pid; }
+kiv_os::THandle Process::Get_Parent_Pid() const { return parent_pid; }
 
-kiv_os::THandle Process::GetStdIn() const { return std_in; }
+kiv_os::THandle Process::Get_Std_in() const { return std_in; }
 
-kiv_os::THandle Process::GetStdOut() const { return std_out; }
+kiv_os::THandle Process::Get_Std_Out() const { return std_out; }
 
-Path& Process::GetWorkingDir() { return working_dir; }
+Path& Process::Get_Working_Dir() { return working_dir; }
 
-void Process::SetWorkingDir(Path& path) {
+void Process::Set_Working_Dir(Path& path) {
 	auto lock = std::scoped_lock(subscribers_mutex);
 	working_dir = std::move(path);
 }
 
 
-void Process::SetSignalCallback(const kiv_os::NSignal_Id signal, const kiv_os::TThread_Proc callback) {
+void Process::Set_Signal_Callback(const kiv_os::NSignal_Id signal, const kiv_os::TThread_Proc callback) {
 	signal_callbacks[signal] = callback;
 }
 
-bool Process::HasCallbackForSignal(int signal_number) const {
+bool Process::Has_Signal_Callback(int signal_number) const {
 	return signal_callbacks.count(static_cast<kiv_os::NSignal_Id>(signal_number)) != 0;
 }
 

@@ -11,7 +11,7 @@
 #include "Utils/Debug.h"
 
 
-void SysCall(kiv_hal::TRegisters& regs) {
+void Syscall(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_Service_Major>(regs.rax.h)) {
 	case kiv_os::NOS_Service_Major::File_System:
 		IOManager::Get().Handle_IO(regs);
@@ -32,15 +32,11 @@ void ShutdownKernel() {
 	FreeLibrary(User_Programs);
 }
 
-void HandleSignal(int signum) {
-	Log_Debug("Hello signal");
-}
-
 
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
+	signal(SIGINT, SIG_IGN);
 	InitializeKernel();
-	signal(SIGINT, HandleSignal);
-	Set_Interrupt_Handler(kiv_os::System_Int_Number, SysCall);
+	Set_Interrupt_Handler(kiv_os::System_Int_Number, Syscall);
 
 	// Spustime init proces
 	InitProcess::Start();
@@ -58,7 +54,7 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 }
 
 
-void SetError(const bool failed, kiv_hal::TRegisters& regs) {
+void Set_Err(const bool failed, kiv_hal::TRegisters& regs) {
 	if (failed) {
 		regs.flags.carry = true;
 		regs.rax.r = GetLastError();

@@ -15,7 +15,7 @@ void Create_Shell(kiv_hal::TRegisters& shell_regs, const kiv_os::THandle std_in_
 	shell_regs.rdx.r = reinterpret_cast<decltype(shell_regs.rdx.r)>(shell_command);
 	shell_regs.rdi.r = reinterpret_cast<decltype(shell_regs.rdi.r)>(shell_args); // rdi je pointer na argumenty
 	shell_regs.rbx.e = std_in_handle << 16 | std_out_handle; // rbx obsahuje stdin a stdout
-	SysCall(shell_regs);
+	Syscall(shell_regs);
 }
 
 void Wait_For(kiv_os::THandle shell_pid) {
@@ -24,7 +24,7 @@ void Wait_For(kiv_os::THandle shell_pid) {
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Wait_For);
 	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(&shell_pid); // pointer na shell_pid
 	regs.rcx.e = 1; // pouze jeden prvek
-	SysCall(regs);
+	Syscall(regs);
 }
 
 void Read_Shell_Exit_Code(const kiv_os::THandle shell_pid) {
@@ -32,10 +32,10 @@ void Read_Shell_Exit_Code(const kiv_os::THandle shell_pid) {
 	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Read_Exit_Code);
 	regs.rdx.x = shell_pid;
-	SysCall(regs);
+	Syscall(regs);
 }
 
-size_t InitProcess::InitFun(const kiv_hal::TRegisters& regs) {
+size_t InitProcess::Init_Fun(const kiv_hal::TRegisters& regs) {
 	const auto std_in = regs.rax.x;
 	const auto std_out = regs.rbx.x;
 
@@ -50,7 +50,7 @@ size_t InitProcess::InitFun(const kiv_hal::TRegisters& regs) {
 }
 
 void InitProcess::Start() {
-	ProcessManager::Get().Run_Init_Process(InitFun);
+	ProcessManager::Get().Run_Init_Process(Init_Fun);
 	semaphore->Acquire(); // Zablokujeme main vlakno aby cekalo na shutdown
 }
 

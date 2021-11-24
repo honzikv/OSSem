@@ -1,4 +1,7 @@
 #include "ConsoleIn.h"
+
+#include "Utils/Logging.h"
+
 kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size, size_t& bytes_read) {
 	auto regs = kiv_hal::TRegisters();
 	auto idx = size_t{0};
@@ -33,6 +36,9 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 				// Pro LF nepridavame ani index a jenom pokracujeme ve while loopu
 			case kiv_hal::NControl_Codes::LF: {
 				break;
+			}
+			case kiv_hal::NControl_Codes::ETX: {
+				Log_Debug("CTRLC");
 			}
 			case kiv_hal::NControl_Codes::NUL:
 			case kiv_hal::NControl_Codes::CR: {

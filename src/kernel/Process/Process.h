@@ -58,18 +58,18 @@ public:
 
 	// Gettery
 	[[nodiscard]] kiv_os::THandle Get_Pid() const;
-	[[nodiscard]] kiv_os::THandle GetParentPid() const;
-	[[nodiscard]] kiv_os::THandle GetStdIn() const;
-	[[nodiscard]] kiv_os::THandle GetStdOut() const;
-	[[nodiscard]] Path& GetWorkingDir();
+	[[nodiscard]] kiv_os::THandle Get_Parent_Pid() const;
+	[[nodiscard]] kiv_os::THandle Get_Std_in() const;
+	[[nodiscard]] kiv_os::THandle Get_Std_Out() const;
+	[[nodiscard]] Path& Get_Working_Dir();
 
 	/// <summary>
 	/// Nastavi pracovni adresar pro proces
 	/// </summary>
 	/// <param name="dir"></param>
-	void SetWorkingDir(Path& path);
+	void Set_Working_Dir(Path& path);
 
-	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& GetSignalCallbacks() {
+	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& Get_Signal_Callbacks() {
 		return signal_callbacks;
 	}
 
@@ -78,7 +78,7 @@ public:
 	/// </summary>
 	/// <param name="signal">Signal, ktery ma callback spoustet</param>
 	/// <param name="callback">Callback, ktery se ma provest</param>
-	void SetSignalCallback(kiv_os::NSignal_Id signal, kiv_os::TThread_Proc callback);
+	void Set_Signal_Callback(kiv_os::NSignal_Id signal, kiv_os::TThread_Proc callback);
 
 	[[nodiscard]] inline const std::vector<kiv_os::THandle>& Get_Process_Threads() const { return threads; }
 
@@ -87,7 +87,7 @@ public:
 	/// </summary>
 	/// <param name="signal_number"></param>
 	/// <returns></returns>
-	[[nodiscard]] bool HasCallbackForSignal(int signal_number) const;
+	[[nodiscard]] bool Has_Signal_Callback(int signal_number) const;
 
 	/// <summary>
 	/// Provede callback na dany signal

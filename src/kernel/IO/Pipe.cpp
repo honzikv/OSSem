@@ -16,12 +16,12 @@ bool Pipe::Full() const {
 	return items == buffer.size();
 }
 
-void Pipe::AdvanceReadingIdx() {
+void Pipe::Advance_Reading_Idx() {
 	// LogDebug("Reading index moved from: " + std::to_string(reading_idx) + " to: " + std::to_string((reading_idx + 1 )% buffer.size()));
 	reading_idx = (reading_idx + 1) % buffer.size();
 }
 
-void Pipe::AdvanceWritingIdx() {
+void Pipe::Advance_Writing_Idx() {
 	// LogDebug("Writing index moved from: " + std::to_string(writing_idx) + " to: " + std::to_string((writing_idx + 1) % buffer.size()));
 	writing_idx = (writing_idx + 1) % buffer.size();
 }
@@ -62,7 +62,7 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 		}
 
 		// Posuneme index pro cteni a snizime pocet polozek o 1
-		AdvanceReadingIdx();
+		Advance_Reading_Idx();
 		items -= 1;
 		// Notifikujeme cokoliv co je zablokovane na psani
 		write->Release();
@@ -107,7 +107,7 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 		}
 
 		// Zvysime index pro zapis a pocet predmetu o 1
-		AdvanceWritingIdx();
+		Advance_Writing_Idx();
 		items += 1;
 
 		read->Release();
@@ -118,14 +118,14 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 }
 
 
-void Pipe::CloseForReading() {
+void Pipe::Close_For_Reading() {
 	Log_Debug("Closing pipe for reading");
 	auto lock = std::scoped_lock(pipe_access);
 	reading_closed = true;
 	write->Release();
 }
 
-void Pipe::CloseForWriting() {
+void Pipe::Close_For_Writing() {
 	Log_Debug("Closing pipe for writing");
 	auto eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
 	auto bytes_written = size_t{0};

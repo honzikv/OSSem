@@ -10,7 +10,7 @@ kiv_os::NOS_Error WritablePipe::Read(char* target_buffer, size_t buffer_size, si
 }
 
 kiv_os::NOS_Error WritablePipe::Close() {
-	pipe->CloseForWriting();
+	pipe->Close_For_Writing();
 	return kiv_os::NOS_Error::Success;
 }
 
