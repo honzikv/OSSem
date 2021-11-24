@@ -211,8 +211,8 @@ void Shell::Close_Command_List_File_Descriptors(const std::vector<Command>& comm
 	}
 }
 
-void Shell::Close_Command_List_File_Descriptors(const std::vector<Command>& commands, size_t idx_start,
-                                                size_t idx_end) const {
+void Shell::Close_Command_List_File_Descriptors(const std::vector<Command>& commands, const size_t idx_start,
+                                                const size_t idx_end) const {
 	for (size_t i = idx_start; i <= idx_end; i += 1) {
 		Close_Command_File_Descriptors(commands[i]);
 	}
@@ -234,8 +234,9 @@ void Shell::Run() {
 		}
 
 		// Zkontrolujeme posledni znak, zda-li neni ctrl c nebo ctrl d
-		if (const auto last_char = buffer[bytes_read - 1];
-			StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char)) {
+		// ReSharper disable once CppTooWideScopeInitStatement
+		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
+		if (bytes_read > 0 && (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char))) {
 			return;
 		}
 
@@ -354,6 +355,7 @@ void Shell::Run_Commands(std::vector<Command>& commands) {
 		const auto wait_for_list = {pid};
 		kiv_os_rtl::Wait_For(wait_for_list);
 		auto exit_code = kiv_os::NOS_Error::Success;
-		kiv_os_rtl::Read_Exit_Code(pid, exit_code); // Precteme exit code pro odstraneni z tabulky
+		// Precteme exit code pro odstraneni z tabulky
+		kiv_os_rtl::Read_Exit_Code(pid, exit_code);
 	}
 }
