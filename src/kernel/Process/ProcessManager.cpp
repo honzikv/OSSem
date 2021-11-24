@@ -643,6 +643,7 @@ void ProcessManager::On_Thread_Finish(const kiv_os::THandle tid) {
 	}
 
 	if (processes_running == 0 && threads_running == 0) {
+		// V tento moment dobehli vsechny vlakna, takze muzeme odemknout semafor
 		shutdown_semaphore->Release();
 	}
 }
