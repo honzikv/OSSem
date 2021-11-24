@@ -315,7 +315,7 @@ void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 
 	// Proces pro init
 	auto path = Path(DefaultProcessWorkingDir);
-	const auto init_process = std::make_shared<InitProcess>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, path);
+	const auto init_process = std::make_shared<Process>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, path);
 
 	// Initu predame do registru stdio
 	auto init_regs = kiv_hal::TRegisters();

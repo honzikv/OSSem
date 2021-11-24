@@ -51,11 +51,6 @@ size_t InitProcess::Init_Fun(const kiv_hal::TRegisters& regs) {
 
 void InitProcess::Start() {
 	ProcessManager::Get().Run_Init_Process(Init_Fun);
-	semaphore->Acquire(); // Zablokujeme main vlakno aby cekalo na shutdown
 }
 
-void InitProcess::Notify_Subscribers(const kiv_os::THandle this_task_handle) {
-	Process::Notify_Subscribers(this_task_handle);
-	semaphore->Release();
-}
 
