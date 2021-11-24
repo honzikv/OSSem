@@ -68,20 +68,43 @@ class Shell {
 	std::pair<bool, std::string> Prepare_Stdio_For_Commands(std::vector<Command>& commands) const;
 
 	/// <summary>
-	/// Zavre file descriptory pro dany prikaz. Pokud jsou file descriptory pro std_in a std_out shellu, metoda je ignoruje
+	/// Zavre stdin pro prikaz
 	/// </summary>
-	/// <param name="command">Reference na prikaz</param>
-	void Close_Command_File_Descriptors(const Command& command) const;
+	/// <param name="command"></param>
+	void Close_Command_Std_In(const Command& command) const;
 
 	/// <summary>
-	/// Zavre file descriptory pro dany pocet prikazu z vektoru. Pokud je pocet -1 zavre file descriptory pro vsechny prikazy
+	/// Zavre stdout pro prikaz
 	/// </summary>
-	/// <param name="commands">Reference na vektor s prikazy</param>
-	/// <param name="count">Pocet prvku seznamu, pro ktery se maji file descriptory zavrit</param>
-	void Close_Command_List_File_Descriptors(const std::vector<Command>& commands, size_t count = -1) const;
+	/// <param name="command"></param>
+	void Close_Command_Std_Out(const Command& command) const;
 
-	void Close_Command_List_File_Descriptors(const std::vector<Command>& commands, size_t idx_start, size_t idx_end) const;
+	/// <summary>
+	/// Zavre stdio pro prikaz
+	/// </summary>
+	/// <param name="command"></param>
+	void Close_Command_Stdio(const Command& command) const;
 
+	/// <summary>
+	/// Zavre stdio pro prikazy ve vektoru - od 0. indexu az do count (vcetne)
+	/// </summary>
+	/// <param name="commands">Reference na vektor</param>
+	/// <param name="count">Pocet prikazu, pro ktere se ma stdio zavrit</param>
+	void Close_Command_List_Stdio(const std::vector<Command>& commands, size_t count) const;
+
+	/// <summary>
+	/// Zavre stdio pro prikazy ve vektoru - od start_idx indexu az do start_idx + count (vcetne)
+	/// </summary>
+	/// <param name="commands">Reference na vektor</param>
+	/// <param name="start_idx">Pocatecni index</param>
+	/// <param name="count">Pocet prikazu, pro ktere se ma stdio zavrit</param>
+	void Close_Command_List_Stdio(const std::vector<Command>& commands, size_t start_idx, size_t count) const;
+
+	/// <summary>
+	/// Pripravi stdio pro prave jeden prikaz (bez ||)
+	/// </summary>
+	/// <param name="command">Reference na prikaz</param>
+	/// <returns></returns>
 	std::pair<bool, std::string> Prepare_Stdio_For_Single_Command(Command& command) const;
 
 	/// <summary>
@@ -91,7 +114,6 @@ class Shell {
 	/// <param name="next_std_in"></param>
 	/// <returns>Vysledek</returns>
 	std::pair<bool, std::string> Prepare_Stdio_For_First_Command(Command& command, kiv_os::THandle& next_std_in) const;
-
 
 	/// <summary>
 	/// Provadi seznam prikazu, dokud nenastane chyba
@@ -114,12 +136,16 @@ public:
 	[[nodiscard]] std::vector<Command> Parse_Commands(const std::string& line) const;
 #endif
 
-
 	/// <summary>
 	/// Spusti shell - ten bezi, dokud se nezavola exit nebo shutdown
 	/// </summary>
 	void Run();
-	
+
+	/// <summary>
+	/// CD prikaz
+	/// </summary>
+	/// <param name="command">reference na prikaz - pro ziskani argumentu</param>
+	/// <returns></returns>
 	std::pair<bool, std::string> Change_Directory(const Command& command);
 
 };

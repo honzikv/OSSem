@@ -177,7 +177,7 @@ private:
 
 	kiv_os::NOS_Error Syscall_Set_File_Attribute(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error OpenFile(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle);
+	kiv_os::NOS_Error Open_File(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle);
 
-	VFS* GetFileSystem(const std::string& disk);
+	VFS* Get_File_System(const std::string& disk);
 };
