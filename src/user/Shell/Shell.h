@@ -58,31 +58,31 @@ class Shell {
 	/// Zapise do konzole zpravu a prida jako posledni znak newline
 	/// </summary>
 	/// <param name="message">Reference na zpravu</param>
-	void WriteLine(const std::string& message) const;
+	void Write_Line(const std::string& message) const;
 
 	/// <summary>
 	/// Ukonci shell - zavola se pro exit
 	/// </summary>
 	void Terminate();
 
-	std::pair<bool, std::string> PrepareStdIOForCommands(std::vector<Command>& commands) const;
+	std::pair<bool, std::string> Prepare_Stdio_For_Commands(std::vector<Command>& commands) const;
 
 	/// <summary>
 	/// Zavre file descriptory pro dany prikaz. Pokud jsou file descriptory pro std_in a std_out shellu, metoda je ignoruje
 	/// </summary>
 	/// <param name="command">Reference na prikaz</param>
-	void CloseCommandFileDescriptors(const Command& command) const;
+	void Close_Command_File_Descriptors(const Command& command) const;
 
 	/// <summary>
 	/// Zavre file descriptory pro dany pocet prikazu z vektoru. Pokud je pocet -1 zavre file descriptory pro vsechny prikazy
 	/// </summary>
 	/// <param name="commands">Reference na vektor s prikazy</param>
 	/// <param name="count">Pocet prvku seznamu, pro ktery se maji file descriptory zavrit</param>
-	void CloseCommandListFileDescriptors(const std::vector<Command>& commands, size_t count = -1) const;
+	void Close_Command_List_File_Descriptors(const std::vector<Command>& commands, size_t count = -1) const;
 
-	void CloseCommandListFileDescriptors(const std::vector<Command>& commands, size_t idx_start, size_t idx_end) const;
+	void Close_Command_List_File_Descriptors(const std::vector<Command>& commands, size_t idx_start, size_t idx_end) const;
 
-	std::pair<bool, std::string> PrepareStdIOForSingleCommand(Command& command) const;
+	std::pair<bool, std::string> Prepare_Stdio_For_Single_Command(Command& command) const;
 
 	/// <summary>
 	/// Pripravi pipe pro prvni prikaz
@@ -90,14 +90,14 @@ class Shell {
 	/// <param name="command"></param>
 	/// <param name="next_std_in"></param>
 	/// <returns>Vysledek</returns>
-	std::pair<bool, std::string> PrepareStdIOForFirstCommand(Command& command, kiv_os::THandle& next_std_in) const;
+	std::pair<bool, std::string> Prepare_Stdio_For_First_Command(Command& command, kiv_os::THandle& next_std_in) const;
 
 
 	/// <summary>
 	/// Provadi seznam prikazu, dokud nenastane chyba
 	/// </summary>
 	/// <param name="commands">Seznam prikazu, ktery se ma provest</param>
-	void RunCommands(std::vector<Command>& commands);
+	void Run_Commands(std::vector<Command>& commands);
 
 public:
 	/// <summary>
@@ -111,7 +111,7 @@ public:
 	      std::string current_path);
 
 #if IS_DEBUG
-	[[nodiscard]] std::vector<Command> ParseCommands(const std::string& line) const;
+	[[nodiscard]] std::vector<Command> Parse_Commands(const std::string& line) const;
 #endif
 
 
@@ -120,6 +120,6 @@ public:
 	/// </summary>
 	void Run();
 	
-	std::pair<bool, std::string> ChangeDirectory(const Command& command);
+	std::pair<bool, std::string> Change_Directory(const Command& command);
 
 };

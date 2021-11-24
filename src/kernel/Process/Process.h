@@ -42,13 +42,18 @@ class Process : public Task {
 	std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc> signal_callbacks = {};
 
 	/// <summary>
+	/// Jmeno programu
+	/// </summary>
+	std::string program_name;
+
+	/// <summary>
 	/// Seznam vlaken, ktere patri tomuto procesu. Vlakno na 0tem indexu je main
 	/// </summary>
 	std::vector<kiv_os::THandle> threads = {};
 
 public:
 	Process(kiv_os::THandle pid, kiv_os::THandle main_thread_tid, kiv_os::THandle parent_pid,
-		kiv_os::THandle std_in, kiv_os::THandle std_out, Path& working_dir);
+		kiv_os::THandle std_in, kiv_os::THandle std_out, Path& working_dir, std::string program_name);
 
 	/// <summary>
 	/// Prida vlakno do procesu

@@ -12,6 +12,6 @@ public:
 	/// <summary>
 	/// Spusteni testu
 	/// </summary>
-	static void runTests();
+	static void Run_Tests();
 };
 #endif

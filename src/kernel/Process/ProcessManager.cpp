@@ -2,12 +2,10 @@
 
 #include <csignal>
 
-#include "InitProcess.h"
 #include "../kernel.h"
 #include "../IO/IOManager.h"
 
 size_t Default_Signal_Callback(const kiv_hal::TRegisters& regs) {
-	// Tento callback pouze vraci success
 	return 0;
 }
 
@@ -197,7 +195,7 @@ kiv_os::NOS_Error ProcessManager::Create_Process(kiv_hal::TRegisters& regs) {
 	}
 
 	// Vytvorime proces
-	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out, working_dir);
+	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out, working_dir, program_name);
 
 	// Pridame proces a vlakno do tabulky
 	Add_Process(process, pid);
@@ -315,7 +313,7 @@ void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 
 	// Proces pro init
 	auto path = Path(DefaultProcessWorkingDir);
-	const auto init_process = std::make_shared<Process>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, path);
+	const auto init_process = std::make_shared<Process>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, path, "Init");
 
 	// Initu predame do registru stdio
 	auto init_regs = kiv_hal::TRegisters();
@@ -453,8 +451,7 @@ kiv_os::NOS_Error ProcessManager::Syscall_Read_Exit_Code(kiv_hal::TRegisters& re
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 
 	Log_Debug("Reading exit code by: " + std::to_string(Get_Current_Tid()));
-	if (handle_type == HandleType::Process) {
-		// NOLINT(bugprone-branch-clone)
+	if (handle_type == HandleType::Process) {  // NOLINT(bugprone-branch-clone)
 		task = Get_Process(handle);
 		if (task != nullptr) {
 			Remove_Process_From_Table(std::static_pointer_cast<Process>(task)); // pretypovani Task na Process shared ptr
@@ -492,8 +489,6 @@ void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 	if (process == nullptr || process->Get_Task_State() == TaskState::Finished) {
 		return;
 	}
-
-	// TODO remove from procfs
 
 	// Zavolame signal
 	process->Execute_Signal_Callback(kiv_os::NSignal_Id::Terminate);
@@ -596,9 +591,7 @@ void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t
 		// Nastavime exit code na readable
 		thread->Set_Finished();
 	}
-
-	// TODO zavreme vsechny otevrene soubory pro proces
-	// TODO - zatim uzavreme pouze stdio
+	
 	IOManager::Get().Unregister_Process_Stdio(pid, process->Get_Std_in(), process->Get_Std_Out());
 
 	// Provedeme notifikaci cekajich objektu na tento proces

@@ -4,6 +4,7 @@
 #include <vector>
 #include <locale>
 #include <numeric>
+#include "../../api/hal.h"
 #include <sstream>
 
 /// <summary>
@@ -18,7 +19,7 @@ namespace StringUtils {
 	/// <param name="source">Retezec, ktery se ma rozdelit</param>
 	/// <param name="regex">Regex, podle ktereho se retezec rozdeli</param>
 	/// <returns></returns>
-	inline auto SplitByRegex(const std::string& source, const std::regex& regex) {
+	inline auto Split_By_Regex(const std::string& source, const std::regex& regex) {
 		return std::vector<std::string>(
 			std::sregex_token_iterator(source.begin(), source.end(), regex, -1),
 			std::sregex_token_iterator()
@@ -30,7 +31,7 @@ namespace StringUtils {
 	/// </summary>
 	/// <param name="str">Retezec, ktery se orizne</param>
 	/// <returns></returns>
-	inline std::string TrimFromLeft(const std::string& str) {
+	inline std::string Trim_From_Left(const std::string& str) {
 		return std::regex_replace(str, std::regex("^\\s+"), std::string(""));
 	}
 
@@ -39,7 +40,7 @@ namespace StringUtils {
 	/// </summary>
 	/// <param name="str">Retezec, ktery se orizne</param>
 	/// <returns></returns>
-	inline std::string TrimFromRight(const std::string& str) {
+	inline std::string Trim_From_Right(const std::string& str) {
 		return std::regex_replace(str, std::regex("\\s+$"), std::string(""));
 	}
 
@@ -49,9 +50,7 @@ namespace StringUtils {
 	/// </summary>
 	/// <param name="str">Retezec, ze kterho se maji retezce odstranit</param>
 	/// <returns></returns>
-	inline std::string TrimWhitespaces(const std::string& str) {
-		return TrimFromLeft(TrimFromRight(str));
-	}
+	inline std::string Trim_Whitespaces(const std::string& str) { return Trim_From_Left(Trim_From_Right(str)); }
 
 	/// <summary>
 	/// Spoji prvky pomoci delimiteru
@@ -59,11 +58,11 @@ namespace StringUtils {
 	/// <param name="vector">Vektor, ktery cheme spojit</param>
 	/// <param name="delim">Delimiter</param>
 	/// <returns></returns>
-	inline std::string JoinByDelimiter(const std::vector<std::string>& vector, const std::string& delim) {
+	inline std::string Join_By_Delimiter(const std::vector<std::string>& vector, const std::string& delim) {
 		if (vector.size() == 0) {
 			return "";
 		}
-		
+
 		return std::accumulate(
 			std::next(vector.begin()),
 			vector.end(),
@@ -73,6 +72,27 @@ namespace StringUtils {
 			}
 		);
 	}
+
+	/// <summary>
+	/// Vrati, zda-li je symbol CTRL D
+	/// </summary>
+	/// <param name="symbol"></param>
+	/// <returns></returns>
+	inline bool Is_Ctrl_D(const char symbol) { return symbol == static_cast<char>(kiv_hal::NControl_Codes::EOT); }
+
+	/// <summary>
+	/// Vrati zda-li je symbol CTRL Z
+	/// </summary>
+	/// <param name="symbol"></param>
+	/// <returns></returns>
+	inline bool Is_Ctrl_Z(const char symbol) { return symbol == static_cast<char>(kiv_hal::NControl_Codes::SUB); }
+
+	/// <summary>
+	/// Vrati zda-li je symbol CTRL C
+	/// </summary>
+	/// <param name="symbol"></param>
+	/// <returns></returns>
+	inline bool Is_Ctrl_C(const char symbol) { return symbol == static_cast<char>(kiv_hal::NControl_Codes::ETX); }
 
 
 }

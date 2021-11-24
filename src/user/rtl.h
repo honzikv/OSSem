@@ -17,9 +17,9 @@ namespace kiv_os_rtl {
 	/// Vrati posledni chybu po syscallu
 	/// </summary>
 	/// <returns>Posledni chybu</returns>
-	kiv_os::NOS_Error GetLastError();
+	kiv_os::NOS_Error Get_Last_Err();
 
-	bool ReadFile(kiv_os::THandle file_handle, char* buffer, size_t buffer_size, size_t& read);
+	bool Read_File(kiv_os::THandle file_handle, char* buffer, size_t buffer_size, size_t& read);
 	//zapise do souboru identifikovaneho deskriptor data z buffer o velikosti BUFFER_SIZE a vrati pocet zapsanych dat ve written
 	//vraci true, kdyz vse OK
 	//vraci true, kdyz vse OK
@@ -29,9 +29,9 @@ namespace kiv_os_rtl {
 	/// </summary>
 	/// <param name="std_in">Vstup</param>
 	/// <param name="buffer">Buffer, kam se data zapisuji</param>
-	void ReadIntoBuffer(kiv_os::THandle std_in, std::vector<char>& buffer);
+	void Read_Into_Buffer(kiv_os::THandle std_in, std::vector<char>& buffer);
 
-	bool WriteFile(kiv_os::THandle file_handle, const char* buffer, size_t buffer_size, size_t& written);
+	bool Write_File(kiv_os::THandle file_handle, const char* buffer, size_t buffer_size, size_t& written);
 	//zapise do souboru identifikovaneho deskriptor data z buffer o velikosti BUFFER_SIZE a vrati pocet zapsanych dat ve written
 	//vraci true, kdyz vse OK
 	//vraci true, kdyz vse OK
@@ -42,7 +42,7 @@ namespace kiv_os_rtl {
 	/// <param name="writing_process_output">Reference na promennou se vstupem - sem se zapise zaroven vysledek po vytvoreni</param>
 	/// <param name="reading_process_input">Reference na promennou s vystupem - sem se zapise zaroven vysledek po vytvoreni</param>
 	/// <returns>Vysledek operace</returns>
-	bool CreatePipe(kiv_os::THandle& writing_process_output, kiv_os::THandle& reading_process_input);
+	bool Create_Pipe(kiv_os::THandle& writing_process_output, kiv_os::THandle& reading_process_input);
 
 	/// <summary>
 	/// Otevre file z filesystemu
@@ -51,21 +51,21 @@ namespace kiv_os_rtl {
 	/// <param name="file_uri">Uri souboru</param>
 	/// <param name="mode">Rezim otevreni</param>
 	/// <returns>Vysledek operace</returns>
-	bool OpenFsFile(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode);
+	bool Open_File(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode);
 
 	/// <summary>
 	/// Zavre handle daneho file descriptoru
 	/// </summary>
 	/// <param name="file_descriptor">Handle (fd), ktere chceme zavrit</param>
 	/// <returns>Vysledek operace</returns>
-	bool CloseHandle(kiv_os::THandle file_descriptor);
+	bool Close_File_Descriptor(kiv_os::THandle file_descriptor);
 
 	/// <summary>
 	/// Nastavi procesu pracovni adresar
 	/// </summary>
 	/// <param name="params">parametry</param>
 	/// <returns>Vysledek operace</returns>
-	bool SetWorkingDir(const std::string& params);
+	bool Set_Working_Dir(const std::string& params);
 
 	/// <summary>
 	/// Ziska aktualni pracovni adresar procesu
@@ -73,19 +73,19 @@ namespace kiv_os_rtl {
 	/// <param name="buffer">Buffer, kam se maji data zapsat</param>
 	/// <param name="new_dir_buffer_size">Velikost bufferu</param>
 	/// <param name="new_directory_str_size">velikost stringu po zapsani</param>
-	bool GetWorkingDir(char* buffer, const uint32_t new_dir_buffer_size, uint32_t& new_directory_str_size);
+	bool Get_Working_Dir(char* buffer, const uint32_t new_dir_buffer_size, uint32_t& new_directory_str_size);
 
-	bool CreateProcess(const std::string& program_name, const std::string& params, kiv_os::THandle std_in,
+	bool Create_Process(const std::string& program_name, const std::string& params, kiv_os::THandle std_in,
 	                   kiv_os::THandle std_out, kiv_os::THandle& pid);
 
-	bool CreateThread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in, kiv_os::THandle std_out);
+	bool Create_Thread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in, kiv_os::THandle std_out);
 
 	/// <summary>
 	/// Aktualni vlakno vycka, dokud dany handle nedobehne
 	/// </summary>
 	/// <param name="handles">Handly, na ktere se ceka</param>
 	/// <returns>Vzdy true</returns>
-	bool WaitFor(const std::vector<kiv_os::THandle>& handles);
+	bool Wait_For(const std::vector<kiv_os::THandle>& handles);
 
 	/// <summary>
 	/// Precte exit code pro dany pid. Proces musi byt ukonceny - tzn. musi se na nej pockat pomoci WaitFor, jinak
@@ -93,7 +93,7 @@ namespace kiv_os_rtl {
 	/// </summary>
 	/// <param name="pid">process id</param>
 	/// <param name="exit_code">Promenna pro zapsani exit codu</param>
-	bool ReadExitCode(kiv_os::THandle pid, kiv_os::NOS_Error& exit_code);
+	bool Read_Exit_Code(kiv_os::THandle pid, kiv_os::NOS_Error& exit_code);
 
 	/// <summary>
 	/// Vypnuti OS

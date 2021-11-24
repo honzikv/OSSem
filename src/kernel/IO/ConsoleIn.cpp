@@ -1,10 +1,12 @@
 #include "ConsoleIn.h"
 
+#include "Process/ProcessManager.h"
 #include "Utils/Logging.h"
 
 kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size, size_t& bytes_read) {
 	auto regs = kiv_hal::TRegisters();
 	auto idx = size_t{0};
+
 	while (idx < buffer_size) {
 		// Precteme znak
 		regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Read_Char);
@@ -19,13 +21,13 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 		// bufferu
 		auto symbol = static_cast<char>(regs.rax.l);
 
-		switch (static_cast<kiv_hal::NControl_Codes>(regs.rax.l)) {  // NOLINT(clang-diagnostic-switch-enum)
+		switch (static_cast<kiv_hal::NControl_Codes>(regs.rax.l)) {
+			// NOLINT(clang-diagnostic-switch-enum)
 			case kiv_hal::NControl_Codes::BS: {
 				// Backspace = smazeme znak z bufferu
 
 				// Pokud je index vetsi nez 1 snizime
-				if (idx > 0)
-					idx -= 1;
+				idx = idx > 0 ? idx - 1 : idx;
 
 				// Zapiseme znak do VGA biosu - tzn smazeme z konzole znak
 				regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NVGA_BIOS::Write_Control_Char);
@@ -33,19 +35,23 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 				kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, regs);
 				break;
 			}
-				// Pro LF nepridavame ani index a jenom pokracujeme ve while loopu
+			// Pro LF nepridavame ani index a jenom pokracujeme ve while loopu
 			case kiv_hal::NControl_Codes::LF: {
 				break;
-			}
-			case kiv_hal::NControl_Codes::ETX: {
-				Log_Debug("CTRLC");
 			}
 			case kiv_hal::NControl_Codes::NUL:
 			case kiv_hal::NControl_Codes::CR: {
 				bytes_read = idx; // Zde k indexu 1 nepridavame, protoze CR znak nas nezajima
 				return kiv_os::NOS_Error::Success;
 			}
-
+			case kiv_hal::NControl_Codes::EOT:
+			case kiv_hal::NControl_Codes::ETX:
+			case kiv_hal::NControl_Codes::SUB: {
+				target_buffer[idx] = symbol;
+				idx += 1;
+				bytes_read = idx;
+				return kiv_os::NOS_Error::Success; // dostali jsme signal ukoncime cteni
+			}
 			default: {
 				target_buffer[idx] = symbol;
 				idx += 1;

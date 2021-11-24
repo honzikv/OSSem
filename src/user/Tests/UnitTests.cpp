@@ -5,17 +5,17 @@
 #if IS_DEBUG
 void CompareCommands(const Command& actual, const Command& expected) {
 	if (actual != expected) {
-		std::cerr << "Expected: " << expected.ToString() << std::endl;
-		std::cerr << "Actual: " << actual.ToString() << std::endl;
+		std::cerr << "Expected: " << expected.To_String() << std::endl;
+		std::cerr << "Actual: " << actual.To_String() << std::endl;
 		throw std::exception();
 	}
 }
 
-auto ShellTest_SimpleCommand(Shell& shellInterpreter) {
+auto ShellTest_SimpleCommand(const Shell& shellInterpreter) {
 	const auto input = "ls -a -b -c";
 
 	const auto expectedCommand = Command("ls", {"-a", "-b", "-c"});
-	const auto commands = shellInterpreter.ParseCommands(input);
+	const auto commands = shellInterpreter.Parse_Commands(input);
 
 	if (commands.size() > 1) {
 		std::cerr << "Test failed, parsed: " << commands.size() << " commands instead of 1" << std::endl;
@@ -35,9 +35,9 @@ auto ShellTest_SimpleCommand(Shell& shellInterpreter) {
 }
 
 auto ShellTest_NoCommand(Shell& shellInterpreter) {
-	auto input = "";
+	const auto input = "";
 
-	const auto commands = shellInterpreter.ParseCommands(input);
+	const auto commands = shellInterpreter.Parse_Commands(input);
 	if (!commands.empty()) {
 		std::cerr << "Error commands are not empty" << std::endl;
 	}
@@ -48,7 +48,7 @@ auto ShellTest_NoCommand(Shell& shellInterpreter) {
 auto ShellTest_FileRedirect(Shell& shellInterpreter) {
 	auto input = "command1 < data.json";
 
-	const auto commands = shellInterpreter.ParseCommands(input);
+	const auto commands = shellInterpreter.Parse_Commands(input);
 
 	if (commands.size() != 1) {
 		std::cerr << "Incorrect number of parameters parsed. Expected 1 got: " << commands.size() << std::endl;
@@ -70,9 +70,9 @@ auto ShellTest_FileRedirect(Shell& shellInterpreter) {
 }
 
 auto ShellTest_MultipleCommandsWithFileRedirects(Shell& shellInterpreter) {
-	auto input = "command1 -a -b | command2 > out.json|command3|command4 |command5 -a -b -c < from.json";
+	const auto input = "command1 -a -b | command2 > out.json|command3|command4 |command5 -a -b -c < from.json";
 
-	auto expected_commands = std::vector<Command>({
+	const auto expected_commands = std::vector<Command>({
 		{"command1", {"-a", "-b"}},
 		{"command2", {}, "", "out.json"},
 		{"command3", {}},
@@ -81,7 +81,7 @@ auto ShellTest_MultipleCommandsWithFileRedirects(Shell& shellInterpreter) {
 
 	});
 
-	auto actual_commands = shellInterpreter.ParseCommands(input);
+	const auto actual_commands = shellInterpreter.Parse_Commands(input);
 
 	if (actual_commands.size() != expected_commands.size()) {
 		std::cerr << "Error, incorrect number of items parsed, expected: " << expected_commands.size() << " got " <<
@@ -102,10 +102,11 @@ auto ShellTest_MultipleCommandsWithFileRedirects(Shell& shellInterpreter) {
 	std::cout << "shellTest_MultipleCommandsWithFileRedirects Test succeeded." << std::endl;
 }
 
-auto ShellTest_InvalidInput1(Shell& shell_interpreter) {
+auto ShellTest_InvalidInput1(const Shell& shell_interpreter) {
 	const auto input = "command <| command";
 	try {
-		shell_interpreter.ParseCommands(input);
+		// ReSharper disable once CppNoDiscardExpression
+		shell_interpreter.Parse_Commands(input);
 	}
 	catch (ParseException&) {
 		std::cout << "shellTest_InvalidInput1 Test succeeded." << std::endl;
@@ -120,10 +121,11 @@ auto ShellTest_InvalidInput1(Shell& shell_interpreter) {
 	std::cerr << "shellTest_InvalidInput1: Error, no exception was thrown" << std::endl;
 }
 
-auto ShellTest_InvalidInput2(Shell& shell_interpreter) {
+auto ShellTest_InvalidInput2(const Shell& shell_interpreter) {
 	const auto input = "| | | <> <<<.././/.sdf./sd";
 	try {
-		shell_interpreter.ParseCommands(input);
+		// ReSharper disable once CppNoDiscardExpression
+		shell_interpreter.Parse_Commands(input);
 	}
 	catch (ParseException&) {
 		std::cout << "shellTest_InvalidInput2 Test succeeded." << std::endl;
@@ -138,16 +140,16 @@ auto ShellTest_InvalidInput2(Shell& shell_interpreter) {
 	std::cerr << "shellTest_InvalidInput2: Error, no exception was thrown" << std::endl;
 }
 
-auto ShellTest_InvalidInput3(Shell& shell_interpreter) {
+auto ShellTest_InvalidInput3(const Shell& shell_interpreter) {
 	const auto input = "||||||:))):L(:)<::}🙌🙌🙌";
-	auto commands = shell_interpreter.ParseCommands(input);
+	const auto commands = shell_interpreter.Parse_Commands(input);
 	if (commands.size() != 1) {
 		std::cerr << "shellTest_InvalidInput3: Error, incorrect number of commands parsed. Expected 1, got: " <<
 			commands.size() << std::endl;
 		return;
 	}
 
-	auto expected_command = Command(":))):L(:)", {}, "::}🙌🙌🙌", "");
+	const auto expected_command = Command(":))):L(:)", {}, "::}🙌🙌🙌", "");
 	try {
 		CompareCommands(expected_command, commands[0]);
 	}
@@ -158,21 +160,21 @@ auto ShellTest_InvalidInput3(Shell& shell_interpreter) {
 	std::cout << "shellTest_InvalidInput3 Test succeeded." << std::endl;
 }
 
-auto ShellTest_InvalidInput4(Shell& shell_interpreter) {
+auto ShellTest_InvalidInput4(const Shell& shell_interpreter) {
 	const auto input =
 		"She travelling acceptance men unpleasant her especially entreaties law. Law forth but end any arise chief arose.";
-	auto commands = shell_interpreter.ParseCommands(input);
+	const auto commands = shell_interpreter.Parse_Commands(input);
 
 	if (commands.size() != 1) {
 		std::cerr << "shellTest_InvalidInput4: Test failed, expected 1 command, instead got: " << commands.size() <<
 			std::endl;
 	}
 
-	auto expected_command = Command("She", {
-		                                "travelling", "acceptance", "men", "unpleasant", "her", "especially",
-		                                "entreaties", "law.", "Law", "forth",
-		                                "but", "end", "any", "arise", "chief", "arose."
-	                                }, "", "");
+	const auto expected_command = Command("She", {
+		                                      "travelling", "acceptance", "men", "unpleasant", "her", "especially",
+		                                      "entreaties", "law.", "Law", "forth",
+		                                      "but", "end", "any", "arise", "chief", "arose."
+	                                      }, "", "");
 
 	try {
 		CompareCommands(expected_command, commands[0]);
@@ -186,8 +188,8 @@ auto ShellTest_InvalidInput4(Shell& shell_interpreter) {
 }
 
 
-void TestRunner::runTests() {
-	auto curr_path = "";
+void TestRunner::Run_Tests() {
+	const auto curr_path = "";
 	auto shell_interpreter = Shell({}, {}, {}, curr_path);
 
 	ShellTest_SimpleCommand(shell_interpreter);

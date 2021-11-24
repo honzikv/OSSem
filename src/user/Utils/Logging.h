@@ -7,7 +7,7 @@
 // Debug
 #define IS_DEBUG true
 
-inline void LogDebug(const std::string& str) {
+inline void Log_Debug(const std::string& str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
 	string_stream << "debug:\t" << str << std::endl;
@@ -15,7 +15,7 @@ inline void LogDebug(const std::string& str) {
 #endif
 }
 
-inline void LogDebug(const char* str) {
+inline void Log_Debug(const char* str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
 	string_stream << "debug:\t" << str << std::endl;
@@ -23,7 +23,7 @@ inline void LogDebug(const char* str) {
 #endif
 }
 
-inline void LogWarning(std::string& str) {
+inline void Log_Warning(std::string& str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
 	string_stream << "warning:\t" << str << std::endl;
@@ -31,7 +31,7 @@ inline void LogWarning(std::string& str) {
 #endif
 }
 
-inline void LogWarning(const char* str) {
+inline void Log_Warning(const char* str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
 	string_stream << "warning:\t" << str << std::endl;

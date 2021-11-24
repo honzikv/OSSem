@@ -22,7 +22,7 @@ extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	// return 0;
 
 	// Debug pipy
-	LogDebug("Type std_out is : " + std::to_string(std_out));
+	Log_Debug("Type std_out is : " + std::to_string(std_out));
 	auto string_stream = std::stringstream();
 	for (size_t i = 0; i < 1000; i += 1) {
 		string_stream << "hahahahahaah\n";
@@ -30,7 +30,7 @@ extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 
 	auto buffer = string_stream.str();
 	auto written = size_t{0};
-	auto success = kiv_os_rtl::WriteFile(std_out, buffer.data(), buffer.size(), written);
+	auto success = kiv_os_rtl::Write_File(std_out, buffer.data(), buffer.size(), written);
 	if (!success) {
 		return 1;
 	}
@@ -58,13 +58,13 @@ extern "C" size_t __stdcall md(const kiv_hal::TRegisters& regs) {
 	auto written = size_t{0};
 	const auto message_md = std::string{"MD start"};
 
-	kiv_os_rtl::WriteFile(std_out, message_md.data(), message_md.size(), written);
+	kiv_os_rtl::Write_File(std_out, message_md.data(), message_md.size(), written);
 
-	LogDebug("md std_in is : " + std::to_string(std_in) + " std_out is " + std::to_string(std_out));
+	Log_Debug("md std_in is : " + std::to_string(std_in) + " std_out is " + std::to_string(std_out));
 	auto buffer = std::vector<char>();
-	kiv_os_rtl::ReadIntoBuffer(std_in, buffer);
+	kiv_os_rtl::Read_Into_Buffer(std_in, buffer);
 
-	auto success = kiv_os_rtl::WriteFile(std_out, buffer.data(), buffer.size(), written);
+	auto success = kiv_os_rtl::Write_File(std_out, buffer.data(), buffer.size(), written);
 	if (!success) {
 		return 1;
 	}

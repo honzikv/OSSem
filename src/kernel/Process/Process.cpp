@@ -3,9 +3,9 @@
 
 
 Process::Process(const kiv_os::THandle pid, const kiv_os::THandle main_thread_tid, const kiv_os::THandle parent_pid,
-                 const kiv_os::THandle std_in, const kiv_os::THandle std_out, Path& working_dir):
+                 const kiv_os::THandle std_in, const kiv_os::THandle std_out, Path& working_dir, std::string program_name):
 	pid(pid), parent_pid(parent_pid), std_in(std_in),
-	std_out(std_out), working_dir(std::move(working_dir)) {
+	std_out(std_out), working_dir(std::move(working_dir)), program_name(std::move(program_name)) {
 
 	threads.push_back(main_thread_tid);
 }

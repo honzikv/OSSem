@@ -31,7 +31,7 @@ class CommandParser {
 	const std::regex REDIRECT_REGEX = std::regex("\\<|\\>");
 	const std::regex WHITESPACE_REGEX = std::regex("\\s+");
 
-	static Command CreateCommand(const std::vector<std::string>& command_with_params,
+	static Command Create_Command(const std::vector<std::string>& command_with_params,
 	                             const RedirectType redirect_type, const std::string& source_file,
 	                             const std::string& target_file);
 
@@ -42,7 +42,7 @@ class CommandParser {
 	/// <param name="command_with_params">Prikaz s argumenty a presmerovanim</param>
 	/// <param name="redirect_type">Typ presmerovani (z metody getRedirectType)</param>
 	/// <returns>zdrojovy soubor, cilovy soubor, prikaz s argumenty</returns>
-	[[nodiscard]] auto SplitByFileRedirect(const std::string& command_with_params,
+	[[nodiscard]] auto Split_By_File_Redirect(const std::string& command_with_params,
 	                                       const RedirectType redirect_type) const
 	-> std::tuple<std::string, std::string, std::string>;
 
@@ -52,7 +52,7 @@ class CommandParser {
 	/// </summary>
 	/// <param name="command_with_params">Prikaz s argumenty a presmerovanim</param>
 	/// <returns>Typ presmerovani</returns>
-	[[nodiscard]] RedirectType GetRedirectType(const std::string& command_with_params) const;
+	[[nodiscard]] RedirectType Get_Redirect_Type(const std::string& command_with_params) const;
 
 public:
 	/// <summary>
@@ -60,5 +60,5 @@ public:
 	/// </summary>
 	/// <param name="input">Radka </param>
 	/// <returns>Typ presmerovani</returns>
-	[[nodiscard]] std::vector<Command> ParseCommands(const std::string& input) const;
+	[[nodiscard]] std::vector<Command> Parse_Commands(const std::string& input) const;
 };

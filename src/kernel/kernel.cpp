@@ -24,6 +24,15 @@ void Syscall(kiv_hal::TRegisters& regs) {
 
 }
 
+void Disable_Default_Behavior(int _) {
+	// Override defaultniho chovani CTRL C / CTRL D
+}
+
+void Init_Signal_Behavior() {
+	signal(SIGINT, Disable_Default_Behavior);
+	raise(SIGINT); // timto signal zavolame a dalsi volani uz bude brat klavesnice misto handleru
+}
+
 void InitializeKernel() {
 	User_Programs = LoadLibraryW(L"user.dll");
 }
@@ -32,11 +41,11 @@ void ShutdownKernel() {
 	FreeLibrary(User_Programs);
 }
 
-
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	InitializeKernel();
-	Set_Interrupt_Handler(kiv_os::System_Int_Number, Syscall);
+	Init_Signal_Behavior();
 
+	Set_Interrupt_Handler(kiv_os::System_Int_Number, Syscall);
 	// Spustime init proces
 	InitProcess::Start();
 
@@ -46,9 +55,8 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 #endif
 
 	// Pokud jsme se dostali az sem OS se bude vypinat
-	// Zavolame OnShutdown process manageru, coz nam sesynchronizuje main s ukoncenim init procesu
+	// Zavolame OnShutdown process manageru, coz nam sesynchronizuje main s ukoncenim ostatnich procesu
 	ProcessManager::Get().On_Shutdown();
-
 	ShutdownKernel();
 }
 
