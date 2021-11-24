@@ -34,7 +34,6 @@ void ShutdownKernel() {
 
 
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
-	signal(SIGINT, SIG_IGN);
 	InitializeKernel();
 	Set_Interrupt_Handler(kiv_os::System_Int_Number, Syscall);
 

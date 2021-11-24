@@ -270,8 +270,7 @@ private:
 	kiv_os::NOS_Error Syscall_Read_Exit_Code(kiv_hal::TRegisters& regs);
 
 	kiv_os::NOS_Error Syscall_Exit_Task(const kiv_hal::TRegisters& regs);
-
-	void Terminate_Thread(kiv_os::THandle tid);
+	
 	void Terminate_Process(kiv_os::THandle pid);
 
 	kiv_os::NOS_Error Syscall_Shutdown(const kiv_hal::TRegisters& regs);
@@ -295,5 +294,5 @@ public:
 	/// <summary>
 	/// Synchronizace main vlakna
 	/// </summary>
-	void On_Shutdown();
+	void On_Shutdown() const;
 };

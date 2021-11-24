@@ -487,17 +487,6 @@ kiv_os::NOS_Error ProcessManager::Syscall_Exit_Task(const kiv_hal::TRegisters& r
 	return kiv_os::NOS_Error::Success;
 }
 
-void ProcessManager::Terminate_Thread(const kiv_os::THandle tid) {
-	const auto thread = Get_Thread(tid);
-	if (thread == nullptr) {
-		return;
-	}
-
-	thread->Notify_Subscribers(thread->Get_Tid());
-	thread->Terminate_If_Running(ForcefullyEndedTaskExitCode);
-	Log_Debug("Thread with tid: " + std::to_string(tid) + " was joined");
-}
-
 void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 	const auto process = Get_Process(pid);
 	if (process == nullptr || process->Get_Task_State() == TaskState::Finished) {
@@ -511,9 +500,7 @@ void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 
 	// Zavreme file descriptory procesu
 	IOManager::Get().Close_Process_File_Descriptors(pid);
-
-	// Notifikujeme vsechny cekajici
-	// process->Notify_Subscribers(process->Get_Pid());
+	
 	process->Set_Exit_Code(ForcefullyEndedTaskExitCode);
 	process->Set_Finished();
 }
@@ -660,7 +647,7 @@ void ProcessManager::On_Thread_Finish(const kiv_os::THandle tid) {
 	}
 }
 
-void ProcessManager::On_Shutdown() {
+void ProcessManager::On_Shutdown() const {
 	// Pockame, dokud se vsechny procesy nedokonci
 	shutdown_semaphore->Acquire();
 }
