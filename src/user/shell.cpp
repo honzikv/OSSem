@@ -60,7 +60,9 @@ auto Shell::Prepare_Stdio_For_Single_Command(Command& command) const -> std::pai
 	// Zkusime nastavit vstupni file descriptor
 	if (command.redirect_type == RedirectType::Both || command.redirect_type == RedirectType::FromFile) {
 		if (const auto success = kiv_os_rtl::Open_File(command_std_in, command.source_file,
-		                                               kiv_os::NOpen_File::fmOpen_Always); !success) {
+		                                               kiv_os::NOpen_File::fmOpen_Always,
+		                                               kiv_os::NFile_Attributes::Read_Only);
+			!success) {
 			return {false, "Error, could not open input file for command: " + command.command_name};
 		}
 	}
@@ -71,7 +73,8 @@ auto Shell::Prepare_Stdio_For_Single_Command(Command& command) const -> std::pai
 	// Zkusime nastavit vystupni soubor
 	if (command.redirect_type == RedirectType::Both || command.redirect_type == RedirectType::ToFile) {
 		if (const auto success = kiv_os_rtl::Open_File(command_std_out, command.target_file,
-		                                               kiv_os::NOpen_File::fmOpen_Always); !success) {
+		                                               kiv_os::NOpen_File::fmOpen_Always,
+		                                               kiv_os::NFile_Attributes::Archive); !success) {
 			Close_Command_Std_In(command);
 			return {false, "Error, could not open output file for command: " + command.command_name};
 		}
@@ -100,7 +103,8 @@ auto Shell::Prepare_Stdio_For_First_Command(Command& command,
 	if (command.redirect_type == RedirectType::FromFile) {
 		// Pokud operace selze, vyhodime chybu, jinak se std_in nastavi spravne
 		if (const auto success = kiv_os_rtl::Open_File(command_std_in, command.source_file,
-		                                               kiv_os::NOpen_File::fmOpen_Always); !success) {
+		                                               kiv_os::NOpen_File::fmOpen_Always,
+		                                               kiv_os::NFile_Attributes::Read_Only); !success) {
 			return {false, "Error, could not open input file for command: " + command.command_name};
 		}
 	}
@@ -197,7 +201,8 @@ auto Shell::Prepare_Stdio_For_Commands(std::vector<Command>& commands) const -> 
 	auto command_fd_out = std_out;
 	if (last_command.redirect_type == RedirectType::ToFile) {
 		if (const auto success = kiv_os_rtl::Open_File(command_fd_out, last_command.target_file,
-		                                               kiv_os::NOpen_File::fmOpen_Always); !success) {
+		                                               kiv_os::NOpen_File::fmOpen_Always,
+		                                               kiv_os::NFile_Attributes::Archive); !success) {
 			Close_Command_List_Stdio(commands, commands.size() - 1);
 			// Zavreme predchozim souborum file descriptory
 			kiv_os_rtl::Close_File_Descriptor(command_fd_in); // zavreme std_in, ktery mel byt pro tento proces

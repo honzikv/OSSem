@@ -146,7 +146,7 @@ private:
 	/// <summary>
 	/// Mutex pro tasky
 	/// </summary>
-	std::mutex tasks_mutex;
+	std::recursive_mutex tasks_mutex;
 
 	ProcessManager() = default;
 	~ProcessManager() = default;
@@ -191,6 +191,16 @@ public:
 	/// Vrati aktualne bezici proces
 	/// </summary>
 	std::shared_ptr<Process> Get_Current_Process();
+
+	/// <summary>
+	/// Vrati aktualni pid
+	/// </summary>
+	kiv_os::THandle Get_Current_Pid();
+
+	/// <summary>
+	/// Vrati vsechny aktualne pouzivane pidy
+	/// </summary>
+	void Get_All_Process_Pids(std::vector<kiv_os::THandle> pid_list);
 
 private:
 	/// <summary>

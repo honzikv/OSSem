@@ -303,6 +303,20 @@ std::shared_ptr<Process> ProcessManager::Get_Current_Process() {
 	return Get_Process(thread->Get_Pid());
 }
 
+kiv_os::THandle ProcessManager::Get_Current_Pid() {
+	return Get_Current_Process()->Get_Pid();
+}
+
+void ProcessManager::Get_All_Process_Pids(std::vector<kiv_os::THandle> pid_list) {
+	auto lock = std::scoped_lock(tasks_mutex);
+	for (size_t pid = PidRangeStart; pid < PidRangeEnd; pid += 1) {
+		if (process_table[pid] != nullptr) {
+			pid_list.push_back(pid);
+		}
+	}
+	
+}
+
 void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	const auto pid = Get_Free_Pid(); // Init process ma vzdy 0

@@ -7,7 +7,7 @@ void Thread::ThreadFunc() {
 	Set_Running();
 
 	// Provedeme spusteni programu (funkce TThread_Proc), coz vlakno zablokuje dokud nedobehne
-	task_exit_code = program(regs);
+	task_exit_code = static_cast<uint16_t>(program(regs));
 		
 	auto lock = std::scoped_lock(thread_finish_mutex);
 	if (task_state != TaskState::Running) {

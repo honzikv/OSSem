@@ -41,7 +41,7 @@ private:
 	size_t items = 0;
 
 	/// <summary>
-	/// Mutex pro pristup k bufferu a flagum
+	/// Mutex pro pristup k bufferu
 	/// </summary>
 	std::mutex pipe_access;
 
@@ -59,7 +59,6 @@ private:
 	/// Ctnei je zavrene
 	/// </summary>
 	bool reading_closed = false;
-	
 
 	/// <summary>
 	/// Vrati, zda-li je pipe prazdna

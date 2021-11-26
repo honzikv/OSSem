@@ -28,7 +28,7 @@ private:
 	/// <summary>
 	/// Mutex pro pristup
 	/// </summary>
-	std::mutex mutex;
+	std::recursive_mutex mutex;
 
 	/// <summary>
 	/// Otevrene soubory - obsahuje dvojici pocet alokaci a referenci na soubor
@@ -75,7 +75,14 @@ public:
 	/// <param name="pid">pid procesu</param>
 	/// <param name="file_descriptor">file descriptor, ktery registrujeme</param>
 	/// <returns></returns>
-	kiv_os::NOS_Error Register_File_To_Process(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
+	kiv_os::NOS_Error Register_File_Descriptor_To_Process(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
+
+	/// <summary>
+	/// Registruje k file descriptoru referenci na soubor.
+	/// </summary>
+	/// <param name="file_descriptor">File descriptor, ktery chceme registrovat</param>
+	/// <param name="file">Reference na soubor</param>
+	void Register_File_Descriptor_To_File(kiv_os::THandle file_descriptor, std::shared_ptr<IFile> file);
 
 	/// <summary>
 	/// Snizi pocet vyskytu file descriptoru. Vrati File_Not_Found  pokud soubor neexistuje.

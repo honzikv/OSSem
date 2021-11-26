@@ -10,16 +10,7 @@
 
 // TODO zmenit - tohle je pouze pro debug
 extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
-	// Debug zavirani vlakna
-	//
-	// const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
-	// while (true) {
-	// 	std::this_thread::sleep_for(std::chrono::seconds(1));
-	// 	std::cout << "Hello Thread" << std::endl;
-	// }
-	//
-	// return 0;
 
 	// Debug pipy
 	Log_Debug("Type std_out is : " + std::to_string(std_out));
@@ -36,22 +27,10 @@ extern "C" size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	}
 
 	return 0;
-};
+}
 
 // TODO zmenit
 extern "C" size_t __stdcall md(const kiv_hal::TRegisters& regs) {
-	// Debug zavirani vlakna
-	// const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
-	// const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
-	//
-	// // Spustime type
-	// const auto program = "type";
-	// const auto params = "";
-	// kiv_os_rtl::CreateThread(program, params, std_in, std_out);
-	//
-	// std::this_thread::sleep_for(std::chrono::seconds(8));
-	//
-	// return 0;
 	// Debug pipy
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
