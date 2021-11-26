@@ -529,7 +529,7 @@ kiv_os::NOS_Error ProcessManager::Syscall_Shutdown(const kiv_hal::TRegisters& re
 	const auto current_process = Get_Process(this_thread_pid);
 
 	// Zavreme stdio tohoto procesu
-	IOManager::Get().Unregister_Process_Stdio(this_thread_pid, current_process->Get_Std_in(), current_process->Get_Std_Out());
+	// IOManager::Get().Unregister_Process_Stdio(this_thread_pid, current_process->Get_Std_in(), current_process->Get_Std_Out());
 
 	// Budeme projizdet vsechny pidy a pro obsazene procesy zabijeme pomoci Terminate_Process metody
 	for (auto pid = PidRangeStart + 1; pid < PidRangeEnd; pid += 1) {

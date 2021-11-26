@@ -100,11 +100,7 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 
 		// Zvysime index pro zapis a pocet predmetu o 1
 		Advance_Writing_Idx();
-
-		{
-			auto lock = std::scoped_lock(close_access);
-			items += 1;
-		}
+		items += 1;
 
 		read->Release();
 	}

@@ -257,9 +257,11 @@ void IOManager::Init_Filesystems() {
 			break;
 		}
 	}
+	Log_Debug("(Init Filesystems) FAT12 file system loaded");
 
 	// Vytvoreni procfs
 	file_systems["proc"] = std::make_unique<ProcFS>();
+	Log_Debug("(Init Filesystems) Procfs file system loaded");
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

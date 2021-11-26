@@ -285,8 +285,8 @@ void Shell::Run() {
 		// Vytvorime seznam prikazu a zkusime je rozparsovat z uzivatelskeho vstupu
 		auto commands = std::vector<Command>();
 		try {
-			commands = command_parser.Parse_Commands(user_input);
 			Write_Line("");
+			commands = command_parser.Parse_Commands(user_input);
 		}
 		catch (ParseException& ex) {
 			// Pri chybe vypiseme hlasku do konzole a restartujeme while loop

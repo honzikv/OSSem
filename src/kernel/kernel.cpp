@@ -44,6 +44,7 @@ void ShutdownKernel() {
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	InitializeKernel();
 	Init_Signal_Behavior();
+	IOManager::Get().Init_Filesystems();
 
 	Set_Interrupt_Handler(kiv_os::System_Int_Number, Syscall);
 	// Spustime init proces

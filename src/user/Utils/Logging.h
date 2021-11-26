@@ -10,7 +10,7 @@
 inline void Log_Debug(const std::string& str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
-	string_stream << "debug:\t" << str << std::endl;
+	string_stream << "user_debug:\t" << str << std::endl;
 	std::cout << string_stream.str();
 #endif
 }
@@ -18,15 +18,15 @@ inline void Log_Debug(const std::string& str) {
 inline void Log_Debug(const char* str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
-	string_stream << "debug:\t" << str << std::endl;
+	string_stream << "user_debug:\t" << str << std::endl;
 	std::cout << string_stream.str();
 #endif
 }
 
-inline void Log_Warning(std::string& str) {
+inline void Log_Warning(const std::string& str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
-	string_stream << "warning:\t" << str << std::endl;
+	string_stream << "user_warning:\t" << str << std::endl;
 	std::cout << string_stream.str();
 #endif
 }
@@ -34,7 +34,7 @@ inline void Log_Warning(std::string& str) {
 inline void Log_Warning(const char* str) {
 #if IS_DEBUG
 	auto string_stream = std::stringstream();
-	string_stream << "warning:\t" << str << std::endl;
+	string_stream << "user_warning:\t" << str << std::endl;
 	std::cout << string_stream.str();
 #endif
 }
