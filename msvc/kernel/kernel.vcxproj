@@ -31,6 +31,7 @@
     <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ReadablePipe.cpp" />
+    <ClCompile Include="..\..\src\kernel\IO\vfs.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\WritablePipe.cpp" />
     <ClCompile Include="..\..\src\kernel\kernel.cpp" />
     <ClCompile Include="..\..\src\kernel\path.cpp" />

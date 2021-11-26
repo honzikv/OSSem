@@ -110,6 +110,9 @@
     <ClCompile Include="..\..\src\kernel\IO\fs_file.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\vfs.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -175,9 +178,6 @@
     <ClInclude Include="..\..\src\kernel\path.h">
       <Filter>Headers\FatFS</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\vfs.h">
-      <Filter>Headers\FatFS</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
@@ -192,6 +192,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\fs_file.h">
       <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\vfs.h">
+      <Filter>Headers\IO</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

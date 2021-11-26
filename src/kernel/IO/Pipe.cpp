@@ -119,7 +119,10 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 
 
 void Pipe::Close_For_Reading() {
-	// auto lock = std::scoped_lock(pipe_access);
+	auto lock = std::scoped_lock(close_access);
+	if (reading_closed) {
+		return;
+	}
 	reading_closed = true;
 	read->Release();
 	write->Release();
@@ -127,9 +130,16 @@ void Pipe::Close_For_Reading() {
 }
 
 void Pipe::Close_For_Writing() {
-	// auto lock = std::scoped_lock(pipe_access);
+	auto lock = std::scoped_lock(close_access);
+	if (writing_closed) {
+		return;
+	}
+
+	writing_closed = true;
+
 	auto eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
 	auto bytes_written = size_t{0};
 	Write(std::addressof(eof), 1, bytes_written); // toto nastavi flag writing closed za nas
+	write->Release();
 	Log_Debug("Closing pipe for writing");
 }

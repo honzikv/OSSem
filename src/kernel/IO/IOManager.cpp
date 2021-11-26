@@ -104,7 +104,7 @@ kiv_os::NOS_Error IOManager::Syscall_Read(kiv_hal::TRegisters& regs) {
 		file = open_files.at(file_descriptor).second; // file pointer je druhy prvek v dvojici
 	}
 
-	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);  // NOLINT(performance-no-int-to-ptr)
+	const auto buffer = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
 	const auto bytes = regs.rcx.r; // kolik bytu se ma precist
 	auto bytes_read = size_t{0}; // pocet prectenych bytu
 
@@ -138,7 +138,7 @@ kiv_os::NOS_Error IOManager::Syscall_Write(kiv_hal::TRegisters& regs) {
 		file = open_files.at(file_descriptor).second; // file pointer je druhy prvek v dvojici
 	}
 
-	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);  // NOLINT(performance-no-int-to-ptr)
+	const auto buffer = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
 	const auto bytes = regs.rcx.r;
 
 	auto bytes_written = size_t{0};
@@ -157,7 +157,8 @@ kiv_os::NOS_Error IOManager::Syscall_Write(kiv_hal::TRegisters& regs) {
 }
 
 kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs) {
-	const auto pipe_read_write_pair = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r);  // NOLINT(performance-no-int-to-ptr)
+	const auto pipe_read_write_pair = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r);
+	// NOLINT(performance-no-int-to-ptr)
 	auto pipe_write = pipe_read_write_pair[0];
 	auto input_preinitialized = false;
 	auto pipe_read = pipe_read_write_pair[1];
@@ -263,7 +264,8 @@ void IOManager::Init_Filesystems() {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 bool IOManager::Is_File_Descriptor_Accessible(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
-	return process_to_file_mapping.count(pid) != 0 && process_to_file_mapping[pid].count(file_descriptor) != 0;
+	return open_files.count(file_descriptor) != 0 &&
+		process_to_file_mapping.count(pid) != 0 && process_to_file_mapping[pid].count(file_descriptor) != 0;
 }
 
 kiv_os::NOS_Error IOManager::Increment_File_Descriptor_Count(const kiv_os::THandle file_descriptor) {
@@ -339,7 +341,7 @@ void IOManager::Close_Process_File_Descriptors(const kiv_os::THandle pid) {
 	}
 
 	// Snizime pocet file descriptoru pro soubor
-	for (const auto  file_descriptor: process_to_file_mapping[pid]) {
+	for (const auto file_descriptor : process_to_file_mapping[pid]) {
 		Decrement_File_Descriptor_Count(file_descriptor);
 	}
 
@@ -479,7 +481,7 @@ kiv_os::NOS_Error IOManager::Syscall_Open_File(kiv_hal::TRegisters& regs) {
 
 //TODO jestli prepsat soubor, kdyz je 0 fmalways a existuje
 kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags, uint8_t attributes,
-                                      kiv_os::THandle& handle) {
+                                       kiv_os::THandle& handle) {
 	auto lock = std::scoped_lock(mutex);
 
 	//TODO mozna vytvoreni ruznych typu filu
@@ -531,7 +533,7 @@ kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags
 	Register_File_Descriptor_To_Process(current_pid, handle);
 
 	// Do otevrenych souboru ulozime handle s referenci na soubor
-	open_files[handle] = { 1, file };
+	open_files[handle] = {1, file};
 
 	return kiv_os::NOS_Error::Success;
 }
