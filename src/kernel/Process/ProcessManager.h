@@ -146,7 +146,7 @@ private:
 	/// <summary>
 	/// Mutex pro tasky
 	/// </summary>
-	std::recursive_mutex tasks_mutex;
+	std::mutex tasks_mutex;
 
 	ProcessManager() = default;
 	~ProcessManager() = default;

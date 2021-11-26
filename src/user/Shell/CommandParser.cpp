@@ -132,10 +132,16 @@ std::vector<Command> CommandParser::Parse_Commands(const std::string& input) con
 	auto result = std::vector<Command>();
 
 	// Nejprve split pomoci pipe symbolu
-	const auto tokensByPipeSymbol = StringUtils::Split_By_Regex(input, PIPE_REGEX);
+	const auto num_pipes = std::count(input.begin(), input.end(), '|');
+	const auto split_by_pipe_regex = StringUtils::Split_By_Regex(input, PIPE_REGEX);
+	const auto tokens_by_pipe_symbol = StringUtils::FilterEmptyStrings(split_by_pipe_regex);
 
-	for (const auto& splitByPipe : tokensByPipeSymbol) {
-		auto commandWithParamsAndRedirect = StringUtils::Trim_Whitespaces(splitByPipe);
+	if (tokens_by_pipe_symbol.size() - 1 != num_pipes) {
+		throw ParseException("Invalid number of pipe symbols is present.");
+	}
+
+	for (const auto& split_by_pipe : tokens_by_pipe_symbol) {
+		auto commandWithParamsAndRedirect = StringUtils::Trim_Whitespaces(split_by_pipe);
 		if (commandWithParamsAndRedirect.empty()) {
 			continue;
 		}

@@ -12,6 +12,7 @@
 /// </summary>
 namespace StringUtils {
 
+	inline const auto whitespace_regex = std::regex("\\s+");
 
 	/// <summary>
 	/// Rozdeli retezec podle regexu
@@ -95,4 +96,15 @@ namespace StringUtils {
 	inline bool Is_Ctrl_C(const char symbol) { return symbol == static_cast<char>(kiv_hal::NControl_Codes::ETX); }
 
 
+	inline std::vector<std::string> FilterEmptyStrings(const std::vector<std::string>& vector) {
+		auto result = std::vector<std::string>();
+
+		for (const auto token : vector) {
+			if (!std::regex_match(token.begin(), token.end(), whitespace_regex) && token.size() > 0) {
+				result.push_back(Trim_Whitespaces(token));
+			}
+		}
+
+		return result;
+	}
 }

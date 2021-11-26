@@ -13,7 +13,14 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 
-	const auto shell = std::make_unique<Shell>(regs, std_in, std_out, "C:\\>");
+	constexpr auto working_dir_str_size = 64;
+	auto working_dir = std::array<char, working_dir_str_size>();
+	uint32_t str_size = 0;
+	const auto current_path = kiv_os_rtl::Get_Working_Dir(working_dir.data(), working_dir_str_size, str_size);
+
+	const auto path = std::string(working_dir.data(), str_size);
+
+	const auto shell = std::make_unique<Shell>(regs, std_in, std_out, path);
 
 	// Spustime shell
 	shell->Run();
@@ -249,7 +256,7 @@ void Shell::Close_Command_List_Stdio(const std::vector<Command>& commands, const
 
 void Shell::Run() {
 	while (run) {
-		Write(current_working_dir); // Zapiseme aktualni cestu
+		Write(current_working_dir + ">"); // Zapiseme aktualni cestu
 
 		// Vyresetujeme buffer
 		std::fill_n(buffer.data(), buffer.size(), 0);
@@ -258,6 +265,7 @@ void Shell::Run() {
 		size_t bytes_read;
 		if (const auto read_success = kiv_os_rtl::Read_File(std_in, buffer.data(), buffer.size(), bytes_read);
 			!read_success) {
+			// Nastala chyba? Nemuzeme dal pokracovat, exit
 			return;
 		}
 

@@ -18,12 +18,12 @@ private:
 	/// <summary>
 	/// Semafor pro pristup k polozkam na zapis
 	/// </summary>
-	std::shared_ptr<Semaphore> write;
+	std::unique_ptr<Semaphore> write;
 
 	/// <summary>
 	/// Semafor pro pristup k polozkam na cteni
 	/// </summary>
-	std::shared_ptr<Semaphore> read;
+	std::unique_ptr<Semaphore> read;
 
 	/// <summary>
 	/// Index pro cteni
@@ -44,7 +44,7 @@ private:
 	/// Mutex pro pristup k bufferu
 	/// </summary>
 	std::mutex pipe_access;
-
+	
 	std::mutex close_access;
 
 	/// <summary>
