@@ -9,7 +9,7 @@
 #include "SuspendCallback.h"
 #include "../../api/api.h"
 #include "../Utils/Logging.h"
-#include <winnt.h>
+#include "../IO/ProcessTableSnapshot.h"
 
 /// <summary>
 /// Typ handle pro wait for funkcionalitu
@@ -305,4 +305,9 @@ public:
 	/// Synchronizace main vlakna
 	/// </summary>
 	void On_Shutdown() const;
+
+	/// <summary>
+	/// Vrati aktualni snapshot tabulky procesu pro procfs
+	/// </summary>
+	std::shared_ptr<ProcessTableSnapshot> Get_Process_Table_Snapshot();
 };

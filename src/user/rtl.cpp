@@ -234,7 +234,7 @@ bool kiv_os_rtl::Wait_For(const std::vector<kiv_os::THandle>& handles) {
 
 bool kiv_os_rtl::Read_Exit_Code(kiv_os::THandle pid, kiv_os::NOS_Error& exit_code) {
 	auto regs = Prepare_Syscall_Ctx(kiv_os::NOS_Service_Major::Process,
-	                                static_cast<uint8_t>(kiv_os::NOS_Process::Wait_For));
+	                                static_cast<uint8_t>(kiv_os::NOS_Process::Read_Exit_Code));
 
 	regs.rdx.x = pid;
 

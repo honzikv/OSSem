@@ -78,13 +78,6 @@ public:
 	kiv_os::NOS_Error Register_File_Descriptor_To_Process(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
 
 	/// <summary>
-	/// Registruje k file descriptoru referenci na soubor.
-	/// </summary>
-	/// <param name="file_descriptor">File descriptor, ktery chceme registrovat</param>
-	/// <param name="file">Reference na soubor</param>
-	void Register_File_Descriptor_To_File(kiv_os::THandle file_descriptor, std::shared_ptr<IFile> file);
-
-	/// <summary>
 	/// Snizi pocet vyskytu file descriptoru. Vrati File_Not_Found  pokud soubor neexistuje.
 	///	Pokud ma soubor pocet vyskytu 0 nebo mensi je z open_files odstranen
 	/// </summary>
@@ -184,7 +177,12 @@ private:
 
 	kiv_os::NOS_Error Syscall_Set_File_Attribute(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error Open_File(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle);
+	kiv_os::NOS_Error Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, const kiv_os::THandle
+	                                   current_pid);
+
+	kiv_os::NOS_Error Open_File(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, kiv_os::THandle current_pid);
+
+	kiv_os::NOS_Error Open_Procfs_File();
 
 	VFS* Get_File_System(const std::string& disk);
 };

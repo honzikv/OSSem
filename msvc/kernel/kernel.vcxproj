@@ -29,7 +29,9 @@
     <ClCompile Include="..\..\src\kernel\IO\IFile.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\Pipe.cpp" />
+    <ClCompile Include="..\..\src\kernel\IO\ProcessTableSnapshot.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp" />
+    <ClCompile Include="..\..\src\kernel\IO\ProcFSRow.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\ReadablePipe.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\vfs.cpp" />
     <ClCompile Include="..\..\src\kernel\IO\WritablePipe.cpp" />
@@ -55,7 +57,9 @@
     <ClInclude Include="..\..\src\kernel\IO\IFile.h" />
     <ClInclude Include="..\..\src\kernel\IO\IOManager.h" />
     <ClInclude Include="..\..\src\kernel\IO\Pipe.h" />
+    <ClInclude Include="..\..\src\kernel\IO\ProcessTableSnapshot.h" />
     <ClInclude Include="..\..\src\kernel\IO\ProcFS.h" />
+    <ClInclude Include="..\..\src\kernel\IO\ProcFSRow.h" />
     <ClInclude Include="..\..\src\kernel\IO\ReadablePipe.h" />
     <ClInclude Include="..\..\src\kernel\IO\WritablePipe.h" />
     <ClInclude Include="..\..\src\kernel\kernel.h" />
@@ -67,6 +71,7 @@
     <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h" />
     <ClInclude Include="..\..\src\kernel\Process\TaskState.h" />
     <ClInclude Include="..\..\src\kernel\Process\Thread.h" />
+    <ClInclude Include="..\..\src\kernel\Utils\ByteUtils.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Debug.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Logging.h" />
     <ClInclude Include="..\..\src\kernel\Utils\Semaphore.h" />

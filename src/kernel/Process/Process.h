@@ -100,4 +100,6 @@ public:
 	/// <param name="signal_id">Cislo signalu</param>
 	void Execute_Signal_Callback(kiv_os::NSignal_Id signal_id);
 
+	[[nodiscard]] const std::string& Get_Program_Name() const;
+
 };

@@ -72,6 +72,9 @@
     <ClInclude Include="..\..\src\user\Programs\Sort.h">
       <Filter>Header Files\Programs</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\user\Programs\Tasklist.h">
+      <Filter>Header Files\Programs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\user\rtl.cpp">
@@ -96,6 +99,9 @@
       <Filter>Source Files\Programs</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\user\Programs\Shutdown.cpp">
+      <Filter>Source Files\Programs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\user\Programs\Tasklist.cpp">
       <Filter>Source Files\Programs</Filter>
     </ClCompile>
   </ItemGroup>

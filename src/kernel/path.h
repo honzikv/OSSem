@@ -29,7 +29,7 @@ public:
 
     void Append_Path(const Path &path);
 
-    std::string To_String();
+    std::string To_String() const;
 
 
 };

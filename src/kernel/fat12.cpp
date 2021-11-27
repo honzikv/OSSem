@@ -10,9 +10,9 @@ std::vector<unsigned char> second_fat;
 /**
  * Nacte FAT 1 a FAT 2
  */
-Fat12::Fat12() {
-    fat = Fat_Helper::Load_Fat_Table(1);
-    second_fat = Fat_Helper::Load_Fat_Table(1 + Fat_Helper::kFatTableSectorCount);
+Fat12::Fat12(): VFS(FsType::Fat12) {
+	fat = Fat_Helper::Load_Fat_Table(1);
+	second_fat = Fat_Helper::Load_Fat_Table(1 + Fat_Helper::kFatTableSectorCount);
 }
 
 /**

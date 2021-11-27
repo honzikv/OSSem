@@ -8,7 +8,7 @@
 #include "../vfs.h"
 #include "IFile.h"
 
-class Fs_File: public IFile {
+class Fs_File final : public IFile {
 public:
     explicit Fs_File(VFS *vfs, File file);
 

@@ -45,3 +45,5 @@ void Process::Execute_Signal_Callback(kiv_os::NSignal_Id signal_id) {
 	regs.rcx.r = static_cast<decltype(regs.rcx.r)>(signal_id);
 	signal_callbacks[signal_id](regs);
 }
+
+const std::string& Process::Get_Program_Name() const { return program_name; }

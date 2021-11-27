@@ -173,7 +173,8 @@ kiv_os::NOS_Error ProcessManager::Create_Process(kiv_hal::TRegisters& regs) {
 	const auto pid = Get_Free_Pid();
 	const auto tid = Get_Free_Tid();
 
-	if (pid == NoFreeId || tid == NoFreeId) { // Pokud nejsou vratime chybu
+	if (pid == NoFreeId || tid == NoFreeId) {
+		// Pokud nejsou vratime chybu
 		return kiv_os::NOS_Error::Out_Of_Memory;
 	}
 
@@ -195,7 +196,8 @@ kiv_os::NOS_Error ProcessManager::Create_Process(kiv_hal::TRegisters& regs) {
 	}
 
 	// Vytvorime proces
-	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out, working_dir, program_name);
+	const auto process = std::make_shared<Process>(pid, tid, parent_process_pid, std_in, std_out, working_dir,
+	                                               program_name);
 
 	// Pridame proces a vlakno do tabulky
 	Add_Process(process, pid);
@@ -314,7 +316,7 @@ void ProcessManager::Get_All_Process_Pids(std::vector<kiv_os::THandle> pid_list)
 			pid_list.push_back(pid);
 		}
 	}
-	
+
 }
 
 void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
@@ -327,7 +329,8 @@ void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 
 	// Proces pro init
 	auto path = Path(DefaultProcessWorkingDir);
-	const auto init_process = std::make_shared<Process>(pid, tid, kiv_os::Invalid_Handle, std_in, std_out, path, "Init");
+	const auto init_process = std::make_shared<Process>(pid, tid, kiv_os::Invalid_Handle,
+	                                                    std_in, std_out, path, "Init");
 
 	// Initu predame do registru stdio
 	auto init_regs = kiv_hal::TRegisters();
@@ -361,8 +364,8 @@ HandleType ProcessManager::Get_Handle_Type(const kiv_os::THandle id) {
 }
 
 void ProcessManager::Add_Current_Thread_As_Subscriber(const kiv_os::THandle* handle_array,
-                                                  const uint32_t handle_array_size,
-                                                  const kiv_os::THandle current_tid) {
+                                                      const uint32_t handle_array_size,
+                                                      const kiv_os::THandle current_tid) {
 	for (uint32_t i = 0; i < handle_array_size; i += 1) {
 		const auto handle = handle_array[i];
 		const auto handle_type = Get_Handle_Type(handle);
@@ -465,10 +468,12 @@ kiv_os::NOS_Error ProcessManager::Syscall_Read_Exit_Code(kiv_hal::TRegisters& re
 	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 
 	Log_Debug("Reading exit code by: " + std::to_string(Get_Current_Tid()));
-	if (handle_type == HandleType::Process) {  // NOLINT(bugprone-branch-clone)
+	if (handle_type == HandleType::Process) {
+		// NOLINT(bugprone-branch-clone)
 		task = Get_Process(handle);
 		if (task != nullptr) {
-			Remove_Process_From_Table(std::static_pointer_cast<Process>(task)); // pretypovani Task na Process shared ptr
+			Remove_Process_From_Table(std::static_pointer_cast<Process>(task));
+			// pretypovani Task na Process shared ptr
 		}
 	}
 	else if (handle_type == HandleType::Thread) {
@@ -509,7 +514,7 @@ void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 
 	// Zavreme file descriptory procesu
 	IOManager::Get().Close_Process_File_Descriptors(pid);
-	
+
 	process->Set_Exit_Code(ForcefullyEndedTaskExitCode);
 	process->Set_Finished();
 }
@@ -547,9 +552,11 @@ kiv_os::NOS_Error ProcessManager::Syscall_Shutdown(const kiv_hal::TRegisters& re
 
 kiv_os::NOS_Error ProcessManager::Syscall_Register_Signal_Handler(const kiv_hal::TRegisters& regs) {
 	const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
-	
+
 	// funkce pro signal  // NOLINT(performance-no-int-to-ptr)
-	const auto callback = regs.rdx.r == 0 ? Default_Signal_Callback : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r);
+	const auto callback = regs.rdx.r == 0
+		                      ? Default_Signal_Callback
+		                      : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r);
 
 	// zamkneme
 	auto lock = std::scoped_lock(tasks_mutex);
@@ -572,7 +579,8 @@ void ProcessManager::Initialize_Suspend_Callback(const kiv_os::THandle subscribe
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void ProcessManager::Trigger_Suspend_Callback(const kiv_os::THandle subscriber_handle, const kiv_os::THandle notifier_handle) {
+void ProcessManager::Trigger_Suspend_Callback(const kiv_os::THandle subscriber_handle,
+                                              const kiv_os::THandle notifier_handle) {
 	if (suspend_callbacks.count(subscriber_handle) == 0 || suspend_callbacks[subscriber_handle] == nullptr) {
 		return; // Pokud callback neni v mape vratime se
 	}
@@ -583,7 +591,8 @@ void ProcessManager::Trigger_Suspend_Callback(const kiv_os::THandle subscriber_h
 	callback->Notify(notifier_handle);
 }
 
-void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t main_thread_exit_code, const bool triggered_by_main_thread) {
+void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t main_thread_exit_code,
+                                       const bool triggered_by_main_thread) {
 	// Nic nelockujeme, tato funkce zavola pouze z metody OnThreadFinish, ktera mutexy uz lockne
 	const auto process = Get_Process(pid);
 
@@ -609,7 +618,7 @@ void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t
 		// Nastavime exit code na readable
 		thread->Set_Finished();
 	}
-	
+
 	IOManager::Get().Unregister_Process_Stdio(pid, process->Get_Std_in(), process->Get_Std_Out());
 
 	// Provedeme notifikaci cekajich objektu na tento proces
@@ -662,4 +671,19 @@ void ProcessManager::On_Thread_Finish(const kiv_os::THandle tid) {
 void ProcessManager::On_Shutdown() const {
 	// Pockame, dokud se vsechny procesy nedokonci
 	shutdown_semaphore->Acquire();
+}
+
+std::shared_ptr<ProcessTableSnapshot> ProcessManager::Get_Process_Table_Snapshot() {
+	auto lock = std::scoped_lock(tasks_mutex);
+
+	auto procfs_vec = std::vector<std::shared_ptr<ProcFSRow>>();
+	for (size_t pid = PidRangeStart; pid < PidRangeEnd; pid += 1) {
+		if (process_table[pid] == nullptr) {
+			continue;
+		}
+		
+		procfs_vec.push_back(ProcFSRow::Map_Process_To_ProcFSRow(*process_table[pid]));
+	}
+
+	return std::make_shared<ProcessTableSnapshot>(procfs_vec);
 }

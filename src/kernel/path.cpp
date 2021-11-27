@@ -8,7 +8,7 @@
 
 
 Path::Path(std::string file_path) {
-    Create_Path(std::move(file_path));
+    Create_Path(file_path);
     Create_Name();
 }
 
@@ -61,7 +61,7 @@ void Path::Create_Path(const std::string& file_path) {
  * Vytvori jmeno slozky/souboru a priponu
  */
 void Path::Create_Name() {
-	const char dot = '.'; // tecka
+	constexpr char dot = '.'; // tecka
     extension.clear();
     name.clear();
     full_name = path_vector.back();
@@ -108,9 +108,9 @@ void Path::Return_Name_to_Path() {
  * Prevede cestu na string
  * @return string ziskany z vektoru stringu cesty
  */
-std::string Path::To_String() {
+std::string Path::To_String() const {
     std::string res;
-    const char separator = '\\';
+    constexpr char separator = '\\';
     if (!is_relative) {
         res += disk_letter;
         res += ':';

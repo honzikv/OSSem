@@ -42,6 +42,12 @@
     <Filter Include="Source Files\FatFS">
       <UniqueIdentifier>{d0343b0b-f481-4665-80cb-40d4da587fa9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\ProcFS">
+      <UniqueIdentifier>{a1933f39-0046-4c8c-a4bd-4496a73006e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ProcFS">
+      <UniqueIdentifier>{c42abe6e-abf3-4ba5-8753-8b9c7f9cbe5c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\kernel.cpp">
@@ -95,9 +101,6 @@
     <ClCompile Include="..\..\src\kernel\path.cpp">
       <Filter>Source Files\FatFS</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
-      <Filter>Source Files\IO</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\IO\ReadablePipe.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
@@ -112,6 +115,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\kernel\IO\vfs.cpp">
       <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ProcessTableSnapshot.cpp">
+      <Filter>Source Files\ProcFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ProcFSRow.cpp">
+      <Filter>Source Files\ProcFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
+      <Filter>Source Files\ProcFS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -178,9 +190,6 @@
     <ClInclude Include="..\..\src\kernel\path.h">
       <Filter>Headers\FatFS</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
-      <Filter>Headers\IO</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\ReadablePipe.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
@@ -195,6 +204,18 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\vfs.h">
       <Filter>Headers\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
+      <Filter>Headers\ProcFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ProcessTableSnapshot.h">
+      <Filter>Headers\ProcFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ProcFSRow.h">
+      <Filter>Headers\ProcFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Utils\ByteUtils.h">
+      <Filter>Headers\Utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

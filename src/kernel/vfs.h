@@ -4,9 +4,12 @@
 
 #pragma once
 
+#include <memory>
+
 #include "../api/api.h"
 #include "path.h"
 #include "vector"
+#include "IO/IFile.h"
 
 struct File {
 	char* name;
@@ -16,11 +19,31 @@ struct File {
 	kiv_os::THandle handle;
 };
 
+enum class FsType : uint8_t {
+	Fat12,
+	Procfs
+};
+
 class VFS {
+
 public:
+
+	/// <summary>
+	/// Typ filesystemu
+	/// </summary>
+	FsType file_system_type;
+
+	/// <summary>
+	/// Konstruktor - pri vytvoreni potrebujeme definovat typ filesystemu
+	/// </summary>
+	/// <param name="file_system_type">typ filesystemu</param>
+	explicit VFS(FsType file_system_type);
+
 	virtual kiv_os::NOS_Error Open(Path& path, kiv_os::NOpen_File flags, File& file, uint8_t attributes);
 
 	virtual kiv_os::NOS_Error Close(File file);
+
+	virtual std::shared_ptr<IFile> Open_IFile(Path& path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::NOS_Error& err);
 
 	virtual kiv_os::NOS_Error Read_Dir(Path& path, std::vector<kiv_os::TDir_Entry>& entries);
 
@@ -43,7 +66,6 @@ public:
 	virtual uint32_t Get_Root_Fd();
 
 	virtual kiv_os::NOS_Error Set_Size(File file, size_t new_size);
-
 
 	virtual ~VFS() = default;
 
