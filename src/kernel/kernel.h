@@ -1,6 +1,6 @@
 #pragma once
 #include "../api/hal.h"
-#include "IO/HandleService.h"
+#include "Process/InitProcess.h"
 
 void Set_Err(const bool failed, kiv_hal::TRegisters& regs);
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context);

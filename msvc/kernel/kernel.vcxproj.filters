@@ -125,6 +125,9 @@
     <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
       <Filter>Source Files\ProcFS</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Process\TaskIdService.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\kernel\kernel.h">
@@ -216,6 +219,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\kernel\Utils\ByteUtils.h">
       <Filter>Headers\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\TaskIdService.h">
+      <Filter>Headers\Process</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

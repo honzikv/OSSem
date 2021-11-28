@@ -1,5 +1,7 @@
 #include "IOManager.h"
 
+#include "ConsoleIn.h"
+#include "ConsoleOut.h"
 #include "ReadablePipe.h"
 #include "WritablePipe.h"
 #include "Utils/Logging.h"
@@ -76,8 +78,8 @@ auto IOManager::Create_Stdio() -> std::pair<kiv_os::THandle, kiv_os::THandle> {
 	const auto std_in = std::make_shared<ConsoleIn>();
 	const auto std_out = std::make_shared<ConsoleOut>();
 
-	const auto std_in_handle = HandleService::Get().Create_Empty_Handle();
-	const auto std_out_handle = HandleService::Get().Create_Empty_Handle();
+	const auto std_in_handle = HandleService::Get().Get_Empty_Handle();
+	const auto std_out_handle = HandleService::Get().Get_Empty_Handle();
 
 	// Pro stdio chceme vyskyt na nule, protoze stdio se musi predat procesu
 	open_files[std_in_handle] = {0, std_in};
@@ -175,7 +177,7 @@ kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs
 	// Pokud je zapis do pipy invalid, musime ziskat novy handle
 	if (pipe_write == kiv_os::Invalid_Handle) {
 		input_preinitialized = true;
-		const auto file_descriptor = HandleService::Get().Create_Empty_Handle();
+		const auto file_descriptor = HandleService::Get().Get_Empty_Handle();
 		if (file_descriptor == kiv_os::Invalid_Handle) {
 			// dosly handly, vyhodime vyjimku
 			return kiv_os::NOS_Error::Out_Of_Memory;
@@ -187,7 +189,7 @@ kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs
 
 	// To same pro cteni z pipy
 	if (pipe_read == kiv_os::Invalid_Handle) {
-		const auto file_descriptor = HandleService::Get().Create_Empty_Handle();
+		const auto file_descriptor = HandleService::Get().Get_Empty_Handle();
 		if (file_descriptor == kiv_os::Invalid_Handle) {
 			// dosly handly, vyhodime vyjimku
 			if (input_preinitialized) {
@@ -225,6 +227,9 @@ kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& reg
 
 	// Ziskame aktualni proces
 	const auto current_process = ProcessManager::Get().Get_Current_Process();
+	if (current_process == nullptr) { // toto se stane pri shutdownu
+		return kiv_os::NOS_Error::Success;
+	}
 	auto lock = std::scoped_lock(mutex);
 
 	// Pokud proces nema pristup k handlu vratime chybu
@@ -464,6 +469,11 @@ kiv_os::NOS_Error IOManager::Syscall_Open_File(kiv_hal::TRegisters& regs) {
 	const auto attributes = static_cast<uint8_t>(regs.rdi.i);
 	kiv_os::THandle handle; //TODO vytvorit handle
 	std::shared_ptr<Process> current_process = ProcessManager::Get().Get_Current_Process();
+
+	if (current_process == nullptr) {
+		return kiv_os::NOS_Error::File_Not_Found;
+	}
+
 	Path path(file_name);
 	if (path.is_relative) {
 
@@ -493,7 +503,7 @@ auto IOManager::Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File f
 	}
 
 	auto lock = std::scoped_lock(mutex);
-	const auto file_descriptor = HandleService::Get().Create_Empty_Handle();
+	const auto file_descriptor = HandleService::Get().Get_Empty_Handle();
 
 	// Do otevrenych souboru ulozime handle s referenci na soubor
 	open_files[file_descriptor] = {1, file};
@@ -556,7 +566,7 @@ kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags
 
 	auto file = std::make_shared<Fs_File>(fs, f);
 
-	handle = HandleService::Get().Create_Empty_Handle();
+	handle = HandleService::Get().Get_Empty_Handle();
 
 	// Do otevrenych souboru ulozime handle s referenci na soubor
 	open_files[handle] = {1, file};

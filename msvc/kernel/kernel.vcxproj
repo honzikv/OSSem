@@ -42,6 +42,7 @@
     <ClCompile Include="..\..\src\kernel\Process\Process.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\ProcessManager.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Task.cpp" />
+    <ClCompile Include="..\..\src\kernel\Process\TaskIdService.cpp" />
     <ClCompile Include="..\..\src\kernel\Process\Thread.cpp" />
     <ClCompile Include="..\..\src\kernel\Utils\Semaphore.cpp" />
   </ItemGroup>
@@ -69,6 +70,7 @@
     <ClInclude Include="..\..\src\kernel\Process\SuspendCallback.h" />
     <ClInclude Include="..\..\src\kernel\Process\Process.h" />
     <ClInclude Include="..\..\src\kernel\Process\ProcessManager.h" />
+    <ClInclude Include="..\..\src\kernel\Process\TaskIdService.h" />
     <ClInclude Include="..\..\src\kernel\Process\TaskState.h" />
     <ClInclude Include="..\..\src\kernel\Process\Thread.h" />
     <ClInclude Include="..\..\src\kernel\Utils\ByteUtils.h" />

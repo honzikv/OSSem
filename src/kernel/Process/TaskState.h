@@ -11,6 +11,9 @@ enum class TaskState : uint8_t {
 	// Vlakno bezi a vykonava program
 	Running,
 
+	// Vlakno ceka
+	Waiting,
+
 	// Uloha byla dokoncena
 	Finished,
 	
