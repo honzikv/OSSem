@@ -76,10 +76,18 @@ bool kiv_os_rtl::Create_Pipe(kiv_os::THandle& writing_process_output, kiv_os::TH
 	return success;
 }
 
-bool kiv_os_rtl::Open_File(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode) {
-	// TODO impl
-	// TODO file descriptor se za zadnou cenu nesmi nastavit, pokud selze cteni souboru
-	return false;
+bool kiv_os_rtl::Open_File(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode, kiv_os::NFile_Attributes attributes) {
+	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System, static_cast<uint8_t>(kiv_os::NOS_File_System::Open_File));
+
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(file_uri.data());
+	regs.rcx.r = static_cast<decltype(regs.rcx.l)>(mode);
+	regs.rdi.r = static_cast<decltype(regs.rdi.i)>(attributes);
+
+	bool syscall_result = kiv_os::Sys_Call(regs);
+	if (syscall_result == true) {
+		file_descriptor = regs.rax.x;
+	}
+	return syscall_result;
 }
 
 bool kiv_os_rtl::Close_File_Descriptor(const kiv_os::THandle file_descriptor) {
@@ -136,7 +144,7 @@ bool kiv_os_rtl::Create_Process(const std::string& program_name, const std::stri
 }
 
 bool kiv_os_rtl::Create_Thread(const std::string& program_name, const std::string& params, const kiv_os::THandle std_in,
-                              const kiv_os::THandle std_out) {
+                              const kiv_os::THandle std_out, kiv_os::THandle& new_thread) {
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Clone);
@@ -148,7 +156,7 @@ bool kiv_os_rtl::Create_Thread(const std::string& program_name, const std::strin
 	if (!kiv_os::Sys_Call(regs)) {
 		return false;
 	}
-	
+	new_thread = static_cast<kiv_os::THandle>(regs.rax.r);
 	return true;
 }
 
@@ -181,4 +189,78 @@ void kiv_os_rtl::Shutdown() {
 		static_cast<uint8_t>(kiv_os::NOS_Process::Shutdown));
 
 	kiv_os::Sys_Call(regs);
+}
+
+bool kiv_os_rtl::Exit(uint16_t exit_code) {
+	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::Process,
+									  static_cast<uint8_t>(kiv_os::NOS_Process::Exit));
+
+	regs.rcx.x = static_cast<decltype(regs.rcx.x)>(exit_code);
+
+	if (!kiv_os::Sys_Call(regs))
+	{
+		return false;
+	}
+	return true;
+}
+
+bool kiv_os_rtl::Seek(kiv_os::THandle file_handle, kiv_os::NFile_Seek seek_operation, kiv_os::NFile_Seek position_type, size_t &position) {
+	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System,
+									  static_cast<uint8_t>(kiv_os::NOS_File_System::Seek));
+	
+	regs.rdx.x = static_cast<decltype(regs.rdx.x)>(file_handle);
+	regs.rdi.r = static_cast<decltype(regs.rdi.r)>(position);
+	regs.rcx.x = static_cast<decltype(regs.rcx.h)>(seek_operation);
+	
+	//if (kiv_os::NFile_Seek::Set_Position == seek_operation) {
+	regs.rcx.x = static_cast<decltype(regs.rcx.l)>(position_type);
+	//}	
+
+	if (!kiv_os::Sys_Call(regs)) {
+		return false;
+	}
+
+	if (kiv_os::NFile_Seek::Get_Position == seek_operation) {
+		position = regs.rax.r;
+	}
+
+	return true;
+}
+
+bool kiv_os_rtl::Delete_File(const std::string& file_name) {
+	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System,
+									  static_cast<uint8_t>(kiv_os::NOS_File_System::Delete_File));
+
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(file_name.data());
+
+	if (!kiv_os::Sys_Call(regs)) {
+		return false;
+	}
+	return true;
+}
+
+bool kiv_os_rtl::Register_Signal_Handler(kiv_os::NSignal_Id signal_Id, kiv_os::TThread_Proc process_thread_handle) {
+	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::Process,
+									  static_cast<uint8_t>(kiv_os::NOS_Process::Register_Signal_Handler));
+
+	regs.rcx.r = static_cast<decltype(regs.rcx.r)>(signal_Id);
+
+	if (process_thread_handle == 0) {
+		regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(Default_Signal_Handler);
+	}
+	else {
+		regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(process_thread_handle);
+	}
+
+
+	if (!kiv_os::Sys_Call(regs))
+	{
+		return false;
+	}
+	return true;
+}
+
+void kiv_os_rtl::Default_Signal_Handler() {
+	// Tady se nic delat nebude.
+	return;
 }

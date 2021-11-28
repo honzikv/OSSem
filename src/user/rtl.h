@@ -50,8 +50,9 @@ namespace kiv_os_rtl {
 	/// <param name="file_descriptor">Reference na promennou, kam se zapise vytvoreny file descriptor</param>
 	/// <param name="file_uri">Uri souboru</param>
 	/// <param name="mode">Rezim otevreni</param>
+	/// <param name="attributes">Atributy pro otevreni</param>
 	/// <returns>Vysledek operace</returns>
-	bool Open_File(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode);
+	bool Open_File(kiv_os::THandle& file_descriptor, const std::string& file_uri, kiv_os::NOpen_File mode, kiv_os::NFile_Attributes attributes);
 
 	/// <summary>
 	/// Zavre handle daneho file descriptoru
@@ -78,7 +79,8 @@ namespace kiv_os_rtl {
 	bool Create_Process(const std::string& program_name, const std::string& params, kiv_os::THandle std_in,
 	                   kiv_os::THandle std_out, kiv_os::THandle& pid);
 
-	bool Create_Thread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in, kiv_os::THandle std_out);
+	bool Create_Thread(const std::string& program_name, const std::string& params, kiv_os::THandle std_in, 
+					   kiv_os::THandle std_out, kiv_os::THandle& new_thread);
 
 	/// <summary>
 	/// Aktualni vlakno vycka, dokud dany handle nedobehne
@@ -100,4 +102,17 @@ namespace kiv_os_rtl {
 	/// </summary>
 	/// <returns></returns>
 	void Shutdown();
+
+	/// <summary>
+	/// Ukonceni programu
+	/// </summary>
+	bool Exit(uint16_t exit_code);
+
+	bool Seek(kiv_os::THandle file_handle, kiv_os::NFile_Seek seek_operation, kiv_os::NFile_Seek position_type, size_t& position);
+
+	bool Delete_File(const std::string& file_name);
+
+	bool Register_Signal_Handler(kiv_os::NSignal_Id signal_Id, kiv_os::TThread_Proc process_thread_handle);
+
+	void Default_Signal_Handler();
 }
