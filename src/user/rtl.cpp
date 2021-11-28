@@ -265,7 +265,7 @@ void kiv_os_rtl::Shutdown() {
 }
 
 bool kiv_os_rtl::Exit(uint16_t exit_code) {
-	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::Process,
+	auto regs = Prepare_Syscall_Ctx(kiv_os::NOS_Service_Major::Process,
 									  static_cast<uint8_t>(kiv_os::NOS_Process::Exit));
 
 	regs.rcx.x = static_cast<decltype(regs.rcx.x)>(exit_code);
@@ -278,7 +278,7 @@ bool kiv_os_rtl::Exit(uint16_t exit_code) {
 }
 
 bool kiv_os_rtl::Seek(kiv_os::THandle file_handle, kiv_os::NFile_Seek seek_operation, kiv_os::NFile_Seek position_type, size_t &position) {
-	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System,
+	auto regs = Prepare_Syscall_Ctx(kiv_os::NOS_Service_Major::File_System,
 									  static_cast<uint8_t>(kiv_os::NOS_File_System::Seek));
 	
 	regs.rdx.x = static_cast<decltype(regs.rdx.x)>(file_handle);
@@ -297,39 +297,6 @@ bool kiv_os_rtl::Seek(kiv_os::THandle file_handle, kiv_os::NFile_Seek seek_opera
 		position = regs.rax.r;
 	}
 
-	return true;
-}
-
-bool kiv_os_rtl::Delete_File(const std::string& file_name) {
-	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::File_System,
-									  static_cast<uint8_t>(kiv_os::NOS_File_System::Delete_File));
-
-	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(file_name.data());
-
-	if (!kiv_os::Sys_Call(regs)) {
-		return false;
-	}
-	return true;
-}
-
-bool kiv_os_rtl::Register_Signal_Handler(kiv_os::NSignal_Id signal_Id, kiv_os::TThread_Proc process_thread_handle) {
-	auto regs = PrepareSyscallContext(kiv_os::NOS_Service_Major::Process,
-									  static_cast<uint8_t>(kiv_os::NOS_Process::Register_Signal_Handler));
-
-	regs.rcx.r = static_cast<decltype(regs.rcx.r)>(signal_Id);
-
-	if (process_thread_handle == 0) {
-		regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(Default_Signal_Handler);
-	}
-	else {
-		regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(process_thread_handle);
-	}
-
-
-	if (!kiv_os::Sys_Call(regs))
-	{
-		return false;
-	}
 	return true;
 }
 

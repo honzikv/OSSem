@@ -21,9 +21,17 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\api\api.h" />
     <ClInclude Include="..\..\src\api\hal.h" />
+    <ClInclude Include="..\..\src\user\Programs\Dir.h" />
+    <ClInclude Include="..\..\src\user\Programs\Echo.h" />
+    <ClInclude Include="..\..\src\user\Programs\Find.h" />
     <ClInclude Include="..\..\src\user\Programs\Freq.h" />
+    <ClInclude Include="..\..\src\user\Programs\Md.h" />
+    <ClInclude Include="..\..\src\user\Programs\Rd.h" />
+    <ClInclude Include="..\..\src\user\Programs\Rgen.h" />
     <ClInclude Include="..\..\src\user\Programs\Shutdown.h" />
     <ClInclude Include="..\..\src\user\Programs\Sort.h" />
+    <ClInclude Include="..\..\src\user\Programs\Tasklist.h" />
+    <ClInclude Include="..\..\src\user\Programs\Type.h" />
     <ClInclude Include="..\..\src\user\rtl.h" />
     <ClInclude Include="..\..\src\user\Shell\Command.h" />
     <ClInclude Include="..\..\src\user\shell_commands.h" />
@@ -35,8 +43,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\api\api.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Dir.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Echo.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Find.cpp" />
     <ClCompile Include="..\..\src\user\Programs\Freq.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Md.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Rd.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Rgen.cpp" />
     <ClCompile Include="..\..\src\user\Programs\Shutdown.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Sort.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Tasklist.cpp" />
+    <ClCompile Include="..\..\src\user\Programs\Type.cpp" />
     <ClCompile Include="..\..\src\user\rtl.cpp" />
     <ClCompile Include="..\..\src\user\Shell.cpp" />
     <ClCompile Include="..\..\src\user\Shell\Command.cpp" />
@@ -53,26 +70,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
