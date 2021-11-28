@@ -1,6 +1,6 @@
 #include "Pipe.h"
 
-#include "Utils/Logging.h"
+#include "../Utils/Logging.h"
 
 Pipe::Pipe(const size_t buffer_size): write(std::make_unique<Semaphore>(buffer_size)),
                                       read(std::make_unique<Semaphore>()) {

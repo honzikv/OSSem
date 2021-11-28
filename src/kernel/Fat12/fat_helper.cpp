@@ -6,8 +6,8 @@
 #include <vector>
 #include <string>
 #include <cmath>
-#include "../api/hal.h"
-#include "../api/api.h"
+#include "../../api/hal.h"
+#include "../../api/api.h"
 #include "fat_helper.h"
 #include "path.h"
 

@@ -1,7 +1,7 @@
 #include "ConsoleIn.h"
 
-#include "Process/ProcessManager.h"
-#include "Utils/Logging.h"
+#include "../Process/ProcessManager.h"
+#include "../Utils/Logging.h"
 
 kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size, size_t& bytes_read) {
 	auto regs = kiv_hal::TRegisters();

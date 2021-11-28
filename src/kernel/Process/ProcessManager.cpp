@@ -3,7 +3,7 @@
 #include "../kernel.h"
 #include "../IO/IOManager.h"
 
-size_t Default_Signal_Callback(const kiv_hal::TRegisters& regs) {
+size_t __stdcall Default_Signal_Callback(const kiv_hal::TRegisters& regs) {
 	return 0;
 }
 
@@ -490,9 +490,11 @@ kiv_os::NOS_Error ProcessManager::Syscall_Register_Signal_Handler(const kiv_hal:
 	const auto signal = static_cast<kiv_os::NSignal_Id>(regs.rcx.x); // signal
 
 	// funkce pro signal  // NOLINT(performance-no-int-to-ptr)
-	const auto callback = regs.rdx.r == 0
-		                      ? Default_Signal_Callback
-		                      : reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r);
+	kiv_os::TThread_Proc callback;
+	if (regs.rdx.r == 0)
+		callback = Default_Signal_Callback;
+	else
+		callback = reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r);
 
 	// zamkneme
 	auto lock = std::scoped_lock(tasks_mutex);

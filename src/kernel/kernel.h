@@ -1,4 +1,5 @@
 #pragma once
+
 #include "../api/hal.h"
 #include "Process/InitProcess.h"
 
@@ -9,6 +10,6 @@ void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context);
 /// Funkce pro systemove volani
 /// </summary>
 /// <param name="regs">registry s kontextem</param>
-void Syscall(kiv_hal::TRegisters& regs);
+void __stdcall Syscall(kiv_hal::TRegisters& regs);
 
 inline HMODULE User_Programs;

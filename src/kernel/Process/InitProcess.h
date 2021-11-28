@@ -1,5 +1,5 @@
 #pragma once
-#include "Process/ProcessManager.h"
+#include "ProcessManager.h"
 
 class InitProcess {
 
@@ -8,7 +8,7 @@ class InitProcess {
 	/// </summary>
 	/// <param name="regs">registry s kontextem</param>
 	/// <returns></returns>
-	static size_t Init_Fun(const kiv_hal::TRegisters& regs);
+	static  size_t __stdcall Init_Fun(const kiv_hal::TRegisters& regs);
 
 public:
 	/// <summary>

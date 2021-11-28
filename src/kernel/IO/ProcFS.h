@@ -1,7 +1,7 @@
 #pragma once
 #include "IOManager.h"
-#include "vfs.h"
-#include "Process/ProcessManager.h"
+#include "../Fat12/vfs.h"
+#include "../Process/ProcessManager.h"
 
 /// <summary>
 /// </summary>

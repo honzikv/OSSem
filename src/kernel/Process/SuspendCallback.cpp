@@ -1,6 +1,6 @@
 #include "SuspendCallback.h"
 
-#include "Utils/Logging.h"
+#include "../Utils/Logging.h"
 
 void SuspendCallback::Suspend() const {
 	semaphore->Acquire();

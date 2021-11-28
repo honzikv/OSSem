@@ -4,8 +4,8 @@
 #include "HandleService.h"
 #include "IFile.h"
 #include "Pipe.h"
-#include "../vfs.h"
-#include "../fat12.h"
+#include "../Fat12/vfs.h"
+#include "../Fat12/fat12.h"
 #include "../../api/hal.h"
 
 /// <summary>

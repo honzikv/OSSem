@@ -6,10 +6,10 @@
 
 #include <memory>
 
-#include "../api/api.h"
+#include "../../api/api.h"
 #include "path.h"
 #include "vector"
-#include "IO/IFile.h"
+#include "../IO/IFile.h"
 
 struct File {
 	char* name;

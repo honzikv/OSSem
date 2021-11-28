@@ -5,8 +5,8 @@
 #pragma once
 
 
-#include "../vfs.h"
-#include "IFile.h"
+#include "../Fat12/vfs.h"
+#include "../IO/IFile.h"
 
 class Fs_File final : public IFile {
 public:

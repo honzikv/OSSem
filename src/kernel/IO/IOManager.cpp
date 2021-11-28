@@ -4,10 +4,10 @@
 #include "ConsoleOut.h"
 #include "ReadablePipe.h"
 #include "WritablePipe.h"
-#include "Utils/Logging.h"
-#include "fs_file.h"
+#include "../Utils/Logging.h"
+#include "../Fat12/fs_file.h"
 #include "ProcFS.h"
-#include "Process/ProcessManager.h"
+#include "../Process/ProcessManager.h"
 
 void IOManager::Handle_IO(kiv_hal::TRegisters& regs) {
 	const auto operation = regs.rax.l;

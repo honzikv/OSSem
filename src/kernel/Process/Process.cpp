@@ -30,7 +30,7 @@ void Process::Set_Working_Dir(Path& path) {
 }
 
 
-void Process::Set_Signal_Callback(const kiv_os::NSignal_Id signal, const kiv_os::TThread_Proc callback) {
+void Process::Set_Signal_Callback(const kiv_os::NSignal_Id signal, kiv_os::TThread_Proc callback) {
 	signal_callbacks[signal] = callback;
 }
 
