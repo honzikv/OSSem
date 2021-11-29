@@ -4,8 +4,8 @@
 #include "HandleService.h"
 #include "IFile.h"
 #include "Pipe.h"
-#include "../vfs.h"
-#include "../fat12.h"
+#include "../Fat12/vfs.h"
+#include "../Fat12/fat12.h"
 #include "../../api/hal.h"
 
 /// <summary>
@@ -28,7 +28,7 @@ private:
 	/// <summary>
 	/// Mutex pro pristup
 	/// </summary>
-	std::mutex mutex;
+	std::recursive_mutex mutex;
 
 	/// <summary>
 	/// Otevrene soubory - obsahuje dvojici pocet alokaci a referenci na soubor
@@ -75,7 +75,7 @@ public:
 	/// <param name="pid">pid procesu</param>
 	/// <param name="file_descriptor">file descriptor, ktery registrujeme</param>
 	/// <returns></returns>
-	kiv_os::NOS_Error Register_File_To_Process(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
+	kiv_os::NOS_Error Register_File_Descriptor_To_Process(kiv_os::THandle pid, kiv_os::THandle file_descriptor);
 
 	/// <summary>
 	/// Snizi pocet vyskytu file descriptoru. Vrati File_Not_Found  pokud soubor neexistuje.
@@ -177,7 +177,12 @@ private:
 
 	kiv_os::NOS_Error Syscall_Set_File_Attribute(const kiv_hal::TRegisters& regs);
 
-	kiv_os::NOS_Error Open_File(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle);
+	kiv_os::NOS_Error Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, const kiv_os::THandle
+	                                   current_pid);
+
+	kiv_os::NOS_Error Open_File(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, kiv_os::THandle current_pid);
+
+	kiv_os::NOS_Error Open_Procfs_File();
 
 	VFS* Get_File_System(const std::string& disk);
 };

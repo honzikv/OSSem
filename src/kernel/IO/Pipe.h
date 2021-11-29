@@ -18,12 +18,12 @@ private:
 	/// <summary>
 	/// Semafor pro pristup k polozkam na zapis
 	/// </summary>
-	std::shared_ptr<Semaphore> write;
+	std::unique_ptr<Semaphore> write;
 
 	/// <summary>
 	/// Semafor pro pristup k polozkam na cteni
 	/// </summary>
-	std::shared_ptr<Semaphore> read;
+	std::unique_ptr<Semaphore> read;
 
 	/// <summary>
 	/// Index pro cteni
@@ -41,9 +41,11 @@ private:
 	size_t items = 0;
 
 	/// <summary>
-	/// Mutex pro pristup k bufferu a flagum
+	/// Mutex pro pristup k bufferu
 	/// </summary>
 	std::mutex pipe_access;
+	
+	std::mutex close_access;
 
 	/// <summary>
 	/// Buffer pro data
@@ -53,13 +55,12 @@ private:
 	/// <summary>
 	/// Zapis je zavreny
 	/// </summary>
-	bool writing_closed = false;
+	std::atomic<bool> writing_closed = false;
 
 	/// <summary>
 	/// Ctnei je zavrene
 	/// </summary>
-	bool reading_closed = false;
-	
+	std::atomic<bool> reading_closed = false;
 
 	/// <summary>
 	/// Vrati, zda-li je pipe prazdna

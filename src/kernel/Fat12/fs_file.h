@@ -5,10 +5,10 @@
 #pragma once
 
 
-#include "../vfs.h"
-#include "IFile.h"
+#include "../Fat12/vfs.h"
+#include "../IO/IFile.h"
 
-class Fs_File: public IFile {
+class Fs_File final : public IFile {
 public:
     explicit Fs_File(VFS *vfs, File file);
 

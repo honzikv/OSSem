@@ -2,7 +2,6 @@
 // Created by Kuba on 09.10.2021.
 //
 
-#include <cstring>
 #include "fat12.h"
 
 std::vector<unsigned char> fat;
@@ -11,9 +10,9 @@ std::vector<unsigned char> second_fat;
 /**
  * Nacte FAT 1 a FAT 2
  */
-Fat12::Fat12() {
-    fat = Fat_Helper::Load_Fat_Table(1);
-    second_fat = Fat_Helper::Load_Fat_Table(1 + Fat_Helper::kFatTableSectorCount);
+Fat12::Fat12(): VFS(FsType::Fat12) {
+	fat = Fat_Helper::Load_Fat_Table(1);
+	second_fat = Fat_Helper::Load_Fat_Table(1 + Fat_Helper::kFatTableSectorCount);
 }
 
 /**
@@ -264,7 +263,7 @@ kiv_os::NOS_Error Fat12::Read(File file, const size_t bytes_to_read, const size_
             dir_entries_bytes = Fat_Helper::Convert_Dir_Entries_To_Char_Vector(dir_entries);
         }
 
-        if ((dir_entries.size() * sizeof(kiv_os::TDir_Entry)) >=
+        if ((dir_entries_bytes.size() * sizeof(kiv_os::TDir_Entry)) >=
             (bytes_to_read + offset)) { // lze precist, nepresahl se rozsah
             for (int i = 0; i < bytes_to_read; ++i) {
                 buffer.push_back(dir_entries_bytes.at(i + offset));

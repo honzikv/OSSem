@@ -1,10 +1,13 @@
 #include "IOManager.h"
 
+#include "ConsoleIn.h"
+#include "ConsoleOut.h"
 #include "ReadablePipe.h"
 #include "WritablePipe.h"
-#include "Utils/Logging.h"
-#include "fs_file.h"
-#include "Process/ProcessManager.h"
+#include "../Utils/Logging.h"
+#include "../Fat12/fs_file.h"
+#include "ProcFS.h"
+#include "../Process/ProcessManager.h"
 
 void IOManager::Handle_IO(kiv_hal::TRegisters& regs) {
 	const auto operation = regs.rax.l;
@@ -75,8 +78,8 @@ auto IOManager::Create_Stdio() -> std::pair<kiv_os::THandle, kiv_os::THandle> {
 	const auto std_in = std::make_shared<ConsoleIn>();
 	const auto std_out = std::make_shared<ConsoleOut>();
 
-	const auto std_in_handle = HandleService::Get().Create_Empty_Handle();
-	const auto std_out_handle = HandleService::Get().Create_Empty_Handle();
+	const auto std_in_handle = HandleService::Get().Get_Empty_Handle();
+	const auto std_out_handle = HandleService::Get().Get_Empty_Handle();
 
 	// Pro stdio chceme vyskyt na nule, protoze stdio se musi predat procesu
 	open_files[std_in_handle] = {0, std_in};
@@ -103,7 +106,7 @@ kiv_os::NOS_Error IOManager::Syscall_Read(kiv_hal::TRegisters& regs) {
 		file = open_files.at(file_descriptor).second; // file pointer je druhy prvek v dvojici
 	}
 
-	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);
+	const auto buffer = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
 	const auto bytes = regs.rcx.r; // kolik bytu se ma precist
 	auto bytes_read = size_t{0}; // pocet prectenych bytu
 
@@ -137,7 +140,7 @@ kiv_os::NOS_Error IOManager::Syscall_Write(kiv_hal::TRegisters& regs) {
 		file = open_files.at(file_descriptor).second; // file pointer je druhy prvek v dvojici
 	}
 
-	const auto buffer = reinterpret_cast<char*>(regs.rdi.r);
+	const auto buffer = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
 	const auto bytes = regs.rcx.r;
 
 	auto bytes_written = size_t{0};
@@ -157,6 +160,7 @@ kiv_os::NOS_Error IOManager::Syscall_Write(kiv_hal::TRegisters& regs) {
 
 kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs) {
 	const auto pipe_read_write_pair = reinterpret_cast<kiv_os::THandle*>(regs.rdx.r);
+	// NOLINT(performance-no-int-to-ptr)
 	auto pipe_write = pipe_read_write_pair[0];
 	auto input_preinitialized = false;
 	auto pipe_read = pipe_read_write_pair[1];
@@ -173,7 +177,7 @@ kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs
 	// Pokud je zapis do pipy invalid, musime ziskat novy handle
 	if (pipe_write == kiv_os::Invalid_Handle) {
 		input_preinitialized = true;
-		const auto file_descriptor = HandleService::Get().Create_Empty_Handle();
+		const auto file_descriptor = HandleService::Get().Get_Empty_Handle();
 		if (file_descriptor == kiv_os::Invalid_Handle) {
 			// dosly handly, vyhodime vyjimku
 			return kiv_os::NOS_Error::Out_Of_Memory;
@@ -185,7 +189,7 @@ kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs
 
 	// To same pro cteni z pipy
 	if (pipe_read == kiv_os::Invalid_Handle) {
-		const auto file_descriptor = HandleService::Get().Create_Empty_Handle();
+		const auto file_descriptor = HandleService::Get().Get_Empty_Handle();
 		if (file_descriptor == kiv_os::Invalid_Handle) {
 			// dosly handly, vyhodime vyjimku
 			if (input_preinitialized) {
@@ -199,15 +203,17 @@ kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs
 		pipe_read = file_descriptor;
 	}
 
-	const auto current_process_pid = ProcessManager::Get().Get_Current_Process()->Get_Pid();
-	
 	{
+		const auto current_process_pid = ProcessManager::Get().Get_Current_Pid();
+		// Ulozime pipy do otevrenych souboru a k procesu, ktery tento syscall zavolal
 		auto lock = std::scoped_lock(mutex);
-		open_files[pipe_write] = {0, std::static_pointer_cast<IFile>(writable_pipe)};
-		open_files[pipe_read] = {0, std::static_pointer_cast<IFile>(readable_pipe)};
-		Register_File_To_Process(current_process_pid, pipe_write);
-		Register_File_To_Process(current_process_pid, pipe_read);
-		Log_Debug("Input fd: " + std::to_string(pipe_write) + " Output fd: " + std::to_string(pipe_read));
+
+		// Zde chceme -1, protoze pipe bude zaregistrovana jak u shellu, tak i pro proces, ktery ji bude vyuzivat
+		// protoze chceme aby oba mohli zavolat shutdown
+		open_files[pipe_write] = {-1, std::static_pointer_cast<IFile>(writable_pipe)};
+		open_files[pipe_read] = {-1, std::static_pointer_cast<IFile>(readable_pipe)};
+		Register_File_Descriptor_To_Process(current_process_pid, pipe_write);
+		Register_File_Descriptor_To_Process(current_process_pid, pipe_read);
 	}
 
 	// Zapiseme vysledky zpet do pole
@@ -218,17 +224,20 @@ kiv_os::NOS_Error IOManager::Syscall_Create_Pipe(const kiv_hal::TRegisters& regs
 
 kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& regs) {
 	const auto file_descriptor = static_cast<kiv_os::THandle>(regs.rdx.x);
-	auto lock = std::scoped_lock(mutex);
 
 	// Ziskame aktualni proces
 	const auto current_process = ProcessManager::Get().Get_Current_Process();
+	if (current_process == nullptr) { // toto se stane pri shutdownu
+		return kiv_os::NOS_Error::Success;
+	}
+	auto lock = std::scoped_lock(mutex);
 
 	// Pokud proces nema pristup k handlu vratime chybu
 	if (!Is_File_Descriptor_Accessible(current_process->Get_Pid(), file_descriptor)) {
 		return kiv_os::NOS_Error::Permission_Denied;
 	}
 
-	// Pokud file neni vratime chybu
+	// Pokud file neni vratime file not found - pravdepodobne se uz zavrel nekdy jindy
 	if (open_files.count(file_descriptor) == 0) {
 		return kiv_os::NOS_Error::File_Not_Found;
 	}
@@ -240,7 +249,7 @@ kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& reg
 void IOManager::Init_Filesystems() {
 	//TODO procs asi
 	for (int i = 0; i < 256; ++i) {
-		auto disk_num = static_cast<uint8_t>(i);
+		const auto disk_num = static_cast<uint8_t>(i);
 		kiv_hal::TRegisters registers{};
 		kiv_hal::TDrive_Parameters parameters{};
 		registers.rax.h = static_cast<uint8_t>(kiv_hal::NDisk_IO::Drive_Parameters);
@@ -249,16 +258,21 @@ void IOManager::Init_Filesystems() {
 		kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Disk_IO, registers);
 		if (!registers.flags.carry) {
 			// je disk
-			auto fat_fs = new Fat12();
-			file_systems["C"] = std::unique_ptr<VFS>(fat_fs);
+			file_systems["C"] = std::make_unique<Fat12>();
 			break;
 		}
 	}
+	Log_Debug("(Init Filesystems) FAT12 file system loaded");
+
+	// Vytvoreni procfs
+	file_systems["P"] = std::make_unique<ProcFS>();
+	Log_Debug("(Init Filesystems) Procfs file system loaded");
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 bool IOManager::Is_File_Descriptor_Accessible(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
-	return process_to_file_mapping.count(pid) != 0 && process_to_file_mapping[pid].count(file_descriptor) != 0;
+	return open_files.count(file_descriptor) != 0 &&
+		process_to_file_mapping.count(pid) != 0 && process_to_file_mapping[pid].count(file_descriptor) != 0;
 }
 
 kiv_os::NOS_Error IOManager::Increment_File_Descriptor_Count(const kiv_os::THandle file_descriptor) {
@@ -272,7 +286,7 @@ kiv_os::NOS_Error IOManager::Increment_File_Descriptor_Count(const kiv_os::THand
 }
 
 kiv_os::NOS_Error
-IOManager::Register_File_To_Process(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
+IOManager::Register_File_Descriptor_To_Process(const kiv_os::THandle pid, const kiv_os::THandle file_descriptor) {
 
 	// Nejprve chceme zjistit jestli dava operace vubec smysl - file uz musi byt otevreny
 	// Pokud increment file descriptor selze nebudeme nic delat a vratime chybu
@@ -298,12 +312,12 @@ IOManager::Register_File_To_Process(const kiv_os::THandle pid, const kiv_os::THa
 kiv_os::NOS_Error IOManager::Register_Process_Stdio(const kiv_os::THandle pid, const kiv_os::THandle std_in,
                                                     const kiv_os::THandle std_out) {
 	auto lock = std::scoped_lock(mutex);
-	if (const auto std_in_register_result = Register_File_To_Process(pid, std_in);
+	if (const auto std_in_register_result = Register_File_Descriptor_To_Process(pid, std_in);
 		std_in_register_result != kiv_os::NOS_Error::Success) {
 		return std_in_register_result;
 	}
 
-	if (const auto std_out_register_result = Register_File_To_Process(pid, std_out);
+	if (const auto std_out_register_result = Register_File_Descriptor_To_Process(pid, std_out);
 		std_out_register_result != kiv_os::NOS_Error::Success) {
 		return std_out_register_result;
 	}
@@ -334,7 +348,7 @@ void IOManager::Close_Process_File_Descriptors(const kiv_os::THandle pid) {
 	}
 
 	// Snizime pocet file descriptoru pro soubor
-	for (const auto  file_descriptor: process_to_file_mapping[pid]) {
+	for (const auto file_descriptor : process_to_file_mapping[pid]) {
 		Decrement_File_Descriptor_Count(file_descriptor);
 	}
 
@@ -415,11 +429,11 @@ kiv_os::NOS_Error IOManager::Syscall_Seek(kiv_hal::TRegisters& regs) {
 }
 
 kiv_os::NOS_Error IOManager::Syscall_Get_Working_Dir(kiv_hal::TRegisters& regs) {
-	auto lock = std::scoped_lock(mutex);
-	char* buffer = reinterpret_cast<char*>(regs.rdx.r);
-	auto buffer_size = static_cast<size_t>(regs.rcx.r);
-	//TODO najit proces vlakna, kopirovat buffer do working dir, nastavit written
 	const std::shared_ptr<Process> process = ProcessManager::Get().Get_Current_Process();
+	auto lock = std::scoped_lock(mutex);
+	const auto buffer = reinterpret_cast<char*>(regs.rdx.r);
+	const auto buffer_size = static_cast<size_t>(regs.rcx.r);
+	//TODO najit proces vlakna, kopirovat buffer do working dir, nastavit written
 	strcpy_s(buffer, buffer_size, process->Get_Working_Dir().To_String().c_str());
 	const size_t written = min(process->Get_Working_Dir().To_String().length(), buffer_size);
 	regs.rax.r = written;
@@ -429,20 +443,23 @@ kiv_os::NOS_Error IOManager::Syscall_Get_Working_Dir(kiv_hal::TRegisters& regs) 
 kiv_os::NOS_Error IOManager::Syscall_Set_Working_Dir(const kiv_hal::TRegisters& regs) {
 	auto lock = std::scoped_lock(mutex);
 	const auto path_char = reinterpret_cast<char*>(regs.rdx.r);
+	std::shared_ptr<Process> current_process = ProcessManager::Get().Get_Current_Process();
+
 	if (path_char == nullptr) {
 		return kiv_os::NOS_Error::IO_Error;
 	}
-	const Path path(path_char);
+	Path path(path_char);
 	if (path.is_relative) {
-		// TODO ziskat proces a jeho cestu a append pred nasi cestu
-		//Path process_path = process->GetWorkingDir();
+		Path working_dir = current_process->Get_Working_Dir();
+		working_dir.Append_Path(path);
+		path = working_dir;
 	}
 	const auto fs = Get_File_System(path.disk_letter);
 	if (fs == nullptr) {
 		return kiv_os::NOS_Error::Unknown_Filesystem;
 	}
 	if (fs->Check_If_File_Exists(path)) {
-		//process->SetWorkingDir(path);
+		current_process->Set_Working_Dir(path);
 		return kiv_os::NOS_Error::Success;
 	}
 
@@ -454,16 +471,21 @@ kiv_os::NOS_Error IOManager::Syscall_Open_File(kiv_hal::TRegisters& regs) {
 	const auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.l); // TODO check
 	const auto attributes = static_cast<uint8_t>(regs.rdi.i);
 	kiv_os::THandle handle; //TODO vytvorit handle
+	std::shared_ptr<Process> current_process = ProcessManager::Get().Get_Current_Process();
+
+	if (current_process == nullptr) {
+		return kiv_os::NOS_Error::File_Not_Found;
+	}
 
 	Path path(file_name);
 	if (path.is_relative) {
-		std::shared_ptr<Process> process = ProcessManager::Get().Get_Current_Process();
-		Path working_dir = process->Get_Working_Dir();
+
+		Path working_dir = current_process->Get_Working_Dir();
 		working_dir.Append_Path(path);
 		path = working_dir;
 	}
 
-	const auto res = Open_File(path, flags, attributes, handle);
+	const auto res = Open_File(path, flags, attributes, handle, current_process->Get_Pid());
 
 	if (res == kiv_os::NOS_Error::Success) {
 		regs.rax.x = handle;
@@ -472,16 +494,45 @@ kiv_os::NOS_Error IOManager::Syscall_Open_File(kiv_hal::TRegisters& regs) {
 	return res;
 }
 
+
+auto IOManager::Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File flags, uint8_t attributes,
+                                 kiv_os::THandle& handle,
+                                 const kiv_os::THandle current_pid) -> kiv_os::NOS_Error {
+
+	auto err = kiv_os::NOS_Error::Success;
+	auto file = fs->Open_IFile(path, flags, attributes, err);
+	if (err != kiv_os::NOS_Error::Success) {
+		return err;
+	}
+
+	auto lock = std::scoped_lock(mutex);
+	const auto file_descriptor = HandleService::Get().Get_Empty_Handle();
+
+	// Do otevrenych souboru ulozime handle s referenci na soubor
+	open_files[file_descriptor] = {1, file};
+
+	// Soubor pridame k procesu aby k nemu mel pristup
+	Register_File_Descriptor_To_Process(current_pid, file_descriptor);
+	handle = file_descriptor;
+	return err;
+}
+
 //TODO jestli prepsat soubor, kdyz je 0 fmalways a existuje
 kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags, uint8_t attributes,
-                                      kiv_os::THandle& handle) {
-	auto lock = std::scoped_lock(mutex);
+                                       kiv_os::THandle& handle, const kiv_os::THandle current_pid) {
+
 
 	//TODO mozna vytvoreni ruznych typu filu
 	const auto fs = Get_File_System(path.disk_letter);
 	if (fs == nullptr) {
 		return kiv_os::NOS_Error::Unknown_Filesystem;
 	}
+
+	if (fs->file_system_type == FsType::Procfs) {
+		return Open_Procfs_File(fs, path, flags, attributes, handle, current_pid);
+	}
+
+	auto lock = std::scoped_lock(mutex);
 	const bool file_exists = fs->Check_If_File_Exists(path);
 
 	if (flags == kiv_os::NOpen_File::fmOpen_Always) {
@@ -503,7 +554,8 @@ kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags
 	path.Return_Name_to_Path();
 
 	// existuje a mel by byt vytvoren adresar - chyba
-	if (file_exists && (attributes & static_cast<decltype(attributes)>(kiv_os::NFile_Attributes::Directory))) {
+	if (flags != kiv_os::NOpen_File::fmOpen_Always && file_exists && 
+		(attributes & static_cast<decltype(attributes)>(kiv_os::NFile_Attributes::Directory))) {
 		handle = kiv_os::Invalid_Handle;
 		return kiv_os::NOS_Error::Invalid_Argument;
 	}
@@ -515,15 +567,21 @@ kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags
 		handle = kiv_os::Invalid_Handle;
 		return res;
 	}
-	// v poradku
-	auto file = new Fs_File(fs, f);
 
-	handle = HandleService::Get().Create_Empty_Handle();
+	auto file = std::make_shared<Fs_File>(fs, f);
 
-	//TODO get handle - neco asi se da pouzit z handle service - pridat do mapy souboru
+	handle = HandleService::Get().Get_Empty_Handle();
+
+	// Do otevrenych souboru ulozime handle s referenci na soubor
+	open_files[handle] = {1, file};
+
+	// Soubor pridame k procesu aby k nemu mel pristup
+	Register_File_Descriptor_To_Process(current_pid, handle);
+
+
 	return kiv_os::NOS_Error::Success;
-
 }
+
 
 kiv_os::NOS_Error IOManager::Syscall_Get_File_Attribute(kiv_hal::TRegisters& regs) {
 	char* file_name = reinterpret_cast<char*>(regs.rdx.r);
@@ -571,6 +629,7 @@ kiv_os::NOS_Error IOManager::Syscall_Set_File_Attribute(const kiv_hal::TRegister
 	}
 	return kiv_os::NOS_Error::File_Not_Found;
 }
+
 
 kiv_os::NOS_Error IOManager::Syscall_Delete_File(const kiv_hal::TRegisters& regs) {
 	char* file_name = reinterpret_cast<char*>(regs.rdx.r);

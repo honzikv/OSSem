@@ -53,7 +53,6 @@ class Thread final : public Task {
 
 
 public:
-
 	/// <summary>
 	/// Konstruktor pro CreateProcess
 	/// </summary>
@@ -63,13 +62,14 @@ public:
 	/// <param name="pid">pid procesu, ktery vlakno vlastni</param>
 	/// <param name="args">Argumenty programu</param>
 	/// <param name="is_main_thread">Zda-li je vlakno hlavni</param>
-	Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os::THandle tid, kiv_os::THandle pid, const char* args,
-		bool is_main_thread = true);
-	
+	Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os::THandle tid, kiv_os::THandle pid,
+	       const char* args,
+	       bool is_main_thread = true);
+
 	/// <summary>
 	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho handle a thread id
 	/// </summary>
-	std::thread::id Dispatch();
+	[[nodiscard]] static std::thread::id Dispatch(std::shared_ptr<Thread> thread_ptr) ;
 
 	/// <summary>
 	/// Nasilne ukonci vlakno. Tato funkce nic nedela, pokud se vlakno ukoncilo samo
@@ -81,7 +81,7 @@ public:
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne
 	/// </summary>
-	void ThreadFunc();
+	friend static void ThreadFunc(std::shared_ptr<Thread> thread);
 
 	[[nodiscard]] inline kiv_os::THandle Get_Tid() const { return tid; }
 	[[nodiscard]] inline kiv_os::THandle Get_Pid() const { return pid; }
