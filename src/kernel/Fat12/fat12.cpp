@@ -46,12 +46,12 @@ kiv_os::NOS_Error Fat12::Open(Path &path, const kiv_os::NOpen_File flags, File &
             // slozka
             if (attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory) ||
                 attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID)) {
-                if (file_name.size() > Fat_Helper::kFileNameSize) { // nazev max 8 znaku
+                if (path.name.size() > Fat_Helper::kFileNameSize) { // nazev max 8 znaku
                     return kiv_os::NOS_Error::Invalid_Argument;
                 }
                 res = Mk_Dir(path, attributes);
             } else { // soubor
-                if (!Fat_Helper::Validate_File_Name(file_name)) {
+                if (!Fat_Helper::Validate_File_Name(path.full_name)) {
                     return kiv_os::NOS_Error::Invalid_Argument;
                 }
 

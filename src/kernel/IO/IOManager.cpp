@@ -443,20 +443,23 @@ kiv_os::NOS_Error IOManager::Syscall_Get_Working_Dir(kiv_hal::TRegisters& regs) 
 kiv_os::NOS_Error IOManager::Syscall_Set_Working_Dir(const kiv_hal::TRegisters& regs) {
 	auto lock = std::scoped_lock(mutex);
 	const auto path_char = reinterpret_cast<char*>(regs.rdx.r);
+	std::shared_ptr<Process> current_process = ProcessManager::Get().Get_Current_Process();
+
 	if (path_char == nullptr) {
 		return kiv_os::NOS_Error::IO_Error;
 	}
-	const Path path(path_char);
+	Path path(path_char);
 	if (path.is_relative) {
-		// TODO ziskat proces a jeho cestu a append pred nasi cestu
-		//Path process_path = process->GetWorkingDir();
+		Path working_dir = current_process->Get_Working_Dir();
+		working_dir.Append_Path(path);
+		path = working_dir;
 	}
 	const auto fs = Get_File_System(path.disk_letter);
 	if (fs == nullptr) {
 		return kiv_os::NOS_Error::Unknown_Filesystem;
 	}
 	if (fs->Check_If_File_Exists(path)) {
-		//process->SetWorkingDir(path);
+		current_process->Set_Working_Dir(path);
 		return kiv_os::NOS_Error::Success;
 	}
 
@@ -551,7 +554,8 @@ kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags
 	path.Return_Name_to_Path();
 
 	// existuje a mel by byt vytvoren adresar - chyba
-	if (file_exists && (attributes & static_cast<decltype(attributes)>(kiv_os::NFile_Attributes::Directory))) {
+	if (flags != kiv_os::NOpen_File::fmOpen_Always && file_exists && 
+		(attributes & static_cast<decltype(attributes)>(kiv_os::NFile_Attributes::Directory))) {
 		handle = kiv_os::Invalid_Handle;
 		return kiv_os::NOS_Error::Invalid_Argument;
 	}

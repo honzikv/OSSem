@@ -319,7 +319,7 @@ std::pair<bool, std::string> Shell::Change_Directory(const Command& command) {
 		return {false, "Critical error ocurred, cannot get current working directory. Shell will close."};
 	}
 
-	current_working_dir = std::string(new_directory_buffer.begin(), new_directory_buffer.begin() + new_dir_buffer_size);
+	current_working_dir = std::string(new_directory_buffer.data());
 	return {true, ""};
 }
 
