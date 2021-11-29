@@ -23,9 +23,9 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 	constexpr int char_buffer_size = max_item_count * dir_entry_size;
 
 	// pokud neni zadana cesta, pouzije se aktualni adresar
-	if (args.empty()) {
+	/*if (args.empty()) {
 		args = std::string(".");
-	}
+	}*/
 
 	auto buffer = std::array<char, char_buffer_size>();
 	kiv_os::THandle handle;
@@ -73,16 +73,23 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 			output.append("\n");
 			current_index++;
 		}
-		index += read;
+		if (read < char_buffer_size) {
+			// uz tam nic dalsiho neni
+			break;
+		}
+		index += current_index;
 		current_index = 0;
 
 		// Set seek of directory to index which has not been yet processed.
-		//kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
+		kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
 
 		kiv_os_rtl::Read_File(handle, buffer.data(), char_buffer_size, read);
+
+		//TODO smazat
 		std::string tmp("\n read=");
 		tmp.append(std::to_string(read));
 		kiv_os_rtl::Write_File(std_out, tmp.data(), tmp.size(), written);
+		// TODO smazat end
 	}
 
 	output.append("\n");
