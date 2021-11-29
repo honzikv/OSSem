@@ -203,14 +203,14 @@ bool kiv_os_rtl::Create_Process(const std::string& program_name, const std::stri
 }
 
 
-bool kiv_os_rtl::Create_Thread(const std::string& program_name, const std::string& params, const kiv_os::THandle std_in,
+bool kiv_os_rtl::Create_Thread(const std::string& program_name, const char *params, const kiv_os::THandle std_in,
                               const kiv_os::THandle std_out, kiv_os::THandle& new_thread) {
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Clone);
 	regs.rcx.l = static_cast<decltype(regs.rcx.l)>(kiv_os::NClone::Create_Thread);
 	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(program_name.c_str());
-	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(params.c_str());
+	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(params);
 	regs.rbx.r = static_cast<decltype(regs.rbx.r)>(std_in << 16 | std_out);
 
 	if (!kiv_os::Sys_Call(regs)) {

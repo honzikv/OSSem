@@ -9,43 +9,48 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
-	const auto* args = reinterpret_cast<const char*>(regs.rdi.r);
+	auto args = std::string(reinterpret_cast<const char*>(regs.rdi.r));
 
 	size_t written;
 	size_t read;
-	const std::string final_path(args);
-
-	//TODO debug
-	kiv_os_rtl::Write_File(std_out, std::string("\nfinal:").data(), 7, written);
-	kiv_os_rtl::Write_File(std_out, final_path.data(), final_path.size(), written);
-	
 
 	size_t current_index = 0;
 	size_t index = 0;
 	int dir_count = 0;
 	int file_count = 0;
-	const int max_item_count = 20;
+	constexpr int max_item_count = 10;
+	constexpr size_t dir_entry_size = sizeof(kiv_os::TDir_Entry);
+	constexpr int char_buffer_size = max_item_count * dir_entry_size;
 
-	char entries[sizeof(kiv_os::TDir_Entry) * max_item_count];
-	kiv_os::THandle handle;
-	std::string output = "";
-	kiv_os_rtl::Open_File(handle, final_path, kiv_os::NOpen_File::fmOpen_Always, kiv_os::NFile_Attributes::Directory);
-	if (handle == static_cast<kiv_os::THandle>(-1)) {
-		uint16_t exit_code = static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found);
-		kiv_os_rtl::Exit(exit_code);
-		return 0;
+	// pokud neni zadana cesta, pouzije se aktualni adresar
+	if (args.empty()) {
+		args = std::string(".");
 	}
-	// prejit na zacatek "souboru"
-	kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
 
-	kiv_os_rtl::Read_File(handle, entries, sizeof(kiv_os::TDir_Entry) * max_item_count, read);
+	auto buffer = std::array<char, char_buffer_size>();
+	kiv_os::THandle handle;
+	std::string output;
+	if (!kiv_os_rtl::Open_File(handle, args, kiv_os::NOpen_File::fmOpen_Always, kiv_os::NFile_Attributes::Directory)) {
+
+		// TODO smazat
+		std::string tmp2("\n Chyba otevreni souboru\n");
+		kiv_os_rtl::Write_File(std_out, tmp2.data(), tmp2.size(), written);
+		// TODO konec smazat
+
+
+		kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found));
+		return 1;
+	}
+
+	// prejit na zacatek "souboru"
+	//kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
+
+	kiv_os_rtl::Read_File(handle, buffer.data(), char_buffer_size, read);
 	//TODO debug
 	std::string tmp1("\n read=");
 	tmp1.append(std::to_string(read));
-	tmp1.append("\n size = ");
-	tmp1.append(std::to_string(sizeof(kiv_os::TDir_Entry)));
 	tmp1.append("\n entry = ");
-	tmp1.append(entries);
+	tmp1.append(buffer.data());
 	kiv_os_rtl::Write_File(std_out, tmp1.data(), tmp1.size(), written);
 	////TODO debug
 	//std::string tmp("\n\n entry=" + entries[0]);
@@ -53,7 +58,8 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 
 	while (read) {
 		while (current_index < (read / sizeof(kiv_os::TDir_Entry))) {
-			auto* entry = reinterpret_cast<kiv_os::TDir_Entry*>(entries + current_index * sizeof(kiv_os::TDir_Entry));
+
+			const auto entry = reinterpret_cast<kiv_os::TDir_Entry*>(buffer.data() + current_index * dir_entry_size);
 			if (entry->file_attributes == static_cast<uint16_t>(kiv_os::NFile_Attributes::Directory)) {
 				output.append("<DIR>");
 				dir_count++;
@@ -67,13 +73,16 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 			output.append("\n");
 			current_index++;
 		}
-		index += current_index;
+		index += read;
 		current_index = 0;
 
 		// Set seek of directory to index which has not been yet processed.
-		kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
+		//kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
 
-		kiv_os_rtl::Read_File(handle, entries, sizeof(entries), read);
+		kiv_os_rtl::Read_File(handle, buffer.data(), char_buffer_size, read);
+		std::string tmp("\n read=");
+		tmp.append(std::to_string(read));
+		kiv_os_rtl::Write_File(std_out, tmp.data(), tmp.size(), written);
 	}
 
 	output.append("\n");

@@ -1,102 +1,85 @@
-#include "find.h"
+#include "Find.h"
 
-size_t __stdcall find(const kiv_hal::TRegisters &regs) {
-	const kiv_os::THandle std_in = static_cast<kiv_os::THandle>(regs.rax.x);
-	const kiv_os::THandle std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
+#include <string>
+#include <vector>
+#include <locale>
+#include "../api/hal.h"
+#include "rtl.h"
+#include "Utils/StringUtils.h"
 
-	const char *arguments = reinterpret_cast<const char *>(regs.rdi.r);
+extern "C" size_t __stdcall find(const kiv_hal::TRegisters & regs) {
+    const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
+    const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
+    auto args = std::string(reinterpret_cast<const char*>(regs.rdi.r));
 
-	std::string output;
-	size_t written;
+	size_t read;
+    kiv_os::THandle file_handle;
 
-	if (strlen(arguments) == 0) {
-		output = "Wrong arguments.\n";
-		uint16_t exit_code = static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument);
-		kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
-		kiv_os_rtl::Exit(exit_code);
-		return 0;
-	}
+    constexpr size_t buffer_size = 256;
+    char buffer[buffer_size] = {};
+    
+    bool is_handler_closable = true;
+    std::vector<std::string> lines;
+    std::string curr_string;
 
-	std::stringstream stream(arguments);
+    int lines_count = 0;
 
-	std::string part1;
-	std::string part2;
-	std::string rest;
-	std::string other = "";
+    // parsing dat
+    constexpr int start_position = 0;
+    const std::string format = "/v \"\" /c";
 
-	stream >> part1;
-	stream >> part2;
+    if (const int index = static_cast<int>(args.find(format, start_position)); index != 0) {
+        size_t written;
+        const auto err_message = std::string("Wrong arguments.. Run command with /v "" /c [optional path]\n");
+        kiv_os_rtl::Write_File(std_out, err_message.data(), err_message.size(), written);
+        return 0;
+    }
+    // syntax OK
+    args = args.substr(format.size(), args.size() - 1);
+    args = StringUtils::Trim_Whitespaces(args);
 
-	while (stream >> rest) {
-		other.append(rest);
-	}
+    if (args.c_str() && !args.empty()) {
+        if (kiv_os_rtl::Open_File(file_handle, args, kiv_os::NOpen_File::fmOpen_Always, static_cast<kiv_os::NFile_Attributes>(0))) {
+        	auto err_message = std::string("Can not open file ");
+            err_message.append(args);
+            err_message.append(".\n");
 
-	size_t actual_position = 0;
+            size_t written = 0;
+            kiv_os_rtl::Write_File(std_out, err_message.c_str(), err_message.size(), written);
+            return 1;
+        }
+    }
+    else {
+        // bude se cist ze std_inu
+        file_handle = std_in;
+        is_handler_closable = false;
+    }
+    
+    do {
+        if (kiv_os_rtl::Read_File(file_handle, buffer, buffer_size, read)) {
+            for (int i = 0; i < read; i++) {
+                if (static_cast<kiv_hal::NControl_Codes>(buffer[i]) == kiv_hal::NControl_Codes::EOT) {
+                    read = 0;
+                    break; // EOT
+                }
 
-	if (part1 == "/v" && part2 == "/c\"\"") {
-		kiv_os::THandle in_handle = std_in;
-		bool is_file = false;
-		if (!rest.empty()) {
-			kiv_os_rtl::Open_File(in_handle, rest, kiv_os::NOpen_File::fmOpen_Always, kiv_os::NFile_Attributes::System_File);
-			is_file = true;
-			kiv_os_rtl::Seek(in_handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, actual_position);
-		}
+                if (buffer[i] == '\n') {
+                    lines_count++;
+                }
+            }
+        }
+    } while (read);
 
-		if (in_handle == static_cast<kiv_os::THandle>(-1)) {
-			uint16_t exit_code = static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found);
-			kiv_os_rtl::Exit(exit_code);
-			return 0;
-		}
-		size_t read = 1;
 
-		constexpr int buffer_size = 256;
-		std::vector<char> buffer(buffer_size);
-		std::string complete;
+    memset(buffer, 0, buffer_size);
+    size_t written = 0;
+    const auto size = sprintf_s(buffer, "%d", lines_count);
+    kiv_os_rtl::Write_File(std_out, buffer, size, written);
+    kiv_os_rtl::Write_File(std_out, "\n", 1, written);
 
-		while (read) {
-			kiv_os_rtl::Read_File(in_handle, buffer.data(), buffer_size, read);
-			complete.append(buffer.data(), 0, read);
+    if (is_handler_closable) {
+        kiv_os_rtl::Close_File_Descriptor(file_handle);
+    }
 
-			if (buffer[0] == 4) {
-				break;
-			}
-
-			if (is_file) {
-				actual_position += read;
-				kiv_os_rtl::Seek(in_handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, actual_position);
-			}
-		}
-
-		if (is_file) {
-			kiv_os_rtl::Close_File_Descriptor(in_handle);
-		}
-		
-		std::stringstream data(complete);
-		std::string line;
-		int lines = 0;
-		while (std::getline(data, line)) {
-			lines = lines + 1;
-		}
-
-		output = "";
-		if (is_file) {
-			output.append("---------- ");
-			output.append(rest);
-			output.append(": ");
-		}
-		
-		output.append(std::to_string(lines));
-		output.append("\n");
-		kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
-	}
-	else {
-		output = "Wrong arguments.\n";
-		uint16_t exit_code = static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument);
-		kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
-		kiv_os_rtl::Exit(exit_code);
-		return 0;
-	}	
-	int16_t exit_code = static_cast<uint16_t>(kiv_os::NOS_Error::Success);
-	kiv_os_rtl::Exit(exit_code);
-	return 0;
+    return 0;
 }
