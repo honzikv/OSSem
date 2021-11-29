@@ -172,10 +172,6 @@ namespace kiv_os_rtl {
 	bool Exit(uint16_t exit_code);
 
 	bool Seek(kiv_os::THandle file_handle, kiv_os::NFile_Seek seek_operation, kiv_os::NFile_Seek position_type, size_t& position);
-
-	bool Delete_File(const std::string& file_name);
-
-	bool Register_Signal_Handler(kiv_os::NSignal_Id signal_Id, kiv_os::TThread_Proc process_thread_handle);
-
+	
 	void Default_Signal_Handler();
 }

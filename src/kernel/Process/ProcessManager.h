@@ -7,18 +7,10 @@
 #include "Thread.h"
 #include "Process.h"
 #include "SuspendCallback.h"
+#include "TaskIdService.h"
 #include "../../api/api.h"
 #include "../Utils/Logging.h"
-#include <winnt.h>
-
-/// <summary>
-/// Typ handle pro wait for funkcionalitu
-/// </summary>
-enum class HandleType {
-	INVALID,
-	Thread,
-	Process
-};
+#include "../IO/ProcessTableSnapshot.h"
 
 static constexpr uint16_t ForcefullyEndedTaskExitCode = -1;
 
@@ -30,14 +22,10 @@ class ProcessManager {
 	// Init proces ma pristup ke vsem fieldum a metodam aby mohl ukoncit procesy
 	friend class InitProcess;
 	// NOLINT(cppcoreguidelines-special-member-functions)
+	
 public:
-	// Konstanty pro rozsahy pidu a tidu
 
-	static constexpr uint16_t PidRangeStart = 0;
-	static constexpr uint16_t PidRangeEnd = 4096;
-	static constexpr uint16_t TidRangeStart = 4096;
-	static constexpr uint16_t TidRangeEnd = 8192;
-	static constexpr uint16_t NoFreeId = -1;
+	std::unique_ptr<TaskIdService> task_id_service = std::make_unique<TaskIdService>();
 
 	/// <summary>
 	/// Vychozi pracovni adresar, pokud neni zadny 
@@ -61,9 +49,19 @@ private:
 	/// </summary>
 	std::mutex shutdown_mutex = {};
 
+	/// <summary>
+	/// Semafor pro notifikaci hlavniho vlakna pro vypnuti OS
+	/// </summary>
 	std::shared_ptr<Semaphore> shutdown_semaphore = std::make_shared<Semaphore>();
 
+	/// <summary>
+	/// Pocet bezicich procesu
+	/// </summary>
 	int32_t processes_running = 0;
+
+	/// <summary>
+	/// Pocet bezicich vlaken
+	/// </summary>
 	int32_t threads_running = 0;
 
 	/// <summary>
@@ -74,12 +72,12 @@ private:
 	/// <summary>
 	/// Tabulka procesu
 	/// </summary>
-	std::array<std::shared_ptr<Process>, PidRangeEnd - PidRangeStart> process_table = {};
+	std::unordered_map<kiv_os::THandle, std::shared_ptr<Process>> process_table = {};
 
 	/// <summary>
 	/// Tabulka vlaken
 	/// </summary>
-	std::array<std::shared_ptr<Thread>, TidRangeEnd - TidRangeStart> thread_table = {};
+	std::unordered_map<kiv_os::THandle, std::shared_ptr<Thread>> thread_table = {};
 
 	/// <summary>
 	/// TID -> Handle
@@ -98,45 +96,11 @@ private:
 	std::unordered_map<kiv_os::THandle, std::shared_ptr<SuspendCallback>> suspend_callbacks = {};
 
 	/// <summary>
-	/// Ziska prvni volny pid, pokud neni vrati NO_FREE_ID
-	/// </summary>
-	/// <returns>Volny pid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	[[nodiscard]] kiv_os::THandle Get_Free_Pid() const;
-
-	/// <summary>
-	/// Ziska prvni volny tid, pokud neni vrati NO_FREE_ID
-	/// </summary>
-	/// <returns>Volny tid, nebo NO_FREE_ID, pokud zadny neni</returns>
-	[[nodiscard]] kiv_os::THandle Get_Free_Tid() const;
-
-	/// <summary>
-	/// Getter pro proces podle pidu
-	/// </summary>
-	/// <param name="pid">pid</param>
-	/// <returns>Pointer na proces</returns>
-	std::shared_ptr<Process> Get_Process(kiv_os::THandle pid);
-
-	/// <summary>
-	/// Prida proces do tabulky
-	/// </summary>
-	/// <param name="process">Pointer na proces</param>
-	/// <param name="pid">pid procesu</param>
-	void Add_Process(std::shared_ptr<Process> process, kiv_os::THandle pid);
-
-	/// <summary>
-	/// Prida vlakno do tabulky
-	/// </summary>
-	/// <param name="thread">Pointer na vlakno</param>
-	/// <param name="tid">tid vlakna</param>
-	void Add_Thread(std::shared_ptr<Thread> thread, kiv_os::THandle tid);
-
-	/// <summary>
 	/// Zjisti, zda-li task existuje
 	/// </summary>
 	/// <param name="task_handle"></param>
 	/// <returns></returns>
-	bool Is_Task_Notifiable(kiv_os::THandle task_handle);
-	
+	[[nodiscard]] bool Is_Task_Notifiable(kiv_os::THandle task_handle) const;
 
 	/// <summary>
 	/// Mutex pro callbacky pro vzbuzeni
@@ -148,6 +112,24 @@ private:
 	/// </summary>
 	std::mutex tasks_mutex;
 
+public:
+	/// <summary>
+	/// Tuto funkci by melo pouzivat pouze vlakno ve sve metode pri ukonceni!
+	/// </summary>
+	/// <returns></returns>
+	inline std::mutex& Get_Tasks_Mutex() {
+		return tasks_mutex;
+	}
+
+	/// <summary>
+	/// Tuto funkci by melo pouzivat pouze valkno ve sve metode pri ukonceni!
+	/// </summary>
+	/// <returns></returns>
+	inline std::mutex& Get_Suspend_Callbacks_Mutex() {
+		return suspend_callbacks_mutex;
+	}
+
+private:
 	ProcessManager() = default;
 	~ProcessManager() = default;
 	ProcessManager(const ProcessManager&) = delete; // NOLINT(modernize-use-equals-delete)
@@ -192,6 +174,11 @@ public:
 	/// </summary>
 	std::shared_ptr<Process> Get_Current_Process();
 
+	/// <summary>
+	/// Vrati aktualni pid
+	/// </summary>
+	kiv_os::THandle Get_Current_Pid();
+
 private:
 	/// <summary>
 	/// Spusti init proces
@@ -207,13 +194,6 @@ private:
 	kiv_os::NOS_Error Syscall_Clone(kiv_hal::TRegisters& regs);
 
 	/// <summary>
-	/// Getter pro vlakno procesu podle tidu
-	/// </summary>
-	/// <param name="tid">tid</param>
-	/// <returns>Pointer na vlakno</returns>
-	std::shared_ptr<Thread> Get_Thread(kiv_os::THandle tid);
-
-	/// <summary>
 	/// Vytvori proces s hlavnim vlaknem a prida je do tabulek
 	/// </summary>
 	/// <param name="regs">Registry pro zapsani vysledku</param>
@@ -226,13 +206,6 @@ private:
 	/// <param name="regs">Registry pro zapsani vysledku</param>
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error Create_Thread(kiv_hal::TRegisters& regs);
-
-	/// <summary>
-	/// Vrati typ handle pro  dane id
-	/// </summary>
-	/// <param name="id">id, pro ktere chceme typ handle dostat</param>
-	/// <returns>typ handle</returns>
-	static HandleType Get_Handle_Type(kiv_os::THandle id);
 
 	/// <summary>
 	/// Prida proces pro ostatni handles (proces/vlakno) jako subscribera, ktereho musi handles po dokonceni vzbudit
@@ -255,12 +228,6 @@ private:
 	/// </summary>
 	/// <param name="process">Reference na proces</param>
 	void Remove_Process_From_Table(std::shared_ptr<Process> process);
-
-	/// <summary>
-	/// Odstrani vlakno z tabulky a lookup map
-	/// </summary>
-	/// <param name="thread">Reference na vlakno</param>
-	void Remove_Thread_From_Table(std::shared_ptr<Thread> thread);
 
 	/// <summary>
 	/// Provede cteni exit codu
@@ -289,10 +256,15 @@ public:
 	/// <summary>
 	/// Dokonceni zivotniho cyklu vlakna - provede zavolani metod a dokonceni
 	/// </summary>
-	void On_Thread_Finish(kiv_os::THandle tid);
+	void On_Thread_Finish(kiv_os::THandle tid, uint16_t thread_exit_code);
 
 	/// <summary>
 	/// Synchronizace main vlakna
 	/// </summary>
 	void On_Shutdown() const;
+
+	/// <summary>
+	/// Vrati aktualni snapshot tabulky procesu pro procfs
+	/// </summary>
+	std::shared_ptr<ProcessTableSnapshot> Get_Process_Table_Snapshot();
 };

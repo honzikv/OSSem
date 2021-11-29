@@ -1,9 +1,9 @@
 #include "Pipe.h"
 
-#include "Utils/Logging.h"
+#include "../Utils/Logging.h"
 
-Pipe::Pipe(const size_t buffer_size): write(std::make_shared<Semaphore>(buffer_size)),
-                                      read(std::make_shared<Semaphore>()) {
+Pipe::Pipe(const size_t buffer_size): write(std::make_unique<Semaphore>(buffer_size)),
+                                      read(std::make_unique<Semaphore>()) {
 	buffer.resize(buffer_size);
 	Log_Debug("New Pipe with buffer size: " + std::to_string(buffer.size()));
 }
@@ -28,83 +28,75 @@ void Pipe::Advance_Writing_Idx() {
 
 kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size_t& bytes_read) {
 	auto bytes_read_from_buffer = 0;
-	{
-		// Nejprve zkontrolujeme, jestli je co precist a pipe je pro cteni uzavrena
-		auto lock = std::scoped_lock(pipe_access);
-		if (writing_closed && Empty() || reading_closed) {
-			bytes_read = 0;
-			return kiv_os::NOS_Error::Permission_Denied;
-		}
-	}
 
-	// Pokud ne zacneme cist
 	for (size_t i = 0; i < buffer_size; i += 1) {
+		{
+			auto lock = std::scoped_lock(close_access, pipe_access);
+			if (writing_closed && Empty() || reading_closed) {
+				target_buffer[i] = static_cast<char>(kiv_hal::NControl_Codes::SUB); // vratime EOF
+				bytes_read_from_buffer += 1;
+				bytes_read = bytes_read_from_buffer;
+				return kiv_os::NOS_Error::Success;
+			}
+		}
+
 		// Ziskame semafor pro cteni
 		read->Acquire();
-
-		// Zkusime zamknout pristup k bufferu a flagum
-		auto lock = std::scoped_lock(pipe_access);
-		if (writing_closed && Empty() || reading_closed) {
-			bytes_read = bytes_read_from_buffer;
-			return kiv_os::NOS_Error::Success;
+		// Zkontrolujeme zda-li lze cist
+		{
+			auto lock = std::scoped_lock(close_access, pipe_access);
+			if (writing_closed && Empty() || reading_closed) {
+				target_buffer[i] = static_cast<char>(kiv_hal::NControl_Codes::SUB); // vratime EOF
+				bytes_read_from_buffer += 1;
+				bytes_read = bytes_read_from_buffer;
+				read->Release(); // aby nedoslo k deadlocku
+				return kiv_os::NOS_Error::Success;
+			}
 		}
 
+		// lockeneme pristup k bufferu
+		auto lock = std::scoped_lock(pipe_access);
 		// Precteme symbol a pridame ho do bufferu
 		const auto symbol = buffer[reading_idx];
 		target_buffer[i] = symbol;
 		bytes_read_from_buffer += 1;
-		// Pokud byl symbol EOF zavreme pipe pro cteni
-		if (symbol == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
-			reading_closed = true;
-			bytes_read = bytes_read_from_buffer;
-			write->Release();
-			return kiv_os::NOS_Error::Success;
-		}
-
 		// Posuneme index pro cteni a snizime pocet polozek o 1
 		Advance_Reading_Idx();
 		items -= 1;
-		// Notifikujeme cokoliv co je zablokovane na psani
 		write->Release();
 	}
-
 	bytes_read = bytes_read_from_buffer;
 	return kiv_os::NOS_Error::Success;
 }
 
 kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_size, size_t& bytes_written) {
 	auto bytes_written_to_buffer = 0;
-	{
-		auto lock = std::scoped_lock(pipe_access);
-		if (writing_closed || reading_closed) {
-			bytes_written = 0;
-			return kiv_os::NOS_Error::Permission_Denied;
-		}
-	}
 
 	for (size_t i = 0; i < buffer_size; i += 1) {
-		// Ziskame semafor pro zapis
-		write->Acquire();
-
-		// Zkusime zamknout pristup k bufferu a flagum
-		auto lock = std::scoped_lock(pipe_access);
-		if (reading_closed || writing_closed) {
-			bytes_written = bytes_written_to_buffer;
-			return kiv_os::NOS_Error::Success;
+		{
+			auto lock = std::scoped_lock(close_access);
+			if (writing_closed || reading_closed) {
+				bytes_written = bytes_written_to_buffer;
+				return kiv_os::NOS_Error::Permission_Denied;
+			}
 		}
 
+		write->Acquire();
+		{
+			auto lock = std::scoped_lock(close_access);
+			if (writing_closed || reading_closed) {
+				bytes_written = bytes_written_to_buffer;
+				write->Release();
+				read->Release();
+				return kiv_os::NOS_Error::Permission_Denied;
+			}
+		}
+
+		auto lock = std::scoped_lock(pipe_access);
 		// Pridame prvek do bufferu
 		const auto symbol = source_buffer[i];
 		buffer[writing_idx] = symbol;
 		bytes_written_to_buffer += 1;
-
-		// Pokud je prvek EOF ukoncime zapis
-		if (symbol == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
-			writing_closed = true;
-			bytes_written = bytes_written_to_buffer;
-			read->Release();
-			return kiv_os::NOS_Error::Success;
-		}
 
 		// Zvysime index pro zapis a pocet predmetu o 1
 		Advance_Writing_Idx();
@@ -119,15 +111,29 @@ kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_siz
 
 
 void Pipe::Close_For_Reading() {
-	Log_Debug("Closing pipe for reading");
-	auto lock = std::scoped_lock(pipe_access);
+	auto lock = std::scoped_lock(close_access);
+	if (reading_closed) {
+		return;
+	}
+
 	reading_closed = true;
 	write->Release();
+	read->Release();
+	Log_Debug("Closing pipe for reading");
 }
 
 void Pipe::Close_For_Writing() {
+	auto lock = std::scoped_lock(close_access);
+	if (writing_closed) {
+		return;
+	}
+	// Log_Debug("Trying to close pipe");
+	// auto eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
+	// auto bytes_written = size_t{0};
+	// Write(std::addressof(eof), 1, bytes_written); // toto nastavi flag writing closed za nas
+
+	writing_closed = true;
+	write->Release(); // Vzbudime kohokoliv kdo chce zapisovat
+	read->Release();
 	Log_Debug("Closing pipe for writing");
-	auto eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
-	auto bytes_written = size_t{0};
-	Write(std::addressof(eof), 1, bytes_written); // toto nastavi flag writing closed za nas
 }

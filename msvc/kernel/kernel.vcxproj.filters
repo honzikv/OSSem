@@ -42,6 +42,12 @@
     <Filter Include="Source Files\FatFS">
       <UniqueIdentifier>{d0343b0b-f481-4665-80cb-40d4da587fa9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\ProcFS">
+      <UniqueIdentifier>{a1933f39-0046-4c8c-a4bd-4496a73006e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ProcFS">
+      <UniqueIdentifier>{c42abe6e-abf3-4ba5-8753-8b9c7f9cbe5c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\kernel\kernel.cpp">
@@ -86,18 +92,6 @@
     <ClCompile Include="..\..\src\kernel\IO\IOManager.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\fat_helper.cpp">
-      <Filter>Source Files\FatFS</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\fat12.cpp">
-      <Filter>Source Files\FatFS</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\path.cpp">
-      <Filter>Source Files\FatFS</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
-      <Filter>Source Files\IO</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\kernel\IO\ReadablePipe.cpp">
       <Filter>Source Files\IO</Filter>
     </ClCompile>
@@ -107,8 +101,32 @@
     <ClCompile Include="..\..\src\kernel\Process\InitProcess.cpp">
       <Filter>Source Files\Process</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\kernel\IO\fs_file.cpp">
-      <Filter>Source Files\IO</Filter>
+    <ClCompile Include="..\..\src\kernel\IO\ProcessTableSnapshot.cpp">
+      <Filter>Source Files\ProcFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ProcFSRow.cpp">
+      <Filter>Source Files\ProcFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\IO\ProcFS.cpp">
+      <Filter>Source Files\ProcFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Process\TaskIdService.cpp">
+      <Filter>Source Files\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Fat12\fat_helper.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Fat12\fat12.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Fat12\path.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Fat12\vfs.cpp">
+      <Filter>Source Files\FatFS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\kernel\Fat12\fs_file.cpp">
+      <Filter>Source Files\FatFS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -166,21 +184,6 @@
     <ClInclude Include="..\..\src\kernel\IO\IOManager.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\fat_helper.h">
-      <Filter>Headers\FatFS</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kernel\fat12.h">
-      <Filter>Headers\FatFS</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kernel\path.h">
-      <Filter>Headers\FatFS</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kernel\vfs.h">
-      <Filter>Headers\FatFS</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
-      <Filter>Headers\IO</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\kernel\IO\ReadablePipe.h">
       <Filter>Headers\IO</Filter>
     </ClInclude>
@@ -190,7 +193,34 @@
     <ClInclude Include="..\..\src\kernel\Process\InitProcess.h">
       <Filter>Headers\Process</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\kernel\IO\fs_file.h">
+    <ClInclude Include="..\..\src\kernel\IO\ProcFS.h">
+      <Filter>Headers\ProcFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ProcessTableSnapshot.h">
+      <Filter>Headers\ProcFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\IO\ProcFSRow.h">
+      <Filter>Headers\ProcFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Utils\ByteUtils.h">
+      <Filter>Headers\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Process\TaskIdService.h">
+      <Filter>Headers\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Fat12\fat_helper.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Fat12\fat12.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Fat12\path.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Fat12\vfs.h">
+      <Filter>Headers\FatFS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\kernel\Fat12\fs_file.h">
       <Filter>Headers\FatFS</Filter>
     </ClInclude>
   </ItemGroup>

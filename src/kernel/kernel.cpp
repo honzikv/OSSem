@@ -1,17 +1,14 @@
-﻿#pragma once
-
-#include "kernel.h"
-
-#include <csignal>
+﻿#include <csignal>
 #include <Windows.h>
 
+#include "kernel.h"
 #include "IO/IOManager.h"
 #include "Process/InitProcess.h"
 #include "Process/ProcessManager.h"
 #include "Utils/Debug.h"
 
 
-void Syscall(kiv_hal::TRegisters& regs) {
+void __stdcall Syscall(kiv_hal::TRegisters& regs) {
 	switch (static_cast<kiv_os::NOS_Service_Major>(regs.rax.h)) {
 	case kiv_os::NOS_Service_Major::File_System:
 		IOManager::Get().Handle_IO(regs);
@@ -24,12 +21,12 @@ void Syscall(kiv_hal::TRegisters& regs) {
 
 }
 
-void Disable_Default_Behavior(int _) {
+void __cdecl Disable_Default_Behavior(int sig) {
 	// Override defaultniho chovani CTRL C / CTRL D
 }
 
 void Init_Signal_Behavior() {
-	signal(SIGINT, Disable_Default_Behavior);
+	auto _ = signal(SIGINT, Disable_Default_Behavior);
 	raise(SIGINT); // timto signal zavolame a dalsi volani uz bude brat klavesnice misto handleru
 }
 
@@ -44,6 +41,7 @@ void ShutdownKernel() {
 void __stdcall Bootstrap_Loader(kiv_hal::TRegisters& context) {
 	InitializeKernel();
 	Init_Signal_Behavior();
+	IOManager::Get().Init_Filesystems();
 
 	Set_Interrupt_Handler(kiv_os::System_Int_Number, Syscall);
 	// Spustime init proces

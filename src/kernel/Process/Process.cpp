@@ -30,7 +30,7 @@ void Process::Set_Working_Dir(Path& path) {
 }
 
 
-void Process::Set_Signal_Callback(const kiv_os::NSignal_Id signal, const kiv_os::TThread_Proc callback) {
+void Process::Set_Signal_Callback(const kiv_os::NSignal_Id signal, kiv_os::TThread_Proc callback) {
 	signal_callbacks[signal] = callback;
 }
 
@@ -45,3 +45,5 @@ void Process::Execute_Signal_Callback(kiv_os::NSignal_Id signal_id) {
 	regs.rcx.r = static_cast<decltype(regs.rcx.r)>(signal_id);
 	signal_callbacks[signal_id](regs);
 }
+
+const std::string& Process::Get_Program_Name() const { return program_name; }

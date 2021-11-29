@@ -1,6 +1,6 @@
 #include "InitProcess.h"
 
-#include "kernel.h"
+#include "../kernel.h"
 #include "../IO/IOManager.h"
 
 void Create_Shell(kiv_hal::TRegisters& shell_regs, const kiv_os::THandle std_in_handle,
@@ -35,7 +35,7 @@ void Read_Shell_Exit_Code(const kiv_os::THandle shell_pid) {
 	Syscall(regs);
 }
 
-size_t InitProcess::Init_Fun(const kiv_hal::TRegisters& regs) {
+size_t __stdcall InitProcess::Init_Fun(const kiv_hal::TRegisters& regs) {
 	const auto std_in = regs.rax.x;
 	const auto std_out = regs.rbx.x;
 
