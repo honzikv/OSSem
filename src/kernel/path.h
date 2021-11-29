@@ -21,7 +21,7 @@ public:
     bool is_relative = false;
     std::string disk_letter;
 
-    explicit Path(std::string file_path);
+    explicit Path(const std::string& file_path);
 
     void Delete_Name_From_Path();
 

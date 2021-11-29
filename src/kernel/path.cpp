@@ -7,8 +7,8 @@
 #include "path.h"
 
 
-Path::Path(std::string file_path) {
-    Create_Path(std::move(file_path));
+Path::Path(const std::string& file_path) {
+    Create_Path(file_path);
     Create_Name();
 }
 
@@ -34,12 +34,15 @@ void Path::Create_Path(const std::string& file_path) {
             }
             item.clear();
         } else if (c == '\0') {
-            std::string item_string(item.begin(), item.end());
-            if (item_string == parent_dir) {
-                path_vector.pop_back();
-            } else if (item_string != cur_dir){
-                std::transform(item_string.begin(), item_string.end(), item_string.begin(), ::toupper); // vsechno ve FAT12 je ukladano velkymi pismeny
-                path_vector.push_back(item_string);
+            if (!item.empty()) {
+                std::string item_string(item.begin(), item.end());
+                if (item_string == parent_dir) {
+                    path_vector.pop_back();
+                } else if (item_string != cur_dir) {
+                    std::transform(item_string.begin(), item_string.end(), item_string.begin(),
+                                   ::toupper); // vsechno ve FAT12 je ukladano velkymi pismeny
+                    path_vector.push_back(item_string);
+                }
             }
             break;
         } else {
@@ -64,6 +67,9 @@ void Path::Create_Name() {
 	const char dot = '.'; // tecka
     extension.clear();
     name.clear();
+    if (path_vector.empty()) {
+        return;
+    }
     full_name = path_vector.back();
     bool is_extension = false;
     for (const char c: full_name) {
