@@ -13,3 +13,4 @@ EXPORTS
 	freq
 	tasklist
 	shutdown
+	checker_for_eof

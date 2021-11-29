@@ -1,37 +1,52 @@
 #include "Rgen.h"
 
+#include <random>
+
 #include "Utils/Logging.h"
 
 bool terminated = false;
 bool eof = false;
 
-size_t Terminated_Checker(const kiv_hal::TRegisters &regs) {
+size_t Terminated_Checker(const kiv_hal::TRegisters& regs) {
 	terminated = true;
 	return 0;
 }
 
-size_t Eof_Checker(const kiv_hal::TRegisters &regs) {
-	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
-	
-	constexpr int buffer_size = 2;
+extern "C" size_t __stdcall checker_for_eof(const kiv_hal::TRegisters& regs) {
+	const auto std_in = static_cast<kiv_os::THandle>((regs.rbx.r >> 16) & 0b01111111111111111);
+	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.r & 0b01111111111111111);
+
+	auto is_eof = reinterpret_cast<bool *>(regs.rdi.r);
+
+
+	constexpr int buffer_size = 256;
 	std::vector<char> buffer(buffer_size);
 	size_t read;
-	Log_Debug("eof checker started");
 
-	kiv_os_rtl::Read_File(std_in, buffer.data(), 2, read);
+	std::string output("checker started\n");
+	size_t written;
+	kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
+
+
+	kiv_os_rtl::Read_File(std_in, buffer.data(), buffer_size, read);
 	while (read && !terminated) {
-		if (buffer[0] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
-			break;
+		for (auto c : buffer) {
+			if (c == static_cast<char>(kiv_hal::NControl_Codes::EOT)
+				|| c == static_cast<char>(kiv_hal::NControl_Codes::ETX)
+				|| c == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
+				terminated = true;
+				break;
+			}
 		}
-		kiv_os_rtl::Read_File(std_in, buffer.data(), 1, read);
+		kiv_os_rtl::Read_File(std_in, buffer.data(), buffer_size, read);
 	}
-	eof = true;
-	
+	*is_eof = true;
+	terminated = true;
 	kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Success));
 	return 0;
 }
 
-size_t __stdcall rgen(const kiv_hal::TRegisters &regs) {
+size_t __stdcall rgen(const kiv_hal::TRegisters& regs) {
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 	const auto handler = reinterpret_cast<kiv_os::TThread_Proc>(Terminated_Checker);
@@ -39,26 +54,29 @@ size_t __stdcall rgen(const kiv_hal::TRegisters &regs) {
 	kiv_os_rtl::Register_Signal_Handler(kiv_os::NSignal_Id::Terminate, handler);
 
 
-	const auto args = std::string(reinterpret_cast<const char *>(regs.rdi.r));
+	const auto args = std::string(reinterpret_cast<const char*>(regs.rdi.r));
 
 	std::string output;
 	size_t written;
 
-	/*if (args.empty()) {
-		output = "Not enough arguments.\n";
-		kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
-		kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument));
-		return 0;
-	}*/
 	kiv_os::THandle handle;
 	eof = false;
-	kiv_os_rtl::Create_Thread("Eof_Checker", "false", std_in, std_out, handle);
+	terminated = false;
+	if (!kiv_os_rtl::Create_Thread("checker_for_eof",
+								   reinterpret_cast<const char*>(&eof), std_in, std_out, handle))
+	{
+		kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Out_Of_Memory));
+		return 1;
+	}
 
-	srand(static_cast <unsigned> (time(0)));
-
+	// ziska random generator od hardwaru
+	std::random_device rand;
+	// nastavi seed
+	std::mt19937 gen(rand());
+	std::uniform_real_distribution<> distr(-1000.0, 1000.0);
 
 	while (!eof && !terminated) {
-		const auto random = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);;
+		const auto random = static_cast<float>(distr(gen));
 		output = std::to_string(random);
 		output.append("\n");
 		kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
@@ -72,7 +90,7 @@ size_t __stdcall rgen(const kiv_hal::TRegisters &regs) {
 		kiv_os_rtl::Wait_For(handles);
 		kiv_os_rtl::Read_Exit_Code(handle, checker_exit_code);
 	}
-	
+
 	kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Success));
 	return 0;
 }
