@@ -133,5 +133,5 @@ Fs_File::Seek(size_t position, kiv_os::NFile_Seek seek_type, kiv_os::NFile_Seek 
 }
 
 Fs_File::~Fs_File() {
-    //delete file.name;
+    delete file.name;
 }
