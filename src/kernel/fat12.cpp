@@ -2,6 +2,7 @@
 // Created by Kuba on 09.10.2021.
 //
 
+#include <cstring>
 #include "fat12.h"
 
 std::vector<unsigned char> fat;
@@ -26,7 +27,9 @@ Fat12::Fat12() {
 kiv_os::NOS_Error Fat12::Open(Path &path, const kiv_os::NOpen_File flags, File &file, uint8_t attributes) {
     file = File{};
     std::string file_name = path.To_String();
-    file.name = &file_name.at(0);
+    size_t length = file_name.length() + 1;
+    file.name = new char[length];
+    strcpy_s(file.name, length, file_name.c_str());
 
     std::vector<std::string> pathCopy(path.path_vector); //TODO asi smazat
 
@@ -43,17 +46,15 @@ kiv_os::NOS_Error Fat12::Open(Path &path, const kiv_os::NOpen_File flags, File &
             dir_item.file_size = 0;
             dir_item.attributes = attributes;
 
+            if (!Fat_Helper::Validate_File_Name(path.full_name)) {
+                return kiv_os::NOS_Error::Invalid_Argument;
+            }
+
             // slozka
             if (attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Directory) ||
                 attributes == static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID)) {
-                if (file_name.size() > Fat_Helper::kFileNameSize) { // nazev max 8 znaku
-                    return kiv_os::NOS_Error::Invalid_Argument;
-                }
                 res = Mk_Dir(path, attributes);
             } else { // soubor
-                if (!Fat_Helper::Validate_File_Name(file_name)) {
-                    return kiv_os::NOS_Error::Invalid_Argument;
-                }
 
                 file.size = 0;
                 res = Create_File(path, attributes);
@@ -263,7 +264,7 @@ kiv_os::NOS_Error Fat12::Read(File file, const size_t bytes_to_read, const size_
             dir_entries_bytes = Fat_Helper::Convert_Dir_Entries_To_Char_Vector(dir_entries);
         }
 
-        if ((dir_entries_bytes.size() * sizeof(kiv_os::TDir_Entry)) >=
+        if ((dir_entries.size() * sizeof(kiv_os::TDir_Entry)) >=
             (bytes_to_read + offset)) { // lze precist, nepresahl se rozsah
             for (int i = 0; i < bytes_to_read; ++i) {
                 buffer.push_back(dir_entries_bytes.at(i + offset));
