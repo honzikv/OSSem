@@ -27,7 +27,11 @@ void Path::Create_Path(const std::string& file_path) {
         if (c == separator) {
             std::string item_string(item.begin(), item.end());
             if (item_string == parent_dir) {
-                path_vector.pop_back();
+                if (!path_vector.empty()) {
+                    path_vector.pop_back();
+                } else {
+                    remove_parent = true;
+                }
             } else if (item_string != cur_dir && !item_string.empty()) {
                 std::transform(item_string.begin(), item_string.end(), item_string.begin(), ::toupper); // vsechno ve FAT12 je ukladano velkymi pismeny
                 path_vector.push_back(item_string);
@@ -36,8 +40,12 @@ void Path::Create_Path(const std::string& file_path) {
         } else if (c == '\0') {
             if (!item.empty()) {
                 std::string item_string(item.begin(), item.end());
-                if (item_string == parent_dir && !path_vector.empty()) {
-                    path_vector.pop_back();
+                if (item_string == parent_dir) {
+                    if (!path_vector.empty()) {
+                        path_vector.pop_back();
+                    } else {
+                        remove_parent = true;
+                    }
                 } else if (item_string != cur_dir) {
                     std::transform(item_string.begin(), item_string.end(), item_string.begin(),
                                    ::toupper); // vsechno ve FAT12 je ukladano velkymi pismeny
@@ -67,6 +75,7 @@ void Path::Create_Name() {
 	constexpr char dot = '.'; // tecka
     extension.clear();
     name.clear();
+    full_name.clear();
     if (path_vector.empty()) {
         return;
     }
@@ -97,6 +106,9 @@ void Path::Delete_Name_From_Path() {
  * @param path cesta, ktera bude pridana
  */
 void Path::Append_Path(const Path &path) {
+    if (path.remove_parent && !path_vector.empty()) {
+        path_vector.pop_back();
+    }
     for (const auto & i : path.path_vector) {
         path_vector.push_back(i);
     }

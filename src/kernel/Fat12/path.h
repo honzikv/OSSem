@@ -19,6 +19,7 @@ public:
     std::string name;
     std::string extension;
     bool is_relative = false;
+    bool remove_parent = false;
     std::string disk_letter;
 
     explicit Path(std::string file_path);
