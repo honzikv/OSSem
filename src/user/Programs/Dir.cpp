@@ -42,19 +42,7 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 		return 1;
 	}
 
-	// prejit na zacatek "souboru"
-	//kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
-
 	kiv_os_rtl::Read_File(handle, buffer.data(), char_buffer_size, read);
-	//TODO debug
-	std::string tmp1("\n read=");
-	tmp1.append(std::to_string(read));
-	tmp1.append("\n entry = ");
-	tmp1.append(buffer.data());
-	kiv_os_rtl::Write_File(std_out, tmp1.data(), tmp1.size(), written);
-	////TODO debug
-	//std::string tmp("\n\n entry=" + entries[0]);
-	//kiv_os_rtl::Write_File(std_out, tmp.data(), tmp.size(), written);
 
 	while (read) {
 		while (current_index < (read / sizeof(kiv_os::TDir_Entry))) {
@@ -80,16 +68,11 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 		index += current_index;
 		current_index = 0;
 
-		// Set seek of directory to index which has not been yet processed.
-		kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
+		// TODO nemelo by byt potreba
+		//// Set seek of directory to index which has not been yet processed.
+		//kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, index);
 
 		kiv_os_rtl::Read_File(handle, buffer.data(), char_buffer_size, read);
-
-		//TODO smazat
-		std::string tmp("\n read=");
-		tmp.append(std::to_string(read));
-		kiv_os_rtl::Write_File(std_out, tmp.data(), tmp.size(), written);
-		// TODO smazat end
 	}
 
 	output.append("\n");
