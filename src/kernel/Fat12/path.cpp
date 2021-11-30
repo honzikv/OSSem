@@ -36,7 +36,7 @@ void Path::Create_Path(const std::string& file_path) {
         } else if (c == '\0') {
             if (!item.empty()) {
                 std::string item_string(item.begin(), item.end());
-                if (item_string == parent_dir) {
+                if (item_string == parent_dir && !path_vector.empty()) {
                     path_vector.pop_back();
                 } else if (item_string != cur_dir) {
                     std::transform(item_string.begin(), item_string.end(), item_string.begin(),
