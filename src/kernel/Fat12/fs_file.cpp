@@ -73,6 +73,7 @@ kiv_os::NOS_Error Fs_File::Read(char *target_buffer, size_t buffer_size, size_t 
         target_buffer[i] = buffer.at(i);
     }
 
+    bytes_read = buffer_size;
     file.offset += bytes_read; // uprava pozice
 
     return res;
