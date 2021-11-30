@@ -92,7 +92,7 @@ namespace Fat_Helper {
 
     kiv_os::NOS_Error Create_File_Or_Dir(Path &path, uint8_t attributes, std::vector<unsigned char> &fat, bool is_dir);
 
-    void Change_File_Size(const char *file_name, size_t new_size, const std::vector<unsigned char> &fat);
+    void Change_File_Size(const std::string& file_name, size_t new_size, const std::vector<unsigned char> &fat);
 
     std::vector<char> Convert_Dir_Entries_To_Char_Vector(std::vector<kiv_os::TDir_Entry> entries);
 

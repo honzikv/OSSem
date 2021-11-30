@@ -811,7 +811,7 @@ namespace Fat_Helper {
      * @param new_size nova velikost
      * @param fat FAT
      */
-    void Change_File_Size(const char *file_name, const size_t new_size, const std::vector<unsigned char> &fat) {
+    void Change_File_Size(const std::string& file_name, const size_t new_size, const std::vector<unsigned char> &fat) {
         Path path(file_name);
         path.Delete_Name_From_Path();
 

@@ -12,7 +12,7 @@
 #include "../IO/IFile.h"
 
 struct File {
-	char* name;
+	std::string name;
 	size_t size;
 	size_t offset;
 	uint16_t attributes;

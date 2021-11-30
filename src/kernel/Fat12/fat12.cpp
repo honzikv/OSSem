@@ -25,10 +25,7 @@ Fat12::Fat12(): VFS(FsType::Fat12) {
  */
 kiv_os::NOS_Error Fat12::Open(Path &path, const kiv_os::NOpen_File flags, File &file, uint8_t attributes) {
     file = File{};
-    std::string file_name = path.To_String();
-    size_t length = file_name.length() + 1;
-    file.name = new char[length];
-    strcpy_s(file.name, length, file_name.c_str());
+    file.name = path.To_String();
 
     std::vector<std::string> pathCopy(path.path_vector); //TODO asi smazat
 
