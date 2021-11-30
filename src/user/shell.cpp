@@ -81,7 +81,7 @@ auto Shell::Prepare_Stdio_For_Single_Command(Command& command) const -> std::pai
 	// Zkusime nastavit vystupni soubor
 	if (command.redirect_type == RedirectType::Both || command.redirect_type == RedirectType::ToFile) {
 		if (const auto success = kiv_os_rtl::Open_File(command_std_out, command.target_file,
-		                                               kiv_os::NOpen_File::fmOpen_Always,
+													   static_cast<kiv_os::NOpen_File>(0),
 		                                               kiv_os::NFile_Attributes::Archive); !success) {
 			Close_Command_Std_In(command);
 			return {false, "Error, could not open output file for command: " + command.command_name};
