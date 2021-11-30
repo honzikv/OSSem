@@ -74,6 +74,10 @@ auto Shell::Prepare_Stdio_For_Single_Command(Command& command) const -> std::pai
 			return {false, "Error, could not open input file for command: " + command.command_name};
 		}
 	}
+	else {
+		// V pripade ze se ctou data z konzole nastavime std_in
+		command_std_in = std_in;
+	}
 
 	// Uspech - nastavime file descriptor pro cteni
 	command.Set_Std_In_File_Descriptor(command_std_in);
@@ -86,6 +90,9 @@ auto Shell::Prepare_Stdio_For_Single_Command(Command& command) const -> std::pai
 			Close_Command_Std_In(command);
 			return {false, "Error, could not open output file for command: " + command.command_name};
 		}
+	}
+	else {
+		command_std_out = std_out;
 	}
 
 	// Uspech - nastavime file descriptor
