@@ -58,7 +58,7 @@ void Path::Create_Path(const std::string& file_path) {
         }
         pos++;
     }
-    if (path_vector.front().find(':') != std::string::npos) { // je absolutni
+    if (!path_vector.empty() && path_vector.front().find(':') != std::string::npos) { // je absolutni
         disk_letter = path_vector.front().at(0);
         path_vector.erase(path_vector.begin());
         is_relative = false;
