@@ -98,7 +98,9 @@ void Path::Create_Name() {
  * Odstrani nazev souboru/slozky z cesty
  */
 void Path::Delete_Name_From_Path() {
-    path_vector.pop_back();
+    if (!path_vector.empty()) {
+        path_vector.pop_back();
+    }
 }
 
 /**
@@ -119,7 +121,9 @@ void Path::Append_Path(const Path &path) {
  * Vrati nazev souboru/slozky do cesty
  */
 void Path::Return_Name_to_Path() {
-    path_vector.push_back(full_name);
+    if (!full_name.empty()) {
+        path_vector.push_back(full_name);
+    }
 }
 
 /**
