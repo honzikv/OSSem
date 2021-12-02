@@ -48,6 +48,8 @@ private:
 	*/
 	std::unordered_map<std::string, std::unique_ptr<VFS>> file_systems;
 
+	static constexpr int64_t StdioCloseAlways = -12345;
+
 public:
 	/**
 	* Inicializuje souborove systemy
@@ -125,10 +127,16 @@ public:
 	kiv_os::NOS_Error Unregister_Process_Stdio(kiv_os::THandle pid, kiv_os::THandle std_in, kiv_os::THandle std_out);
 
 	/// <summary>
+	/// Funkce ignoruje pocet otevreni v souboru a zavola file->Close() (pokud soubor existuje)
+	/// </summary>
+	/// <param name="file_descriptor"></param>
+	void Call_File_Close(kiv_os::THandle file_descriptor);
+
+	/// <summary>
 	/// Zavre vsechny file descriptory, ktere patri procesu s danym pidem
 	/// </summary>
 	/// <param name="pid">pid procesu</param>
-	void Close_Process_File_Descriptors(kiv_os::THandle pid);
+	void Close_All_Process_File_Descriptors(kiv_os::THandle pid);
 
 private:
 	/// <summary>

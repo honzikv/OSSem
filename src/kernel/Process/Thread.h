@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <windows.h>
 
 #include "Task.h"
 #include "TaskState.h"
@@ -81,7 +80,7 @@ public:
 	/// <summary>
 	/// Funkce, ktera se vykonava ve vlakne
 	/// </summary>
-	friend static void ThreadFunc(std::shared_ptr<Thread> thread);
+	friend static void Thread_Func(std::shared_ptr<Thread> thread);
 
 	[[nodiscard]] inline kiv_os::THandle Get_Tid() const { return tid; }
 	[[nodiscard]] inline kiv_os::THandle Get_Pid() const { return pid; }

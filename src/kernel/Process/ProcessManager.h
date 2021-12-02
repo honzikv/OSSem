@@ -22,6 +22,7 @@ class ProcessManager {
 	// Init proces ma pristup ke vsem fieldum a metodam aby mohl ukoncit procesy
 	friend class InitProcess;
 	// NOLINT(cppcoreguidelines-special-member-functions)
+
 	
 public:
 

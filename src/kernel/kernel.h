@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Windows.h>
+
 #include "../api/hal.h"
 #include "Process/InitProcess.h"
 

@@ -70,5 +70,10 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 }
 
 kiv_os::NOS_Error ConsoleIn::Close() {
+	auto regs = kiv_hal::TRegisters();
+	const auto symbol = static_cast<char>(kiv_hal::NControl_Codes::EOT);
+	regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Write_Char);
+	regs.rdx.l = symbol;
+	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, regs);
 	return kiv_os::NOS_Error::Success;
 }

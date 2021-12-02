@@ -2,6 +2,7 @@
 
 #include "ConsoleIn.h"
 #include "ConsoleOut.h"
+#include "kernel.h"
 #include "ReadablePipe.h"
 #include "WritablePipe.h"
 #include "../Utils/Logging.h"
@@ -81,8 +82,7 @@ auto IOManager::Create_Stdio() -> std::pair<kiv_os::THandle, kiv_os::THandle> {
 	const auto std_in_handle = HandleService::Get().Get_Empty_Handle();
 	const auto std_out_handle = HandleService::Get().Get_Empty_Handle();
 
-	// Pro stdio chceme vyskyt na nule, protoze stdio se musi predat procesu
-	open_files[std_in_handle] = {0, std_in};
+	open_files[std_in_handle] = { StdioCloseAlways, std_in};
 	open_files[std_out_handle] = {0, std_out};
 
 	return {std_in_handle, std_out_handle};
@@ -227,7 +227,8 @@ kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& reg
 
 	// Ziskame aktualni proces
 	const auto current_process = ProcessManager::Get().Get_Current_Process();
-	if (current_process == nullptr) { // toto se stane pri shutdownu
+	if (current_process == nullptr) {
+		// toto se stane pri shutdownu
 		return kiv_os::NOS_Error::Success;
 	}
 	auto lock = std::scoped_lock(mutex);
@@ -241,6 +242,7 @@ kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& reg
 	if (open_files.count(file_descriptor) == 0) {
 		return kiv_os::NOS_Error::File_Not_Found;
 	}
+
 	Decrement_File_Descriptor_Count(file_descriptor);
 
 	return kiv_os::NOS_Error::Success;
@@ -280,6 +282,11 @@ kiv_os::NOS_Error IOManager::Increment_File_Descriptor_Count(const kiv_os::THand
 	}
 
 	auto [count, file] = open_files[file_descriptor];
+
+	if (count == StdioCloseAlways) {
+		return  kiv_os::NOS_Error::Success;
+	}
+
 	open_files[file_descriptor] = {count + 1, file}; // zvysime pocet o 1
 	return kiv_os::NOS_Error::Success;
 }
@@ -340,7 +347,8 @@ kiv_os::NOS_Error IOManager::Unregister_Process_Stdio(const kiv_os::THandle pid,
 	return kiv_os::NOS_Error::Success;
 }
 
-void IOManager::Close_Process_File_Descriptors(const kiv_os::THandle pid) {
+
+void IOManager::Close_All_Process_File_Descriptors(const kiv_os::THandle pid) {
 	auto lock = std::scoped_lock(mutex);
 	if (process_to_file_mapping.count(pid) == 0) {
 		return;
@@ -361,6 +369,12 @@ kiv_os::NOS_Error IOManager::Decrement_File_Descriptor_Count(const kiv_os::THand
 	}
 
 	auto [count, file] = open_files[file_descriptor];
+
+	if (count == StdioCloseAlways) {
+		file->Close();
+		return kiv_os::NOS_Error::Success;
+	}
+
 	count -= 1;
 
 	// Pokud je count <= 0 zavreme soubor, smazeme ho a odstranime file handle
@@ -550,7 +564,7 @@ kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags
 	path.Return_Name_to_Path();
 
 	// existuje a mel by byt vytvoren adresar - chyba
-	if (flags != kiv_os::NOpen_File::fmOpen_Always && file_exists && 
+	if (flags != kiv_os::NOpen_File::fmOpen_Always && file_exists &&
 		(attributes & static_cast<decltype(attributes)>(kiv_os::NFile_Attributes::Directory))) {
 		handle = kiv_os::Invalid_Handle;
 		return kiv_os::NOS_Error::Invalid_Argument;

@@ -446,10 +446,10 @@ void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 	}
 
 	// Zavolame signal
-	process->Execute_Signal_Callback(kiv_os::NSignal_Id::Terminate);
+	// process->Execute_Signal_Callback(kiv_os::NSignal_Id::Terminate);
 
 	// Zavreme file descriptory procesu
-	IOManager::Get().Close_Process_File_Descriptors(pid);
+	IOManager::Get().Close_All_Process_File_Descriptors(pid);
 
 	process->Set_Exit_Code(ForcefullyEndedTaskExitCode);
 	// process->Set_Finished();
@@ -559,7 +559,7 @@ void ProcessManager::On_Process_Finish(const kiv_os::THandle pid, const uint16_t
 	}
 
 	// Zavreme file descriptory procesu
-	IOManager::Get().Close_Process_File_Descriptors(pid);
+	IOManager::Get().Close_All_Process_File_Descriptors(pid);
 
 	// IOManager::Get().Unregister_Process_Stdio(pid, process->Get_Std_in(), process->Get_Std_Out());
 

@@ -2,7 +2,7 @@
 #include "ProcessManager.h"
 #include <csignal>
 
-void ThreadFunc(const std::shared_ptr<Thread> thread) {
+void Thread_Func(const std::shared_ptr<Thread> thread) {
 	// Tato funkce musi kopirovat shared ptr, jinak se pri shutdownu muze stat, ze se shared_ptr smaze
 	// a na data uz nebudeme mit referenci. Shared pointerem zarucime, ze se vzdy pamet dealokuje az dobehne
 	// veskery kod, ktery objekt vyuziva
@@ -25,7 +25,7 @@ Thread::Thread(const kiv_os::TThread_Proc program, const kiv_hal::TRegisters con
 }
 
 std::thread::id Thread::Dispatch(std::shared_ptr<Thread> thread_ptr) {
-	auto thread = std::thread(ThreadFunc, std::move(thread_ptr));
+	auto thread = std::thread(Thread_Func, std::move(thread_ptr));
 	const auto thread_id = thread.get_id();
 	thread.detach();
 	return thread_id;
