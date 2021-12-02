@@ -281,6 +281,7 @@ void Shell::Run() {
 		// ReSharper disable once CppTooWideScopeInitStatement
 		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
 		if (bytes_read > 0 && (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char))) {
+			Write_Line("");
 			return;
 		}
 
