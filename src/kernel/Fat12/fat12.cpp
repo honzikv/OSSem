@@ -59,6 +59,7 @@ kiv_os::NOS_Error Fat12::Open(Path &path, const kiv_os::NOpen_File flags, File &
             if (res == kiv_os::NOS_Error::Not_Enough_Disk_Space) {
                 return res;
             } else {
+                path.Return_Name_to_Path();
                 target_cluster = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path,
                                                                   fat).first_cluster;
             }
@@ -284,7 +285,7 @@ kiv_os::NOS_Error Fat12::Read(File file, const size_t bytes_to_read, const size_
  * @param written pocet skutecne zapsanych bytu (ulozeno pozdeji)
  * @return vysledek operace - uspech/neuspech
  */
-kiv_os::NOS_Error Fat12::Write(File file, const size_t offset, std::vector<char> buffer, size_t &written) {
+kiv_os::NOS_Error Fat12::Write(File &file, const size_t offset, std::vector<char> buffer, size_t &written) {
     if (offset > file.size) {
         return kiv_os::NOS_Error::IO_Error;
     }

@@ -31,7 +31,7 @@ public:
 
     kiv_os::NOS_Error Read(File file, size_t bytes_to_read, size_t offset, std::vector<char> &buffer) override;
 
-    kiv_os::NOS_Error Write(File file, size_t offset, std::vector<char> buffer, size_t &written) override;
+    kiv_os::NOS_Error Write(File &file, size_t offset, std::vector<char> buffer, size_t &written) override;
 
     kiv_os::NOS_Error Set_Attributes(Path path, uint8_t attributes) override;
 
