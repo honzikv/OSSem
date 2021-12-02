@@ -3,6 +3,7 @@
 #include "../Process/ProcessManager.h"
 #include "../Utils/Logging.h"
 
+
 kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size, size_t& bytes_read) {
 	auto regs = kiv_hal::TRegisters();
 	auto idx = size_t{0};
@@ -69,17 +70,21 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 	return kiv_os::NOS_Error::Success;
 }
 
+
+bool ConsoleIn::Has_Control_Char(kiv_hal::NControl_Codes control_char) {
+	auto regs = kiv_hal::TRegisters();
+	regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Peek_Char);
+	regs.rdx.l = static_cast<char>(control_char);
+	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Keyboard, regs);
+
+	return regs.flags.non_zero == 0;
+}
+
 kiv_os::NOS_Error ConsoleIn::Close() {
-	// Zapiseme EOT na vystup, pokud tam uz neni
 	constexpr auto eot_symbol = static_cast<char>(kiv_hal::NControl_Codes::EOT);
-	Log_Debug("ConsoleIn-close");
 
-	auto eot_ctx = kiv_hal::TRegisters();
-	eot_ctx.rax.h = static_cast<decltype(eot_ctx.rax.l)>(kiv_hal::NKeyboard::Peek_Char);
-	eot_ctx.rdx.l = eot_symbol;
-	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Keyboard, eot_ctx);
-
-	if (eot_ctx.flags.non_zero != 0) {
+	// Zapiseme EOT na vystup, pokud tam uz neni
+	if (Has_Control_Char(kiv_hal::NControl_Codes::EOT) || Has_Control_Char(kiv_hal::NControl_Codes::ETX)) {
 		return kiv_os::NOS_Error::Success;
 	}
 

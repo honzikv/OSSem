@@ -6,6 +6,13 @@
 /// </summary>
 class ConsoleIn final : public IFile  {
 
+	/// <summary>
+	/// Vrati true, pokud buffer v klavesnici obsahuje control char
+	/// </summary>
+	/// <param name="control_char"></param>
+	/// <returns></returns>
+	static bool Has_Control_Char(kiv_hal::NControl_Codes control_char);
+
 
 public:
 	/// <summary>
