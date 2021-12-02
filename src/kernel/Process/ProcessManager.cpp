@@ -300,7 +300,7 @@ void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 	// Nastavime callback pro vzbuzeni Initu do mapy s callbacky, aby fungoval shutdown
 	suspend_callbacks[tid] = init_callback;
 
-	auto std_thread_id = init_main_thread->Dispatch(init_main_thread);
+	auto std_thread_id = Thread::Dispatch(init_main_thread);
 	// Pridame do tabulky
 
 	process_table[pid] = init_process;

@@ -5,6 +5,7 @@
 #include <locale>
 #include <numeric>
 #include "../../api/hal.h"
+#include "../../api/api.h"
 #include <sstream>
 
 /// <summary>
@@ -106,5 +107,21 @@ namespace StringUtils {
 		}
 
 		return result;
+	}
+
+	inline std::string Err_To_String(kiv_os::NOS_Error err) {
+		switch (err) {
+		case kiv_os::NOS_Error::Directory_Not_Empty: return "DirectoryNotEmpty";
+		case kiv_os::NOS_Error::File_Not_Found: return "FileNotFound";
+		case kiv_os::NOS_Error::IO_Error: return "IOError";
+		case kiv_os::NOS_Error::Invalid_Argument: return "InvalidArgument";
+		case kiv_os::NOS_Error::Not_Enough_Disk_Space: return "NotEnoughDiskSpace";
+		case kiv_os::NOS_Error::Out_Of_Memory: return "OutOfMemory";
+		case kiv_os::NOS_Error::Permission_Denied: return "PermissionDenied";
+		case kiv_os::NOS_Error::Success: return "Success";
+		case kiv_os::NOS_Error::Unknown_Error: return "UnknownError";
+		case kiv_os::NOS_Error::Unknown_Filesystem: return "UnknownFilesystem";
+		default: return "InvalidEnumValue";
+		}
 	}
 }

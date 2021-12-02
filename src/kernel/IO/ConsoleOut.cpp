@@ -15,7 +15,7 @@ kiv_os::NOS_Error ConsoleOut::Write(const char* source_buffer, size_t bytes, siz
 	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, regs);
 
 	// Kontrola jestli jsme zapsali vsechny znaky, pokud ne doslo k chybe zapisu
- 	if (!(regs.rax.r == 0)) {
+ 	if (regs.rax.r == 1) {
 		// Doslo k chybe
 		bytes_written = -1;
 
