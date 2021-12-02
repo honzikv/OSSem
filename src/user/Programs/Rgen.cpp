@@ -4,8 +4,8 @@
 
 #include "Utils/Logging.h"
 
-bool terminated = false;
-bool eof = false;
+std::atomic<bool> terminated = false;
+std::atomic<bool> eof = false;
 
 size_t Terminated_Checker(const kiv_hal::TRegisters& regs) {
 	terminated = true;
@@ -13,23 +13,26 @@ size_t Terminated_Checker(const kiv_hal::TRegisters& regs) {
 }
 
 extern "C" size_t __stdcall checker_for_eof(const kiv_hal::TRegisters& regs) {
-	const auto std_in = static_cast<kiv_os::THandle>((regs.rbx.r >> 16) & 0b01111111111111111);
-	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.r & 0b01111111111111111);
+	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
+	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 
 	auto is_eof = reinterpret_cast<bool *>(regs.rdi.r);
 
 
 	constexpr int buffer_size = 256;
 	std::vector<char> buffer(buffer_size);
-	size_t read;
+	size_t read = 1;
 
 	std::string output("checker started\n");
 	size_t written;
 	kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
 
-
-	kiv_os_rtl::Read_File(std_in, buffer.data(), buffer_size, read);
+	
 	while (read && !terminated) {
+		if (!kiv_os_rtl::Read_File(std_in, buffer.data(), buffer_size, read)) {
+			terminated = true;
+			break;
+		}
 		for (auto c : buffer) {
 			if (c == static_cast<char>(kiv_hal::NControl_Codes::EOT)
 				|| c == static_cast<char>(kiv_hal::NControl_Codes::ETX)
@@ -38,7 +41,6 @@ extern "C" size_t __stdcall checker_for_eof(const kiv_hal::TRegisters& regs) {
 				break;
 			}
 		}
-		kiv_os_rtl::Read_File(std_in, buffer.data(), buffer_size, read);
 	}
 	*is_eof = true;
 	terminated = true;

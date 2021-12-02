@@ -163,26 +163,70 @@ private:
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error Syscall_Close_Handle(const kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	/// Nastavi pracovni adresar pro proces, ktery tento syscall vola
+	/// </summary>
+	/// <param name="regs">kontext</param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Syscall_Set_Working_Dir(const kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	/// Ziska pracovni adresar procesu
+	/// </summary>
+	/// <param name="regs">kontext</param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Syscall_Get_Working_Dir(kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	///  Ziska atributy souboru
+	/// </summary>
+	/// <param name="regs"></param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Syscall_Get_File_Attribute(kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	/// Otevre soubor a vrati file descriptor
+	/// </summary>
+	/// <param name="regs">kontext</param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Syscall_Open_File(kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	/// Smazani souboru
+	/// </summary>
+	/// <param name="regs">kontext</param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Syscall_Delete_File(const kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	/// Provede seek v souboru
+	/// </summary>
+	/// <param name="regs">kontext</param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Syscall_Seek(kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	/// Nastavi atributy souboru
+	/// </summary>
+	/// <param name="regs">kontext</param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Syscall_Set_File_Attribute(const kiv_hal::TRegisters& regs);
 
+	/// <summary>
+	/// Metoda otevre procfs soubor pro cteni - tzn. zavola ProcessManager, ten vytvori novy soubor
+	///	ProcessTableSnapshot a IOManager ho ulozi do tabulky otevrenych souboru
+	/// </summary>
+	/// <param name="fs">Reference na filesystem</param>
+	/// <param name="path">cesta</param>
+	/// <param name="flags"></param>
+	/// <param name="attributes"></param>
+	/// <param name="handle"></param>
+	/// <param name="current_pid"></param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, const kiv_os::THandle
 	                                   current_pid);
 
 	kiv_os::NOS_Error Open_File(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, kiv_os::THandle current_pid);
-
-	kiv_os::NOS_Error Open_Procfs_File();
 
 	VFS* Get_File_System(const std::string& disk);
 };
