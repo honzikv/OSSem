@@ -1,5 +1,7 @@
 #include "Tasklist.h"
 #include <sstream>
+#include "Utils/StringUtils.h"
+#include "Utils/Logging.h"
 
 ProcFSRow::ProcFSRow(std::string program_name, const uint32_t running_threads, const kiv_os::THandle pid,
                      const TaskState task_state): program_name(std::move(program_name)),
@@ -48,7 +50,7 @@ std::string Read_Process_Name(const char* buffer, const size_t start_idx, const 
 }
 
 size_t tasklist(const kiv_hal::TRegisters& regs) {
-	const auto ProcfsFilePath = "procfs:\\proclst";
+	const auto ProcfsFilePath = "p:\\proclst";
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 	auto procfs_file_descriptor = kiv_os::Invalid_Handle;
 	const auto success = kiv_os_rtl::Open_File(procfs_file_descriptor, ProcfsFilePath,
@@ -112,9 +114,11 @@ size_t tasklist(const kiv_hal::TRegisters& regs) {
 	for (const auto& procfs_row : procfs_rows) {
 		auto procfs_str = procfs_row.To_String();
 		size_t written = 0;
-		kiv_os_rtl::Write_File(std_out, procfs_str.data(), procfs_str.size(), written);
+		const auto success = kiv_os_rtl::Write_File(std_out, procfs_str.data(), procfs_str.size(), written);
+		Log_Debug("success: " + std::to_string(success) + " error?: " + StringUtils::Err_To_String(kiv_os_rtl::Get_Last_Err()));
 	}
 
-	kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Success));
+	kiv_os_rtl::Close_File_Descriptor(procfs_file_descriptor);
+
 	return 0;
 }
