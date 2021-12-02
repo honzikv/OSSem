@@ -83,7 +83,7 @@ auto IOManager::Create_Stdio() -> std::pair<kiv_os::THandle, kiv_os::THandle> {
 	const auto std_out_handle = HandleService::Get().Get_Empty_Handle();
 
 	open_files[std_in_handle] = { StdioCloseAlways, std_in};
-	open_files[std_out_handle] = {0, std_out};
+	open_files[std_out_handle] = { 0, std_out};
 
 	return {std_in_handle, std_out_handle};
 }

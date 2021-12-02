@@ -466,13 +466,14 @@ kiv_os::NOS_Error ProcessManager::Syscall_Shutdown(const kiv_hal::TRegisters& re
 		shutdown_triggered = true;
 	}
 
+	// Budeme projizdet vsechny pidy a pro obsazene procesy zabijeme pomoci Terminate_Process metody
+	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
+
 	// Ziskame aktualni pid, protoze ten se ukonci po zavolani shutdownu
 	const auto current_tid = Get_Current_Tid();
 	const auto this_thread_pid = thread_table[current_tid]->Get_Pid();
 	const auto current_process = process_table[this_thread_pid];
 
-	// Budeme projizdet vsechny pidy a pro obsazene procesy zabijeme pomoci Terminate_Process metody
-	auto lock = std::scoped_lock(tasks_mutex, suspend_callbacks_mutex);
 	for (auto pid = TaskIdService::PidRangeStart + 1; pid < TaskIdService::PidRangeEnd; pid += 1) {
 		// Pokud je proces nullptr a nebo tento nebudeme nic delat
 		if (pid == this_thread_pid || process_table.count(pid) == 0) {
