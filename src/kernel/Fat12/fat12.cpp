@@ -161,9 +161,12 @@ kiv_os::NOS_Error Fat12::Rm_Dir(Path &path) {
     // nejprve vynuluje a pote doplni data do clusteru
     for (int i = 0; i < sector_indexes_parent_folder.size(); ++i) {
         std::vector<char> data_to_write(Fat_Helper::kSectorSize);
-        for (int j = 0; j < Fat_Helper::kSectorSize; ++j) {
-            data_to_write.push_back(folder_content.at(i * Fat_Helper::kSectorSize + j));
-        }
+        //for (int j = 0; j < Fat_Helper::kSectorSize; ++j) {
+            //data_to_write  (folder_content.at(i * Fat_Helper::kSectorSize + j));
+    	data_to_write.insert(data_to_write.begin(), folder_content.begin() + i * Fat_Helper::kSectorSize, 
+                                 folder_content.begin() + (i + 1) * Fat_Helper::kSectorSize);
+
+        //}
         Fat_Helper::Write_Data_To_Cluster(buffer_to_clear, sector_indexes_parent_folder.at(i), is_parent_folder_root);
         Fat_Helper::Write_Data_To_Cluster(data_to_write, sector_indexes_parent_folder.at(i), is_parent_folder_root);
 
