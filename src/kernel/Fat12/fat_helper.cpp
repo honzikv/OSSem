@@ -120,7 +120,7 @@ namespace Fat_Helper {
         kiv_hal::TRegisters registers{};
         kiv_hal::TDisk_Address_Packet address_packet{};
 
-        address_packet.count = buffer.size() / kSectorSize + (buffer.size() % kSectorSize);
+        address_packet.count = buffer.size() / kSectorSize + (buffer.size() % kSectorSize > 0);
         address_packet.lba_index = start_index;
 
         registers.rdx.l = kDiskNum;
