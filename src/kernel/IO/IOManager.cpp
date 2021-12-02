@@ -2,7 +2,7 @@
 
 #include "ConsoleIn.h"
 #include "ConsoleOut.h"
-#include "kernel.h"
+#include "../kernel.h"
 #include "ReadablePipe.h"
 #include "WritablePipe.h"
 #include "../Utils/Logging.h"

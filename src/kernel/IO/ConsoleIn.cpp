@@ -83,7 +83,6 @@ kiv_os::NOS_Error ConsoleIn::Close() {
 		return kiv_os::NOS_Error::Success;
 	}
 
-
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Write_Char);
 	regs.rdx.l = eot_symbol;
