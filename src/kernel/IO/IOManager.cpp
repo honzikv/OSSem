@@ -247,7 +247,6 @@ kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& reg
 }
 
 void IOManager::Init_Filesystems() {
-	//TODO procs asi
 	for (int i = 0; i < 256; ++i) {
 		const auto disk_num = static_cast<uint8_t>(i);
 		kiv_hal::TRegisters registers{};
@@ -520,8 +519,6 @@ auto IOManager::Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File f
 //TODO jestli prepsat soubor, kdyz je 0 fmalways a existuje
 kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags, uint8_t attributes,
                                        kiv_os::THandle& handle, const kiv_os::THandle current_pid) {
-
-
 	const auto fs = Get_File_System(path.disk_letter);
 	if (fs == nullptr) {
 		return kiv_os::NOS_Error::Unknown_Filesystem;
