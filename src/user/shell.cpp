@@ -20,7 +20,6 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 	const auto current_path = kiv_os_rtl::Get_Working_Dir(working_dir.data(), working_dir_str_size, str_size);
 
 	const auto path = std::string(working_dir.data(), str_size);
-
 	const auto shell = std::make_unique<Shell>(regs, std_in, std_out, path);
 
 	// Spustime shell
@@ -277,11 +276,16 @@ void Shell::Run() {
 			return;
 		}
 
+		// Pokud se nic neprecetlo (napr. pri control charu) resetujeme while loop
+		if (bytes_read == 0) {
+			continue;
+		}
+
 		// Zkontrolujeme posledni znak, zda-li neni ctrl c nebo ctrl d
 		// ReSharper disable once CppTooWideScopeInitStatement
-		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
+		const auto last_char =buffer[bytes_read - 1];
 		if (bytes_read > 0 && (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char))) {
-			Write_Line("");
+			Write_Line("Bye.");
 			return;
 		}
 
