@@ -29,7 +29,7 @@ namespace Fat_Helper {
      * @param second_table druha FAT tabulka
      * @return true pokud jsou FAT tabulky totozne, jinak false
      */
-    bool Check_Fat_Consistency(const std::vector<unsigned char> first_table, const std::vector<unsigned char> second_table) {
+    bool Check_Fat_Consistency(const std::vector<unsigned char>& first_table, const std::vector<unsigned char>& second_table) {
         for (int i = 0; i < static_cast<int>(first_table.size()); ++i) {
             if (first_table.at(i) != second_table.at(i)) {
                 return false;
@@ -404,7 +404,7 @@ namespace Fat_Helper {
         if (path.path_vector.empty()) { // root
             DirItem dir_item;
             dir_item.first_cluster = kRootDirSectorStart;
-            dir_item.file_name = "/"; // TODO konst
+            dir_item.file_name = "\\";
             dir_item.extension = "";
             dir_item.file_size = 0;
             dir_item.attributes = static_cast<uint8_t>(kiv_os::NFile_Attributes::Volume_ID);

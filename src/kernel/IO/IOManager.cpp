@@ -247,7 +247,6 @@ kiv_os::NOS_Error IOManager::Syscall_Close_Handle(const kiv_hal::TRegisters& reg
 }
 
 void IOManager::Init_Filesystems() {
-	//TODO procs asi
 	for (int i = 0; i < 256; ++i) {
 		const auto disk_num = static_cast<uint8_t>(i);
 		kiv_hal::TRegisters registers{};
@@ -468,9 +467,9 @@ kiv_os::NOS_Error IOManager::Syscall_Set_Working_Dir(const kiv_hal::TRegisters& 
 
 kiv_os::NOS_Error IOManager::Syscall_Open_File(kiv_hal::TRegisters& regs) {
 	char* file_name = reinterpret_cast<char*>(regs.rdx.r);
-	const auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.l); // TODO check
-	const auto attributes = static_cast<uint8_t>(regs.rdi.i);
-	kiv_os::THandle handle; //TODO vytvorit handle
+	const auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.r);
+	const auto attributes = static_cast<uint8_t>(regs.rdi.r);
+	kiv_os::THandle handle;
 	std::shared_ptr<Process> current_process = ProcessManager::Get().Get_Current_Process();
 
 	if (current_process == nullptr) {
@@ -520,9 +519,6 @@ auto IOManager::Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File f
 //TODO jestli prepsat soubor, kdyz je 0 fmalways a existuje
 kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags, uint8_t attributes,
                                        kiv_os::THandle& handle, const kiv_os::THandle current_pid) {
-
-
-	//TODO mozna vytvoreni ruznych typu filu
 	const auto fs = Get_File_System(path.disk_letter);
 	if (fs == nullptr) {
 		return kiv_os::NOS_Error::Unknown_Filesystem;
