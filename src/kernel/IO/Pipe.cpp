@@ -36,7 +36,7 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 				target_buffer[i] = static_cast<char>(kiv_hal::NControl_Codes::SUB); // vratime EOF
 				bytes_read_from_buffer += 1;
 				bytes_read = bytes_read_from_buffer;
-				return kiv_os::NOS_Error::Success;
+				return kiv_os::NOS_Error::IO_Error;
 			}
 		}
 
@@ -50,7 +50,7 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 				bytes_read_from_buffer += 1;
 				bytes_read = bytes_read_from_buffer;
 				read->Release(); // aby nedoslo k deadlocku
-				return kiv_os::NOS_Error::Success;
+				return kiv_os::NOS_Error::IO_Error;
 			}
 		}
 
@@ -71,7 +71,6 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 
 kiv_os::NOS_Error Pipe::Write(const char* source_buffer, const size_t buffer_size, size_t& bytes_written) {
 	auto bytes_written_to_buffer = 0;
-
 	for (size_t i = 0; i < buffer_size; i += 1) {
 		{
 			auto lock = std::scoped_lock(close_access);
