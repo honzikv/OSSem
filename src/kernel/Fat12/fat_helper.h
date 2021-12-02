@@ -59,7 +59,7 @@ namespace Fat_Helper {
 
     std::vector<unsigned char> Read_From_Registers(int cluster_count, int start_index);
 
-    std::vector<unsigned char> Read_Data_From_Cluster(int cluster_count, int start_index, bool is_root);
+    std::vector<unsigned char> Read_Data_From_Cluster(int cluster_count, int start_cluster, bool is_root);
 
     int Get_Int_From_Char_Vector(std::vector<unsigned char> bytes);
 

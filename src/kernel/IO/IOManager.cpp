@@ -468,9 +468,9 @@ kiv_os::NOS_Error IOManager::Syscall_Set_Working_Dir(const kiv_hal::TRegisters& 
 
 kiv_os::NOS_Error IOManager::Syscall_Open_File(kiv_hal::TRegisters& regs) {
 	char* file_name = reinterpret_cast<char*>(regs.rdx.r);
-	const auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.l); // TODO check
-	const auto attributes = static_cast<uint8_t>(regs.rdi.i);
-	kiv_os::THandle handle; //TODO vytvorit handle
+	const auto flags = static_cast<kiv_os::NOpen_File>(regs.rcx.r);
+	const auto attributes = static_cast<uint8_t>(regs.rdi.r);
+	kiv_os::THandle handle;
 	std::shared_ptr<Process> current_process = ProcessManager::Get().Get_Current_Process();
 
 	if (current_process == nullptr) {
@@ -522,7 +522,6 @@ kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags
                                        kiv_os::THandle& handle, const kiv_os::THandle current_pid) {
 
 
-	//TODO mozna vytvoreni ruznych typu filu
 	const auto fs = Get_File_System(path.disk_letter);
 	if (fs == nullptr) {
 		return kiv_os::NOS_Error::Unknown_Filesystem;
