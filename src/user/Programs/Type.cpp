@@ -7,8 +7,7 @@ size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 
 	const auto args = std::string(reinterpret_cast<const char*>(regs.rdi.r));
 
-	size_t read = 0;
-	size_t position_in_file = 0;
+	size_t read = 1;
 
 	constexpr size_t read_buffer_size = 1024;
 	std::vector<char> read_buffer(read_buffer_size);
@@ -44,11 +43,10 @@ size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	}
 
     // Nastavi pozici v souboru na zacatek
-    kiv_os_rtl::Seek(handler_in, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, position_in_file);
+	size_t position_start = 0;
+    kiv_os_rtl::Seek(handler_in, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, position_start);
 
 	while (read) {
-		// nastavi pozici v souboru za konec prectene casti
-		kiv_os_rtl::Seek(handler_in, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, position_in_file);
 		if (!kiv_os_rtl::Read_File(handler_in, read_buffer.data(), read_buffer_size, read)) {
 			// je to dir -> nebudu vypisovat
 			const std::string message("IO Error.\n");
@@ -60,10 +58,13 @@ size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 		}
 
 		output.append(read_buffer.data(), read);
-
-		position_in_file += read;
+		if (read < read_buffer_size) {
+			break;
+		}
 	}
-	output.append("\n");
+	if (output.empty()) {
+		output.append("\n");
+	}
 
 	size_t written;
 	kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
