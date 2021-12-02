@@ -70,11 +70,23 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 }
 
 kiv_os::NOS_Error ConsoleIn::Close() {
+	// Zapiseme EOT na vystup, pokud tam uz neni
+	constexpr auto eot_symbol = static_cast<char>(kiv_hal::NControl_Codes::EOT);
 	Log_Debug("ConsoleIn-close");
+
+	auto eot_ctx = kiv_hal::TRegisters();
+	eot_ctx.rax.h = static_cast<decltype(eot_ctx.rax.l)>(kiv_hal::NKeyboard::Peek_Char);
+	eot_ctx.rdx.l = eot_symbol;
+	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Keyboard, eot_ctx);
+
+	if (eot_ctx.flags.non_zero != 0) {
+		return kiv_os::NOS_Error::Success;
+	}
+
+
 	auto regs = kiv_hal::TRegisters();
-	const auto symbol = static_cast<char>(kiv_hal::NControl_Codes::EOT);
 	regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Write_Char);
-	regs.rdx.l = symbol;
+	regs.rdx.l = eot_symbol;
 	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Keyboard, regs);
 	return kiv_os::NOS_Error::Success;
 }

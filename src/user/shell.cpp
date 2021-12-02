@@ -262,38 +262,42 @@ void Shell::Close_Command_List_Stdio(const std::vector<Command>& commands, const
 
 
 void Shell::Run() {
-	while (run) {
-		Write(current_working_dir + ">"); // Zapiseme aktualni cestu
+	// Zapiseme cwd
+	Write(current_working_dir + ">");
 
-		// Vyresetujeme buffer
+	// Zpracovavame prikazy, dokud je co cist
+	do {
+		// Reset bufferu pro cteni
 		std::fill_n(buffer.data(), buffer.size(), 0);
 
-		// Precteme uzivatelsky vstup
+		// Cteme user input
 		size_t bytes_read;
 		if (const auto read_success = kiv_os_rtl::Read_File(std_in, buffer.data(), buffer.size(), bytes_read);
 			!read_success) {
-			// Nastala chyba? Nemuzeme dal pokracovat, exit
+			// Nejde cist? ukoncime shell
 			return;
 		}
-
-		// Pokud se nic neprecetlo (napr. pri control charu) resetujeme while loop
-		if (bytes_read == 0) {
-			continue;
-		}
-
-		// Zkontrolujeme posledni znak, zda-li neni ctrl c nebo ctrl d
-		// ReSharper disable once CppTooWideScopeInitStatement
-		const auto last_char =buffer[bytes_read - 1];
-		if (bytes_read > 0 && (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char))) {
+		
+		// Pokud klavesnice zachyti ctrl c nebo ctrl d prestane cist dalsi data a preda je shellu
+		// Tzn musime zkontrolovat, zda-li neni posledni znak control char a pripadne ho osetrit
+		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
+		if (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char)) {
 			Write_Line("Bye.");
 			return;
 		}
 
-		// Ziskame uzivatelsky vstup, ktery prevedeme na std::sting (vyresi za nas \0 terminaci)
-		auto user_input = std::string(buffer.begin(),
-		                              bytes_read >= buffer.size()
-			                              ? buffer.end()
-			                              : buffer.begin() + bytes_read);
+		// vstup z klavesnice
+		auto keyboard_input = std::string(buffer.begin(),
+			bytes_read >= buffer.size()
+			? buffer.end()
+			: buffer.begin() + bytes_read);
+
+		// urizneme mezery zleva a zprava
+		auto user_input = StringUtils::Trim_Whitespaces(keyboard_input);
+		if (user_input.size() == 1 && StringUtils::Is_CR(user_input[0])) {
+			Write_Line(current_working_dir + ">");
+			continue;
+		}
 
 		// Vytvorime seznam prikazu a zkusime je rozparsovat z uzivatelskeho vstupu
 		auto commands = std::vector<Command>();
@@ -308,8 +312,12 @@ void Shell::Run() {
 		}
 
 		Run_Commands(commands); // Provedeme vsechny prikazy
-	}
+		if (run) { // pokud se nezavolal exit zobrazime cwd aby
+			Write(current_working_dir + ">");
+		}
+	} while (run);
 
+	// Konec pomoci Exitu
 	Write_Line("Bye.");
 }
 
