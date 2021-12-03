@@ -20,9 +20,10 @@ std::string ProcFSRow::Get_State_Str() const {
 	}
 }
 
+
 std::string ProcFSRow::To_String() const {
 	auto string_stream = std::stringstream();
-	string_stream << std::to_string(pid) << "\t" << program_name << "\t\t" << Get_State_Str() << "\t" << std::to_string(running_threads) << "\n";
+	string_stream << std::to_string(pid) << "\t" << program_name << "\t" << Get_State_Str() << "\t" << std::to_string(running_threads) << "\n";
 	return string_stream.str();
 }
 
@@ -48,6 +49,8 @@ std::string Read_Process_Name(const char* buffer, const size_t start_idx, const 
 
 	return std::string(result.begin(), result.end());
 }
+
+const auto table_header = std::string("PID\tProgram Name\tState\t# Threads\n");
 
 size_t tasklist(const kiv_hal::TRegisters& regs) {
 	const auto ProcfsFilePath = "p:\\proclst";
@@ -111,11 +114,21 @@ size_t tasklist(const kiv_hal::TRegisters& regs) {
 		procfs_rows.emplace_back(program_name, running_threads, pid, state);
 	}
 
+	size_t written = 0;
+	auto write_success = kiv_os_rtl::Write_File(std_out, table_header.data(), table_header.size(), written);
+	if (!write_success) {
+		kiv_os_rtl::Close_File_Descriptor(procfs_file_descriptor);
+		return 1;
+	}
+
 	for (const auto& procfs_row : procfs_rows) {
 		auto procfs_str = procfs_row.To_String();
-		size_t written = 0;
 		const auto success = kiv_os_rtl::Write_File(std_out, procfs_str.data(), procfs_str.size(), written);
-		Log_Debug("success: " + std::to_string(success) + " error?: " + StringUtils::Err_To_String(kiv_os_rtl::Get_Last_Err()));
+		if (!success) {
+			kiv_os_rtl::Close_File_Descriptor(procfs_file_descriptor);
+			return 1;
+		}
+		//Log_Debug("success: " + std::to_string(success) + " error?: " + StringUtils::Err_To_String(kiv_os_rtl::Get_Last_Err()));
 	}
 
 	kiv_os_rtl::Close_File_Descriptor(procfs_file_descriptor);
