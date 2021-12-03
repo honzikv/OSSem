@@ -77,7 +77,7 @@ bool ConsoleIn::Has_Control_Char(kiv_hal::NControl_Codes control_char) {
 	regs.rdx.l = static_cast<char>(control_char);
 	kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::Keyboard, regs);
 
-	return regs.flags.non_zero == 0;
+	return regs.flags.non_zero != 0;
 }
 
 kiv_os::NOS_Error ConsoleIn::Close() {
