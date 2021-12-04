@@ -12,6 +12,7 @@ size_t __stdcall Terminated_Checker(const kiv_hal::TRegisters& regs) {
 	return 0;
 }
 
+// Parametry pro EOF checker
 struct EofParams {
 	bool* is_eof;
 	kiv_os::THandle std_in;
@@ -19,11 +20,6 @@ struct EofParams {
 };
 
 extern "C" size_t __stdcall checker_for_eof(const kiv_hal::TRegisters& regs) {
-	// const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
-	// const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
-
-	// auto is_eof = reinterpret_cast<bool *>(regs.rdi.r);
-
 	// Parametry ziskame z rdi
 	const auto eof_params = *reinterpret_cast<EofParams*>(regs.rdi.r);
 	const auto std_in = eof_params.std_in;

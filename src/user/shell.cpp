@@ -296,10 +296,6 @@ void Shell::Run() {
 
 		// urizneme mezery zleva a zprava
 		auto user_input = StringUtils::Trim_Whitespaces(keyboard_input);
-		if (user_input.size() == 1 && StringUtils::Is_CR(user_input[0])) {
-			Write_Line(current_working_dir + ">");
-			continue;
-		}
 
 		// Vytvorime seznam prikazu a zkusime je rozparsovat z uzivatelskeho vstupu
 		auto commands = std::vector<Command>();
