@@ -5,7 +5,9 @@
 #include <array>
 #include <iterator>
 
-
+/// <summary>
+/// Velikost bufferu
+/// </summary>
 constexpr auto BufferSize = 1024;
 
 
@@ -25,6 +27,9 @@ enum class TaskState : uint8_t {
 
 };
 
+/// <summary>
+/// Struktura pro ulozeni jednoho radku tabulky
+/// </summary>
 struct ProcFSRow {
 
 	/// <summary>
@@ -47,14 +52,36 @@ struct ProcFSRow {
 	/// </summary>
 	const TaskState state;
 
+	/// <summary>
+	/// Konstruktor
+	/// </summary>
+	/// <param name="program_name">Jmeno programu</param>
+	/// <param name="running_threads">Pocet bezicich vlaken</param>
+	/// <param name="pid">pid</param>
+	/// <param name="task_state">stav</param>
 	ProcFSRow(std::string program_name, uint32_t running_threads, kiv_os::THandle pid, TaskState task_state);
 
+	/// <summary>
+	/// Vrati State jako string
+	/// </summary>
+	/// <returns></returns>
 	std::string Get_State_Str() const;
 
+	/// <summary>
+	/// Vrati ToString pro vytisknuti do standardniho vystupu
+	/// </summary>
+	/// <returns></returns>
 	std::string To_String() const;
 };
 
-
+/// <summary>
+/// Precte jmeno procesu
+/// </summary>
+/// <param name="buffer"></param>
+/// <param name="start_idx"></param>
+/// <param name="buffer_size"></param>
+/// <param name="return_idx"></param>
+/// <returns></returns>
 std::string Read_Process_Name(const char* buffer, size_t start_idx, size_t buffer_size, size_t& return_idx);
 
 extern "C" size_t __stdcall tasklist(const kiv_hal::TRegisters& regs);

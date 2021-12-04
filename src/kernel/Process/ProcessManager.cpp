@@ -196,35 +196,24 @@ kiv_os::NOS_Error ProcessManager::Create_Process(kiv_hal::TRegisters& regs) {
 
 kiv_os::NOS_Error ProcessManager::Create_Thread(kiv_hal::TRegisters& regs) {
 	// Ziskame jmeno programu a argumenty
-	const auto program_name = reinterpret_cast<char*>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	const auto program_args = reinterpret_cast<char*>(regs.rdi.r); // NOLINT(performance-no-int-to-ptr)
 
 	// Ziskame funkci s programem a pretypujeme ji na TThread_Proc
-	const auto program = reinterpret_cast<kiv_os::TThread_Proc>(GetProcAddress(User_Programs, program_name));
+	const auto program = reinterpret_cast<kiv_os::TThread_Proc>(regs.rdx.r); // NOLINT(performance-no-int-to-ptr)
 	// Pokud program neexistuje vratime Invalid_Argument
 	if (!program) {
 		return kiv_os::NOS_Error::Invalid_Argument;
 	}
 
-	// bx.e = (stdin << 16) | stdout
-	const auto std_out = static_cast<uint16_t>(regs.rbx.e & 0xffff);
-	// vymaskujeme prvnich 16 msb a pretypujeme na uint16
-	const auto std_in = static_cast<uint16_t>(regs.rbx.e >> 16 & 0xffff);
-	// posuneme o 16 bitu a vymaskujeme prvnich 16 lsb
-
-	// Vlakno nezajima registrace stdin a stdout protoze handly ani nezavira - to dela proces
-
-	// Vytvorime zamek, protoze ziskame tid, ktery by nikdo nemel sebrat
+	// Zkusime ziskat tid
 	auto tid = task_id_service->Get_Free_Tid();
 	if (tid == kiv_os::Invalid_Handle) {
 		return kiv_os::NOS_Error::Out_Of_Memory;
 	}
 
-	// Nastavime stdin a stdout pro proces a predame je hlavnimu vlaknu
-	// Argumenty programu se kopiruji do objektu Thread a ten si je nastavi sam
+	// Vytvorime registry pro vlakno a nastavime *data do rdi.r
 	auto thread_context = kiv_hal::TRegisters();
-	thread_context.rax.x = std_in;
-	thread_context.rbx.x = std_out;
+	thread_context.rdi.r = regs.rdi.r;
 
 	auto lock = std::scoped_lock(tasks_mutex);
 	// Ziskame aktualni proces
@@ -240,8 +229,8 @@ kiv_os::NOS_Error ProcessManager::Create_Thread(kiv_hal::TRegisters& regs) {
 		return kiv_os::NOS_Error::File_Not_Found;
 	}
 
-	const auto thread = std::make_shared<Thread>(program, thread_context, tid, current_process->Get_Pid(),
-	                                             program_args, false);
+	// Vytvorime nove vlakno
+	const auto thread = std::make_shared<Thread>(program, thread_context, tid, current_process->Get_Pid());
 
 	// Pridame vlakno do tabulky a spustime
 	Log_Debug("Creating new non-main thread for process with pid: " +
@@ -446,7 +435,7 @@ void ProcessManager::Terminate_Process(const kiv_os::THandle pid) {
 	}
 
 	// Zavolame signal
-	// process->Execute_Signal_Callback(kiv_os::NSignal_Id::Terminate);
+	process->Execute_Signal_Callback(kiv_os::NSignal_Id::Terminate);
 
 	// Zavreme file descriptory procesu
 	IOManager::Get().Close_All_Process_File_Descriptors(pid);

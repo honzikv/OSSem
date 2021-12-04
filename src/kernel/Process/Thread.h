@@ -64,6 +64,14 @@ public:
 	Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os::THandle tid, kiv_os::THandle pid,
 	       const char* args,
 	       bool is_main_thread = true);
+	/// <summary>
+	/// Konstruktor pro CreateThread
+	/// </summary>
+	/// <param name="program">funkce, ktera se spusti pri behu vlakna</param>
+	/// <param name="context">Kontext registru pri behu vlakna</param>
+	/// <param name="tid">tid vlakna</param>
+	/// <param name="pid">pid procesu, ktery vlakno vlastni</param>
+	Thread(kiv_os::TThread_Proc program, kiv_hal::TRegisters context, kiv_os::THandle tid, kiv_os::THandle pid);
 
 	/// <summary>
 	/// Vytvori nativni vlakno s funkci Thread_Func() a vrati jeho handle a thread id

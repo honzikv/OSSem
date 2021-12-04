@@ -5,18 +5,30 @@
 #include "Utils/Logging.h"
 
 std::atomic<bool> terminated = false;
-std::atomic<bool> eof = false;
+auto eof = false;
 
-size_t Terminated_Checker(const kiv_hal::TRegisters& regs) {
+size_t __stdcall Terminated_Checker(const kiv_hal::TRegisters& regs) {
 	terminated = true;
 	return 0;
 }
 
-extern "C" size_t __stdcall checker_for_eof(const kiv_hal::TRegisters& regs) {
-	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
-	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
+struct EofParams {
+	bool* is_eof;
+	kiv_os::THandle std_in;
+	kiv_os::THandle std_out;
+};
 
-	auto is_eof = reinterpret_cast<bool *>(regs.rdi.r);
+extern "C" size_t __stdcall checker_for_eof(const kiv_hal::TRegisters& regs) {
+	// const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
+	// const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
+
+	// auto is_eof = reinterpret_cast<bool *>(regs.rdi.r);
+
+	// Parametry ziskame z rdi
+	const auto eof_params = *reinterpret_cast<EofParams*>(regs.rdi.r);
+	const auto std_in = eof_params.std_in;
+	const auto std_out = eof_params.std_out;
+	auto is_eof = eof_params.is_eof;
 
 
 	constexpr int buffer_size = 256;
@@ -55,7 +67,6 @@ size_t __stdcall rgen(const kiv_hal::TRegisters& regs) {
 
 	kiv_os_rtl::Register_Signal_Handler(kiv_os::NSignal_Id::Terminate, handler);
 
-
 	const auto args = std::string(reinterpret_cast<const char*>(regs.rdi.r));
 
 	std::string output;
@@ -64,9 +75,10 @@ size_t __stdcall rgen(const kiv_hal::TRegisters& regs) {
 	kiv_os::THandle handle;
 	eof = false;
 	terminated = false;
-	if (!kiv_os_rtl::Create_Thread("checker_for_eof",
-								   reinterpret_cast<const char*>(&eof), std_in, std_out, handle))
-	{
+
+	auto params = EofParams{ &eof, std_in, std_out };
+
+	if (!kiv_os_rtl::Create_Thread(checker_for_eof, reinterpret_cast<char*>(&params), handle)) {
 		kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Out_Of_Memory));
 		return 1;
 	}
@@ -75,7 +87,7 @@ size_t __stdcall rgen(const kiv_hal::TRegisters& regs) {
 	std::random_device rand;
 	// nastavi seed
 	std::mt19937 gen(rand());
-	std::uniform_real_distribution<> distr(-1000.0, 1000.0);
+	std::uniform_real_distribution distr(-1000.0, 1000.0);
 
 	while (!eof && !terminated) {
 		const auto random = static_cast<float>(distr(gen));

@@ -136,12 +136,11 @@ namespace kiv_os_rtl {
 	/// <summary>
 	/// Vytvori vlakno
 	/// </summary>
-	/// <param name="program_name">Jmeno programu</param>
+	/// <param name="thread_program">Pointer na funkci, ktera se ma vykonat</param>
 	/// <param name="params">Paramtery programu</param>
-	/// <param name="std_in">standardni vstup</param>
-	/// <param name="std_out">standardni vystup</param>
+	/// <param name="new_thread">Handle noveho vlakna</param>
 	/// <returns></returns>
-	bool Create_Thread(const std::string& program_name, const char *params, kiv_os::THandle std_in, kiv_os::THandle std_out, kiv_os::THandle& new_thread);
+	bool Create_Thread(kiv_os::TThread_Proc thread_program, const char* params, kiv_os::THandle& new_thread);
 
 	/// <summary>
 	/// Aktualni vlakno vycka, dokud dany handle nedobehne

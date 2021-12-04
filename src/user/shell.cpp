@@ -17,6 +17,8 @@ size_t __stdcall shell(const kiv_hal::TRegisters& regs) {
 	constexpr auto working_dir_str_size = 64;
 	auto working_dir = std::array<char, working_dir_str_size>();
 	uint32_t str_size = 0;
+
+	// Aktualni pracovni adresar
 	const auto current_path = kiv_os_rtl::Get_Working_Dir(working_dir.data(), working_dir_str_size, str_size);
 
 	const auto path = std::string(working_dir.data(), str_size);
@@ -277,7 +279,7 @@ void Shell::Run() {
 			// Nejde cist? ukoncime shell
 			return;
 		}
-		
+
 		// Pokud klavesnice zachyti ctrl c nebo ctrl d prestane cist dalsi data a preda je shellu
 		// Tzn musime zkontrolovat, zda-li neni posledni znak control char a pripadne ho osetrit
 		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
@@ -288,9 +290,9 @@ void Shell::Run() {
 
 		// vstup z klavesnice
 		auto keyboard_input = std::string(buffer.begin(),
-			bytes_read >= buffer.size()
-			? buffer.end()
-			: buffer.begin() + bytes_read);
+		                                  bytes_read >= buffer.size()
+			                                  ? buffer.end()
+			                                  : buffer.begin() + bytes_read);
 
 		// urizneme mezery zleva a zprava
 		auto user_input = StringUtils::Trim_Whitespaces(keyboard_input);
@@ -312,10 +314,12 @@ void Shell::Run() {
 		}
 
 		Run_Commands(commands); // Provedeme vsechny prikazy
-		if (run) { // pokud se nezavolal exit zobrazime cwd aby
+		if (run) {
+			// pokud se nezavolal exit zobrazime cwd aby
 			Write(current_working_dir + ">");
 		}
-	} while (run);
+	}
+	while (run);
 
 	// Konec pomoci Exitu
 	Write_Line("Bye.");

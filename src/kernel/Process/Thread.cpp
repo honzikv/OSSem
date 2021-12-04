@@ -11,7 +11,7 @@ void Thread_Func(const std::shared_ptr<Thread> thread) {
 	thread->Set_Running();
 
 	// Provedeme spusteni programu (funkce TThread_Proc), coz vlakno zablokuje dokud nedobehne
-	auto task_exit_code = static_cast<uint16_t>(thread->program(thread->regs));
+	const auto task_exit_code = static_cast<uint16_t>(thread->program(thread->regs));
 	ProcessManager::Get().On_Thread_Finish(thread->tid, task_exit_code);
 }
 
@@ -22,6 +22,11 @@ Thread::Thread(const kiv_os::TThread_Proc program, const kiv_hal::TRegisters con
                                                              args(args),
                                                              tid(tid), pid(pid) {
 	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(this->args.c_str());
+}
+
+Thread::Thread(const kiv_os::TThread_Proc program, const kiv_hal::TRegisters context, const kiv_os::THandle tid, const kiv_os::THandle pid):
+ program(program), regs(context), main_thread(false), tid(tid), pid(pid) {
+	
 }
 
 std::thread::id Thread::Dispatch(std::shared_ptr<Thread> thread_ptr) {

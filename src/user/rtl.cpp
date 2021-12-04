@@ -203,15 +203,13 @@ bool kiv_os_rtl::Create_Process(const std::string& program_name, const std::stri
 }
 
 
-bool kiv_os_rtl::Create_Thread(const std::string& program_name, const char *params, const kiv_os::THandle std_in,
-                              const kiv_os::THandle std_out, kiv_os::THandle& new_thread) {
+bool kiv_os_rtl::Create_Thread(kiv_os::TThread_Proc thread_program, const char *params, kiv_os::THandle& new_thread) {
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.h)>(kiv_os::NOS_Service_Major::Process);
 	regs.rax.l = static_cast<decltype(regs.rax.l)>(kiv_os::NOS_Process::Clone);
 	regs.rcx.l = static_cast<decltype(regs.rcx.l)>(kiv_os::NClone::Create_Thread);
-	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(program_name.c_str());
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(thread_program);
 	regs.rdi.r = reinterpret_cast<decltype(regs.rdi.r)>(params);
-	regs.rbx.r = static_cast<decltype(regs.rbx.r)>(std_in << 16 | std_out);
 
 	if (!kiv_os::Sys_Call(regs)) {
 		return false;
@@ -251,7 +249,7 @@ bool kiv_os_rtl::Register_Signal_Handler(kiv_os::NSignal_Id signal, kiv_os::TThr
 		static_cast<uint8_t>(kiv_os::NOS_Process::Register_Signal_Handler));
 
 	regs.rcx.r = static_cast<decltype(regs.rcx.r)>(signal);
-	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(std::addressof(callback));
+	regs.rdx.r = reinterpret_cast<decltype(regs.rdx.r)>(callback);
 
 	return kiv_os::Sys_Call(regs);
 }
