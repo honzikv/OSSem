@@ -291,7 +291,7 @@ void ProcessManager::Run_Init_Process(kiv_os::TThread_Proc init_main) {
 
 	auto std_thread_id = Thread::Dispatch(init_main_thread);
 	// Pridame do tabulky
-
+	init_process->Set_Running();
 	process_table[pid] = init_process;
 	thread_table[tid] = init_main_thread;
 	std_thread_id_to_kiv_handle[std_thread_id] = tid;
@@ -424,7 +424,15 @@ kiv_os::NOS_Error ProcessManager::Syscall_Exit_Task(const kiv_hal::TRegisters& r
 	auto scoped_lock = std::scoped_lock(tasks_mutex);
 	const auto tid = Get_Current_Tid();
 	const auto exit_code = regs.rcx.x;
-	// TODO terminate thread
+
+	const auto thread = thread_table[tid];
+	if (thread == nullptr) {
+		return kiv_os::NOS_Error::Invalid_Argument;
+	}
+
+	// Nastavime stav na finished
+	thread->Set_Finished();
+
 	return kiv_os::NOS_Error::Success;
 }
 
