@@ -431,6 +431,7 @@ kiv_os::NOS_Error ProcessManager::Syscall_Exit_Task(const kiv_hal::TRegisters& r
 	}
 
 	// Nastavime stav na finished
+	thread->Set_Exit_Code(exit_code);
 	thread->Set_Finished();
 
 	return kiv_os::NOS_Error::Success;
