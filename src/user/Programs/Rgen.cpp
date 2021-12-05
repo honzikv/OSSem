@@ -30,11 +30,6 @@ extern "C" size_t __stdcall checker_for_eof(const kiv_hal::TRegisters& regs) {
 	constexpr int buffer_size = 256;
 	std::vector<char> buffer(buffer_size);
 	size_t read = 1;
-
-	std::string output("checker started\n");
-	size_t written;
-	kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
-
 	
 	while (read && !terminated) {
 		if (!kiv_os_rtl::Read_File(std_in, buffer.data(), buffer_size, read)) {
