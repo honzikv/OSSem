@@ -13,7 +13,7 @@ size_t __stdcall rd(const kiv_hal::TRegisters& regs) {
 		return 1;
 	}
 	if (!kiv_os_rtl::Delete_File(final_path)) {
-		const std::string message("Can not delete dir.\n");
+		const std::string message("Can not delete.\n");
 
 		size_t written;
 		kiv_os_rtl::Write_File(std_out, message.data(), message.size(), written);
