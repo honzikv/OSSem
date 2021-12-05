@@ -1,7 +1,7 @@
 #include "Tasklist.h"
 #include <sstream>
-#include "Utils/StringUtils.h"
-#include "Utils/Logging.h"
+#include "../Utils/StringUtils.h"
+#include "../Utils/Logging.h"
 
 ProcFSRow::ProcFSRow(std::string program_name, const uint32_t running_threads, const kiv_os::THandle pid,
                      const TaskState task_state): program_name(std::move(program_name)),
@@ -54,7 +54,7 @@ std::string Read_Process_Name(const char* buffer, const size_t start_idx, const 
 
 const auto table_header = std::string("PID\tProgram\t State\t #Threads\n");
 
-size_t tasklist(const kiv_hal::TRegisters& regs) {
+size_t __stdcall tasklist(const kiv_hal::TRegisters& regs) {
 	const auto ProcfsFilePath = "p:\\proclst";
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 	auto procfs_file_descriptor = kiv_os::Invalid_Handle;

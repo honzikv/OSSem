@@ -1,7 +1,7 @@
 ﻿#include "UnitTests.h"
 
 #include <iostream>
-#include "Shell/Shell.h"
+#include "../Shell/Shell.h"
 #if IS_DEBUG
 void CompareCommands(const Command& actual, const Command& expected) {
 	if (actual != expected) {

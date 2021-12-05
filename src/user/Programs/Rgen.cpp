@@ -1,8 +1,8 @@
 #include "Rgen.h"
 
 #include <random>
-
-#include "Utils/Logging.h"
+#include <atomic>
+#include "../Utils/Logging.h"
 
 std::atomic<bool> terminated = false;
 auto eof = false;

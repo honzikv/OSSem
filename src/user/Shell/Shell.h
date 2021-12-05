@@ -2,10 +2,10 @@
 
 #include <unordered_set>
 #include <array>
-#include "../api/api.h"
+#include "../../api/api.h"
 #include "CommandParser.h"
-#include "rtl.h"
-#include "Utils/Logging.h"
+#include "../rtl.h"
+#include "../Utils/Logging.h"
 
 constexpr size_t BUFFER_SIZE = 512;
 constexpr auto NEWLINE_SYMBOL = "\n";
