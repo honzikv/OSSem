@@ -13,7 +13,7 @@
 /// </summary>
 namespace StringUtils {
 
-	inline const auto whitespace_regex = std::regex("\\s+");
+	const std::regex whitespace_regex = std::regex("\\s+");
 
 	/// <summary>
 	/// Rozdeli retezec podle regexu

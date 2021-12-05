@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 #include <locale>
-#include "../api/hal.h"
-#include "rtl.h"
-#include "Utils/StringUtils.h"
+#include "../../api/hal.h"
+#include "../rtl.h"
+#include "../Utils/StringUtils.h"
 
 extern "C" size_t __stdcall find(const kiv_hal::TRegisters & regs) {
     const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);

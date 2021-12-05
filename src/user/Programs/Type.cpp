@@ -1,5 +1,5 @@
-#include "type.h"
-#include "rtl.h"
+#include "Type.h"
+#include "../rtl.h"
 
 size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);

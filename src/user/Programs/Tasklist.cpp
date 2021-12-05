@@ -1,7 +1,7 @@
 #include "Tasklist.h"
 #include <sstream>
-#include "Utils/StringUtils.h"
-#include "Utils/Logging.h"
+#include "../Utils/StringUtils.h"
+#include "../Utils/Logging.h"
 
 ProcFSRow::ProcFSRow(std::string program_name, const uint32_t running_threads, const kiv_os::THandle pid,
                      const TaskState task_state): program_name(std::move(program_name)),
@@ -13,7 +13,7 @@ std::string ProcFSRow::Get_State_Str() const {
 		case TaskState::Finished:
 			return "finished";
 		case TaskState::Ready:
-			return "ready";
+			return "ready  ";
 		case TaskState::Running:
 		default:
 			return "running";
@@ -21,9 +21,11 @@ std::string ProcFSRow::Get_State_Str() const {
 }
 
 
-std::string ProcFSRow::To_String() const {
+std::string ProcFSRow::To_String(const size_t name_len) const {
 	auto string_stream = std::stringstream();
-	string_stream << std::to_string(pid) << "\t" << program_name << "\t" << Get_State_Str() << "\t" << std::to_string(running_threads) << "\n";
+	const auto extra_spaces = name_len - program_name.size();
+	const auto padded_name = program_name + std::string(extra_spaces, ' ') + " ";
+	string_stream << std::to_string(pid) << "\t" << padded_name << Get_State_Str() << "\t" << std::to_string(running_threads) << "\n";
 	return string_stream.str();
 }
 
@@ -50,9 +52,9 @@ std::string Read_Process_Name(const char* buffer, const size_t start_idx, const 
 	return std::string(result.begin(), result.end());
 }
 
-const auto table_header = std::string("PID\tProgram Name\tState\t# Threads\n");
+const auto table_header = std::string("PID\tProgram\t State\t #Threads\n");
 
-size_t tasklist(const kiv_hal::TRegisters& regs) {
+size_t __stdcall tasklist(const kiv_hal::TRegisters& regs) {
 	const auto ProcfsFilePath = "p:\\proclst";
 	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 	auto procfs_file_descriptor = kiv_os::Invalid_Handle;
@@ -115,14 +117,20 @@ size_t tasklist(const kiv_hal::TRegisters& regs) {
 	}
 
 	size_t written = 0;
-	auto write_success = kiv_os_rtl::Write_File(std_out, table_header.data(), table_header.size(), written);
+	const auto write_success = kiv_os_rtl::Write_File(std_out, table_header.data(), table_header.size(), written);
 	if (!write_success) {
 		kiv_os_rtl::Close_File_Descriptor(procfs_file_descriptor);
 		return 1;
 	}
 
+	// Protoze nazvy moc dobre nefunguji se zarovnanim najdeme nejdelsi nazev a ke vsem nazvum pripojime mezery
+	const auto procfs_row_with_max_name_len = *std::max_element(procfs_rows.begin(), procfs_rows.end(), [](const ProcFSRow& a, const ProcFSRow& b) {
+		return a.program_name.size() < b.program_name.size();
+		});
+	
+
 	for (const auto& procfs_row : procfs_rows) {
-		auto procfs_str = procfs_row.To_String();
+		auto procfs_str = procfs_row.To_String(procfs_row_with_max_name_len.program_name.size());
 		const auto success = kiv_os_rtl::Write_File(std_out, procfs_str.data(), procfs_str.size(), written);
 		if (!success) {
 			kiv_os_rtl::Close_File_Descriptor(procfs_file_descriptor);

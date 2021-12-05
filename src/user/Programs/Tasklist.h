@@ -70,8 +70,9 @@ struct ProcFSRow {
 	/// <summary>
 	/// Vrati ToString pro vytisknuti do standardniho vystupu
 	/// </summary>
+	///	<param name="name_len">Delka nazvu bez mezery (pro zarovnani)</param>
 	/// <returns></returns>
-	std::string To_String() const;
+	std::string To_String(size_t name_len) const;
 };
 
 /// <summary>
