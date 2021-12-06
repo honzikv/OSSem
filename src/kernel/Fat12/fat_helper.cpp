@@ -639,30 +639,30 @@ namespace Fat_Helper {
             for (int j = 0; j < kFileNameSize; ++j) {
                 if (content.at(i) == kSpaceChar) { // konec nazvu souboru
                     i += kFileNameSize - j; // dopocteno do 8 bytu
-                    file_name_pos = j;
                     break;
-                } else {
-                    dir_entry.file_name[j] = static_cast<char>(content.at(i));
-                    i++;
                 }
+                dir_entry.file_name[file_name_pos++] = static_cast<char>(content.at(i));
+                i++;
             }
+
+            //file_name_pos = j;
 
             dir_entry.file_name[file_name_pos++] = kCurDirChar;
 
             for (int j = 0; j < kFileExtensionSize; ++j) {
                 if (content.at(i) == kSpaceChar) { // konec pripony souboru
                     i += kFileExtensionSize - j; // dopocteno do 3 bytu
-                    file_name_pos += j;
                     break;
-                } else {
-                    dir_entry.file_name[file_name_pos++] = static_cast<char>(content.at(i));
-                    i++;
                 }
+                dir_entry.file_name[file_name_pos++] = static_cast<char>(content.at(i));
+                i++;
             }
 
-            if (file_name_pos > kFileNameAndExtensionMaxSize) { // max je 12 - ukoncit
-                dir_entry.file_name[kFileNameAndExtensionMaxSize - 1] = kEndOfString;
-            } else if (dir_entry.file_name[file_name_pos - 1] == kCurDirChar) { // bez pripony
+
+            if (file_name_pos <= kFileNameAndExtensionMaxSize) {
+                dir_entry.file_name[file_name_pos] = kEndOfString;
+            }
+            if (dir_entry.file_name[file_name_pos - 1] == kCurDirChar) { // bez pripony
                 dir_entry.file_name[file_name_pos - 1] = kEndOfString;
             }
 
