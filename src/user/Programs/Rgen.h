@@ -1,9 +1,6 @@
 #pragma once
 
 #include "../../api/api.h"
-#include "../rtl.h"
-
-#include <string>
 
 struct eof_checker_params {
     kiv_os::THandle std_in;

@@ -2,6 +2,8 @@
 
 #include <random>
 #include <atomic>
+
+#include "../rtl.h"
 #include "../Utils/Logging.h"
 
 std::atomic<bool> terminated = false;
@@ -97,6 +99,5 @@ size_t __stdcall rgen(const kiv_hal::TRegisters& regs) {
 	}
 
 	// kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Success));
-	Log_Debug("Rgen_Finished");
 	return 0;
 }

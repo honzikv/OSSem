@@ -2,11 +2,9 @@
 #include <regex>
 #include <string>
 #include <vector>
-#include <locale>
 #include <numeric>
 #include "../../api/hal.h"
 #include "../../api/api.h"
-#include <sstream>
 
 /// <summary>
 /// Funkce pro praci s retezci

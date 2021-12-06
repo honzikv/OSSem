@@ -5,7 +5,7 @@
 #include <sstream>
 
 // Debug
-#define IS_DEBUG true
+#define IS_DEBUG false
 
 inline void Log_Debug(const std::string& str) {
 #if IS_DEBUG

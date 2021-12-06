@@ -131,10 +131,9 @@ public:
 	/// <param name="current_path">Aktualni cesta</param>
 	Shell(const kiv_hal::TRegisters& registers, kiv_os::THandle std_in, kiv_os::THandle std_out,
 	      std::string current_path);
-
-#if IS_DEBUG
-	[[nodiscard]] std::vector<Command> Parse_Commands(const std::string& line) const;
-#endif
+	
+	[[nodiscard]]
+	std::vector<Command> Parse_Commands(const std::string& line) const;
 
 	/// <summary>
 	/// Spusti shell - ten bezi, dokud se nezavola exit nebo shutdown

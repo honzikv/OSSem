@@ -1,5 +1,4 @@
 #include "CommandParser.h"
-#include <sstream>
 
 const char* ParseException::what() const throw() {
 	return err.c_str();

@@ -26,8 +26,8 @@ void __cdecl Disable_Default_Behavior(int sig) {
 }
 
 void Init_Signal_Behavior() {
-	auto _ = signal(SIGINT, Disable_Default_Behavior);
-	raise(SIGINT); // timto signal zavolame a dalsi volani uz bude brat klavesnice misto handleru
+	// auto _ = signal(SIGINT, Disable_Default_Behavior);
+	// raise(SIGINT); // timto signal zavolame a dalsi volani uz bude brat klavesnice misto handleru
 }
 
 void InitializeKernel() {
