@@ -72,11 +72,11 @@ auto CommandParser::Split_By_File_Redirect(const std::string& command_with_param
 		const auto sourceFileIdx = command_with_params.find_first_of('<');
 		const auto targetFileIdx = command_with_params.find_first_of('>');
 		auto targetFile = targetFileIdx > sourceFileIdx
-			                  ? command_with_params.substr(targetFileIdx + 1, command_with_params.size() - targetFileIdx)
-			                  : command_with_params.substr(targetFileIdx + 1, command_with_params.size() - sourceFileIdx);
-		auto sourceFile = sourceFileIdx > targetFileIdx
-			                  ? command_with_params.substr(sourceFileIdx + 1, command_with_params.size() - sourceFileIdx)
-			                  : command_with_params.substr(sourceFileIdx + 1, command_with_params.size() - targetFileIdx);
+			                  ? command_with_params.substr(targetFileIdx + 1, command_with_params.size() - targetFileIdx - 1)
+			                  : command_with_params.substr(targetFileIdx + 1, sourceFileIdx - targetFileIdx - 2);
+		auto sourceFile = targetFileIdx > sourceFileIdx
+			? command_with_params.substr(sourceFileIdx + 1, targetFileIdx - sourceFileIdx - 2)
+			: command_with_params.substr(sourceFileIdx + 1, command_with_params.size() - sourceFileIdx - 1);
 		targetFile = StringUtils::Trim_Whitespaces(targetFile);
 		sourceFile = StringUtils::Trim_Whitespaces(sourceFile);
 

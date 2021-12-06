@@ -15,11 +15,11 @@ extern "C" size_t __stdcall freq(const kiv_hal::TRegisters& regs) {
 	// Newline do konzole
 	const auto newline = std::string("\n");
 
-	// Ziskame vstup pro cteni
-	const auto std_in = static_cast<kiv_os::THandle>(regs.rbx.x);
+	const auto std_in = static_cast<kiv_os::THandle>(regs.rax.x);
+	const auto std_out = static_cast<kiv_os::THandle>(regs.rbx.x);
 
 	// Zde ani nepotrebujeme hashmapu / mapu, ale staci pole, protoze je bytu "malo"
-	auto byteFrequencies = std::array<int, FREQ_TABLE_SIZE>();
+	auto byteFrequencies = std::array<size_t, FREQ_TABLE_SIZE>();
 
 	// Buffer pro data
 	auto buffer = std::array<char, BUFFER_SIZE>();
@@ -46,16 +46,25 @@ extern "C" size_t __stdcall freq(const kiv_hal::TRegisters& regs) {
 		}
 	}
 
-	const auto std_out = static_cast<kiv_os::THandle>(regs.rax.x);
+	const auto result = kiv_os_rtl::Write_File(std_out, newline.data(), newline.size(), bytesFromStream);
+	if (!result) {
+		return 1;
+	}
+
 	auto stringStream = std::stringstream(); // pro formatovani je nejsnazsi pouzit string stream
-	for (auto i = uint64_t{ 0 }; i < byteFrequencies.size(); i += 1) {
-		const auto byteFreq = byteFrequencies[0];
+	for (size_t i = 0; i < byteFrequencies.size(); i += 1) {
+		const auto byteFreq = byteFrequencies[i];
 		if (byteFreq == 0) {
 			continue;
 		}
 		stringStream.str(""); // vycisteni streamu
 		// Zformatujeme
-		stringStream << "0x" << std::setw(2) << std::hex << i << std::dec << ": " << byteFreq << std::endl;
+		if (i < 0x10) {
+			stringStream << "0x" << std::setw(1) << '0' << std::hex << i << std::dec << ": " << byteFreq;
+		}
+		else {
+			stringStream << "0x" << std::setw(2) << std::hex << i << std::dec << ": " << byteFreq;
+		}
 
 		auto output = stringStream.str(); // ziskame string
 
