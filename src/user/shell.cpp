@@ -275,17 +275,15 @@ void Shell::Run() {
 		if (const auto read_success = kiv_os_rtl::Read_File(std_in, buffer.data(), buffer.size(), bytes_read);
 			!read_success) {
 			// Nejde cist? ukoncime shell
-
-	// Konec pomoci Exitu
 			return;
 		}
 
 		// Pokud klavesnice zachyti ctrl c nebo ctrl d prestane cist dalsi data a preda je shellu
 		// Tzn musime zkontrolovat, zda-li neni posledni znak control char a pripadne ho osetrit
-		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
-		if (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char)) {
-			Write_Line("Bye.");
 
+		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
+		if (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char) || StringUtils::Is_Ctrl_Z(last_char)) {
+			Write_Line("Bye.");
 			// Konec pomoci Exitu
 			return;
 		}
@@ -298,6 +296,20 @@ void Shell::Run() {
 
 		// urizneme mezery zleva a zprava
 		auto user_input = StringUtils::Trim_Whitespaces(keyboard_input);
+
+		// Toto zaruci ze se vytiskne newline pokud je vstup pouze bile znaky (jinak by neslo davat enter)
+		if ((StringUtils::Is_CR(last_char) || StringUtils::Is_LF(last_char)) && user_input.empty()) {
+			Write_Line("");
+			if (echo_on) {
+				Write(current_working_dir + ">");
+			}
+		}
+
+
+		if (user_input.empty()) {
+			continue;
+		}
+
 
 		// Vytvorime seznam prikazu a zkusime je rozparsovat z uzivatelskeho vstupu
 		auto commands = std::vector<Command>();

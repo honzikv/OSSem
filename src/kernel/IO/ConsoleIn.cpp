@@ -36,13 +36,20 @@ kiv_os::NOS_Error ConsoleIn::Read(char* target_buffer, const size_t buffer_size,
 				kiv_hal::Call_Interrupt_Handler(kiv_hal::NInterrupt::VGA_BIOS, regs);
 				break;
 			}
-			// Pro LF nepridavame ani index a jenom pokracujeme ve while loopu
 			case kiv_hal::NControl_Codes::LF: {
+				target_buffer[idx] = symbol;
+				idx += 1;
+				bytes_read = idx;
 				break;
 			}
-			case kiv_hal::NControl_Codes::NUL:
-			case kiv_hal::NControl_Codes::CR: {
+			case kiv_hal::NControl_Codes::NUL: {
 				bytes_read = idx; // Zde k indexu 1 nepridavame, protoze CR znak nas nezajima
+				return kiv_os::NOS_Error::Success;
+			}
+			case kiv_hal::NControl_Codes::CR: {
+				target_buffer[idx] = symbol;
+				idx += 1;
+				bytes_read = idx;
 				return kiv_os::NOS_Error::Success;
 			}
 			case kiv_hal::NControl_Codes::EOT:
@@ -84,9 +91,9 @@ kiv_os::NOS_Error ConsoleIn::Close() {
 	constexpr auto eot_symbol = static_cast<char>(kiv_hal::NControl_Codes::EOT);
 
 	// Zapiseme EOT na vystup, pokud tam uz neni
-	if (Has_Control_Char(kiv_hal::NControl_Codes::EOT) || Has_Control_Char(kiv_hal::NControl_Codes::ETX)) {
-		return kiv_os::NOS_Error::Success;
-	}
+	// if (Has_Control_Char(kiv_hal::NControl_Codes::EOT)) {
+	// 	return kiv_os::NOS_Error::Success;
+	// }
 
 	auto regs = kiv_hal::TRegisters();
 	regs.rax.h = static_cast<decltype(regs.rax.l)>(kiv_hal::NKeyboard::Write_Char);

@@ -94,9 +94,9 @@ namespace StringUtils {
 	/// <returns></returns>
 	inline bool Is_Ctrl_C(const char symbol) { return symbol == static_cast<char>(kiv_hal::NControl_Codes::ETX); }
 
-
 	inline bool Is_CR(const char symbol) { return symbol == static_cast<char>(kiv_hal::NControl_Codes::CR); }
 
+	inline bool Is_LF(const char symbol) { return symbol == static_cast<char>(kiv_hal::NControl_Codes::ETX); }
 
 	inline std::vector<std::string> FilterEmptyStrings(const std::vector<std::string>& vector) {
 		auto result = std::vector<std::string>();
