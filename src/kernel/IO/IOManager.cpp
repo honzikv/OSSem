@@ -446,7 +446,6 @@ kiv_os::NOS_Error IOManager::Syscall_Get_Working_Dir(kiv_hal::TRegisters& regs) 
 	auto lock = std::scoped_lock(mutex);
 	const auto buffer = reinterpret_cast<char*>(regs.rdx.r);
 	const auto buffer_size = static_cast<size_t>(regs.rcx.r);
-	//TODO najit proces vlakna, kopirovat buffer do working dir, nastavit written
 	strcpy_s(buffer, buffer_size, process->Get_Working_Dir().To_String().c_str());
 	const size_t written = min(process->Get_Working_Dir().To_String().length(), buffer_size);
 	regs.rax.r = written;
@@ -530,7 +529,6 @@ auto IOManager::Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File f
 	return err;
 }
 
-//TODO jestli prepsat soubor, kdyz je 0 fmalways a existuje
 kiv_os::NOS_Error IOManager::Open_File(Path path, const kiv_os::NOpen_File flags, uint8_t attributes,
                                        kiv_os::THandle& handle, const kiv_os::THandle current_pid) {
 	const auto fs = Get_File_System(path.disk_letter);

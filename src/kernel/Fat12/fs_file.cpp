@@ -133,6 +133,4 @@ Fs_File::Seek(size_t position, kiv_os::NFile_Seek seek_type, kiv_os::NFile_Seek 
     return kiv_os::NOS_Error::Success;
 }
 
-Fs_File::~Fs_File() {
-//    delete file.name; //TODO smazat asi
-}
+Fs_File::~Fs_File() = default;
