@@ -304,14 +304,18 @@ void Shell::Run() {
 		catch (ParseException& ex) {
 			// Pri chybe vypiseme hlasku do konzole a restartujeme while loop
 			Write_Line(ex.what());
-			Write(current_working_dir + ">");
+			if (echo_on) {
+				Write(current_working_dir + ">");
+			}
 			continue;
 		}
 
 		Run_Commands(commands); // Provedeme vsechny prikazy
 		if (run) {
 			// pokud se nezavolal exit zobrazime cwd aby
-			Write(current_working_dir + ">");
+			if (echo_on) {
+				Write(current_working_dir + ">");
+			}
 		}
 	}
 	while (run);

@@ -11,7 +11,7 @@ size_t __stdcall echo(const kiv_hal::TRegisters& regs) {
 	
 		if (strcmp(args, ECHO_HELP) == 0) {
 			output.append("ECHO command displays messages or turns echoing of the command off.\n");
-			output.append("   ECHO [ON | OFF]\n");
+			output.append("   ECHO [ON\\OFF]\n");
 			output.append("   ECHO [message]\n");
 			output.append("To display current ECHO settings, type ECHO without any parameters.\n");
 
