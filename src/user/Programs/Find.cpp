@@ -29,7 +29,7 @@ extern "C" size_t __stdcall find(const kiv_hal::TRegisters & regs) {
 
     if (const int index = static_cast<int>(args.find(format, start_position)); index != 0) {
         size_t written;
-        const auto err_message = std::string("Wrong arguments.. Run command with /v "" /c [optional path]\n");
+        const auto err_message = std::string("Wrong arguments.. Run command with /c /v "" [optional path]\n");
         kiv_os_rtl::Write_File(std_out, err_message.data(), err_message.size(), written);
         return 0;
     }
@@ -60,8 +60,9 @@ extern "C" size_t __stdcall find(const kiv_hal::TRegisters & regs) {
             // neni co cist
         	break;	
         }
+
         for (int i = 0; i < read; i++) {
-            if (static_cast<kiv_hal::NControl_Codes>(buffer[i]) == kiv_hal::NControl_Codes::EOT) {
+            if (static_cast<kiv_hal::NControl_Codes>(buffer[i]) == kiv_hal::NControl_Codes::SUB) {
                 read = 0;
                 break;
             }

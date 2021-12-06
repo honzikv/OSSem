@@ -275,6 +275,9 @@ void Shell::Run() {
 		if (const auto read_success = kiv_os_rtl::Read_File(std_in, buffer.data(), buffer.size(), bytes_read);
 			!read_success) {
 			// Nejde cist? ukoncime shell
+
+	// Konec pomoci Exitu
+			Log_Debug("Shell Finished");
 			return;
 		}
 
@@ -283,6 +286,9 @@ void Shell::Run() {
 		const auto last_char = bytes_read > 0 ? buffer[bytes_read - 1] : '\0';
 		if (StringUtils::Is_Ctrl_C(last_char) || StringUtils::Is_Ctrl_D(last_char)) {
 			Write_Line("Bye.");
+
+			// Konec pomoci Exitu
+			Log_Debug("Shell Finished");
 			return;
 		}
 
@@ -321,6 +327,7 @@ void Shell::Run() {
 	while (run);
 
 	// Konec pomoci Exitu
+	Log_Debug("Shell Finished");
 	Write_Line("Bye.");
 }
 

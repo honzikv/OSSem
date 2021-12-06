@@ -10,6 +10,7 @@ constexpr auto FREQ_TABLE_SIZE = 256; // cteme byty a muzeme mit az 2^8 variant 
 
 // EOT se pouzije pro ukonceni vypoctu frekvenci
 constexpr auto EOT_SYMBOL = static_cast<char>(kiv_hal::NControl_Codes::EOT);
+constexpr auto SUB_SYMBOL = static_cast<char>(kiv_hal::NControl_Codes::SUB);
 
 extern "C" size_t __stdcall freq(const kiv_hal::TRegisters& regs) {
 	// Newline do konzole
@@ -33,7 +34,7 @@ extern "C" size_t __stdcall freq(const kiv_hal::TRegisters& regs) {
 		if (kiv_os_rtl::Read_File(std_in, buffer.data(), BUFFER_SIZE, bytesFromStream)) {
 			for (auto i = 0; i < static_cast<int>(bytesFromStream); i += 1) {
 				const auto byte = static_cast<uint8_t>(buffer[i]); // pretypujeme dany symbol na uint8_t byte
-				if (byte == EOT_SYMBOL) { // Nasli jsme EOT a ukoncime for loop + while loop
+				if (byte == EOT_SYMBOL || byte == SUB_SYMBOL) { // Nasli jsme EOT
 					continue_reading = false;
 					break;
 				}

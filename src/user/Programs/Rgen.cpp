@@ -96,6 +96,7 @@ size_t __stdcall rgen(const kiv_hal::TRegisters& regs) {
 		kiv_os_rtl::Read_Exit_Code(handle, checker_exit_code);
 	}
 
-	kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Success));
+	// kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Success));
+	Log_Debug("Rgen_Finished");
 	return 0;
 }
