@@ -2,8 +2,6 @@
 
 #include "../../api/api.h"
 #include "../rtl.h"
-#include <array>
-#include <iterator>
 
 /// <summary>
 /// Velikost bufferu

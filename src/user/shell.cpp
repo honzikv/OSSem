@@ -277,7 +277,6 @@ void Shell::Run() {
 			// Nejde cist? ukoncime shell
 
 	// Konec pomoci Exitu
-			Log_Debug("Shell Finished");
 			return;
 		}
 
@@ -288,7 +287,6 @@ void Shell::Run() {
 			Write_Line("Bye.");
 
 			// Konec pomoci Exitu
-			Log_Debug("Shell Finished");
 			return;
 		}
 
@@ -327,7 +325,6 @@ void Shell::Run() {
 	while (run);
 
 	// Konec pomoci Exitu
-	Log_Debug("Shell Finished");
 	Write_Line("Bye.");
 }
 

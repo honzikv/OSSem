@@ -2,6 +2,7 @@
 #include <sstream>
 #include "../Utils/StringUtils.h"
 #include "../Utils/Logging.h"
+#include <array>
 
 ProcFSRow::ProcFSRow(std::string program_name, const uint32_t running_threads, const kiv_os::THandle pid,
                      const TaskState task_state): program_name(std::move(program_name)),

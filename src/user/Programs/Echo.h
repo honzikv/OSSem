@@ -3,7 +3,6 @@
 #include "../rtl.h"
 #include "../../api/api.h"
 
-#include <string>
 
 #define ECHO_ON "on"
 #define ECHO_OFF "off"

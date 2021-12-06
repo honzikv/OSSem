@@ -28,6 +28,7 @@ kiv_os::NOS_Error ConsoleOut::Write(const char* source_buffer, size_t bytes, siz
 	return kiv_os::NOS_Error::Success;
 }
 
+
 kiv_os::NOS_Error ConsoleOut::Close() {
 	return kiv_os::NOS_Error::Success;
 }
