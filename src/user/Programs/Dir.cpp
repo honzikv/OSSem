@@ -52,7 +52,11 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 			dir_name = args;
 		}
 	}
-	
+
+	if (dir_name == "\\*.*") {
+		kiv_os_rtl::Set_Working_Dir("C:\\");
+		dir_name = "";
+	}
 
 	auto buffer = std::array<char, char_buffer_size>();
 	kiv_os::THandle handle;
@@ -66,6 +70,8 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 	size_t file_start_index = 0;
 
 	while (!dirs_to_process.empty()) {
+		file_count = 0;
+		dir_count = 0;
 		const auto entry = dirs_to_process.back();
 		// vymaze posledni prvek
 		dirs_to_process.pop_back();
@@ -86,14 +92,12 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 		kiv_os_rtl::Seek(handle, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, file_start_index);
 
 		if (is_recursive) {
-			output.append(" Directory of: ");
+			output.append("\n Directory of: ");
 			output.append(entry);
 			output.append("\n\n");
 		}
 		read = 1;
 		while (read) {
-			file_count = 0;
-			dir_count = 0;
 			current_index = 0;
 
 			if (!kiv_os_rtl::Read_File(handle, buffer.data(), char_buffer_size, read)) {
@@ -142,7 +146,7 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 
 		output.append("Dir(s): ");
 		output.append(std::to_string(dir_count));
-		output.append("\n\n");
+		output.append("\n");
 
 		kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
 		output.clear();
