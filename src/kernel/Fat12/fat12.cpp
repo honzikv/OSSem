@@ -27,8 +27,6 @@ kiv_os::NOS_Error Fat12::Open(Path &path, const kiv_os::NOpen_File flags, File &
     file = File{};
     file.name = path.To_String();
 
-    std::vector<std::string> pathCopy(path.path_vector); //TODO asi smazat
-
     Fat_Helper::DirItem dir_item = Fat_Helper::Get_Dir_Item_Cluster(Fat_Helper::kRootDirSectorStart, path, fat);
 
     int32_t target_cluster = dir_item.first_cluster;
@@ -207,7 +205,6 @@ kiv_os::NOS_Error Fat12::Read_Dir(Path &path, std::vector<kiv_os::TDir_Entry> &e
     entries = Fat_Helper::Get_Directory_Entries(all_clusters_data, sectors_indexes.size(), false);
 
     return kiv_os::NOS_Error::Success;
-    //TODO mozna check jestli vubec existuje, nebo si to udela volajici
 }
 
 /**

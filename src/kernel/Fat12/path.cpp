@@ -65,7 +65,6 @@ void Path::Create_Path(const std::string& file_path) {
     } else {
         is_relative = true;
     }
-    //TODO osetrit mozna prazdnou cestu nebo neco takovyho
 }
 
 /**
