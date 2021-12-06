@@ -36,7 +36,7 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 				target_buffer[i] = static_cast<char>(kiv_hal::NControl_Codes::SUB); // vratime EOF
 				bytes_read_from_buffer += 1;
 				bytes_read = bytes_read_from_buffer;
-				return kiv_os::NOS_Error::IO_Error;
+				return kiv_os::NOS_Error::Success;
 			}
 		}
 
@@ -50,7 +50,7 @@ kiv_os::NOS_Error Pipe::Read(char* target_buffer, const size_t buffer_size, size
 				bytes_read_from_buffer += 1;
 				bytes_read = bytes_read_from_buffer;
 				read->Release(); // aby nedoslo k deadlocku
-				return kiv_os::NOS_Error::IO_Error;
+				return kiv_os::NOS_Error::Success;
 			}
 		}
 
@@ -126,10 +126,6 @@ void Pipe::Close_For_Writing() {
 	if (writing_closed) {
 		return;
 	}
-	// Log_Debug("Trying to close pipe");
-	// auto eof = static_cast<char>(kiv_hal::NControl_Codes::SUB);
-	// auto bytes_written = size_t{0};
-	// Write(std::addressof(eof), 1, bytes_written); // toto nastavi flag writing closed za nas
 
 	writing_closed = true;
 	write->Release(); // Vzbudime kohokoliv kdo chce zapisovat

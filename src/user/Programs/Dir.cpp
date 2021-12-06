@@ -14,7 +14,7 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 	size_t written;
 	size_t read;
 	bool is_recursive = false;
-	constexpr auto recursion_param = "/s";
+	constexpr auto recursion_param = "/S";
 
 	size_t current_index = 0;
 	size_t index = 0;

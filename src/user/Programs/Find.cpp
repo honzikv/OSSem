@@ -25,7 +25,7 @@ extern "C" size_t __stdcall find(const kiv_hal::TRegisters & regs) {
 
     // parsing dat
     constexpr int start_position = 0;
-    const std::string format = "/v \"\" /c";
+    const std::string format = "/c /v\"\"";
 
     if (const int index = static_cast<int>(args.find(format, start_position)); index != 0) {
         size_t written;

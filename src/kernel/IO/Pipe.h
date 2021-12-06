@@ -44,7 +44,10 @@ private:
 	/// Mutex pro pristup k bufferu
 	/// </summary>
 	std::mutex pipe_access;
-	
+
+	/// <summary>
+	/// Mutex pro pristup k flagum, nicmene je asi overkill
+	/// </summary>
 	std::mutex close_access;
 
 	/// <summary>
@@ -109,7 +112,14 @@ public:
 	/// <returns>Vysledek operace</returns>
 	kiv_os::NOS_Error Write(const char* source_buffer, size_t buffer_size, size_t& bytes_written);
 
+	/// <summary>
+	/// Zavre pipe pro cteni - vola ten, kdo ma pipe jako stdin
+	/// </summary>
 	void Close_For_Reading();
+
+	/// <summary>
+	/// Zavre pipe pro zapis - vola ten, kdo ma pipe jako stdout
+	/// </summary>
 	void Close_For_Writing();
 
 };

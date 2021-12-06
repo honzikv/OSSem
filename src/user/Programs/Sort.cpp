@@ -40,6 +40,7 @@ size_t __stdcall sort(const kiv_hal::TRegisters &regs) {
 		}
 		//pokud je posledni precteny znak konec souboru nebo ukonceni vstupu (CTRL+Z)
 		if (read_buffer[read - 1] == static_cast<char>(kiv_hal::NControl_Codes::SUB)) {
+			input_data.append(read_buffer.data(), 0, read - 1);
 			break;
 		}
 		input_data.append(read_buffer.data(), 0, read);
