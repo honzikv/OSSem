@@ -49,12 +49,7 @@ size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	while (read) {
 		if (!kiv_os_rtl::Read_File(handler_in, read_buffer.data(), read_buffer_size, read)) {
 			// je to dir -> nebudu vypisovat
-			const std::string message("IO Error.\n");
-
-			size_t written;
-			kiv_os_rtl::Write_File(std_out, message.data(), message.size(), written);
-			kiv_os_rtl::Exit(static_cast<uint16_t>(read));
-			return 1;
+			break;
 		}
 
 		output.append(read_buffer.data(), read);

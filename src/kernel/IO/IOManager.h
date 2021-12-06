@@ -13,6 +13,7 @@
 /// </summary>
 class IOManager {
 
+	// Thread-safe singleton metoda pro ziskani instance
 public:
 	static IOManager& Get() {
 		static IOManager instance;
@@ -48,6 +49,7 @@ private:
 	*/
 	std::unordered_map<std::string, std::unique_ptr<VFS>> file_systems;
 
+	// Konstanta, pro kterou IOManager zavre dany soubor vzdy - pouziva se pouze pro cteni z klavesnice
 	static constexpr int64_t StdioCloseAlways = -12345;
 
 public:
@@ -234,7 +236,19 @@ private:
 	kiv_os::NOS_Error Open_Procfs_File(VFS* fs, Path& path, const kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, const kiv_os::THandle
 	                                   current_pid);
 
+	/// <summary>
+	/// Helper metoda pro otevreni souboru aby byl kod lepe strukturovany
+	/// </summary>
+	/// <param name="path">cesta</param>
+	/// <param name="flags"></param>
+	/// <param name="attributes"></param>
+	/// <param name="handle"></param>
+	/// <param name="current_pid"></param>
+	/// <returns></returns>
 	kiv_os::NOS_Error Open_File(Path path, kiv_os::NOpen_File flags, uint8_t attributes, kiv_os::THandle& handle, kiv_os::THandle current_pid);
 
+	/**
+	 * Vrati pointer na dany file system
+	 */
 	VFS* Get_File_System(const std::string& disk);
 };

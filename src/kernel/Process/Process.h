@@ -71,7 +71,7 @@ public:
 	/// <summary>
 	/// Nastavi pracovni adresar pro proces
 	/// </summary>
-	/// <param name="dir"></param>
+	/// <param name="path">cesta</param>
 	void Set_Working_Dir(Path& path);
 
 	[[nodiscard]] const std::unordered_map<kiv_os::NSignal_Id, kiv_os::TThread_Proc>& Get_Signal_Callbacks() {
