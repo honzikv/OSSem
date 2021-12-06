@@ -131,8 +131,14 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 				}
 
 				output.append("\t\t");
-				output.append(curr_entry->file_name);
-				output.append("\n");
+                for (int i = 0; i < 12; i++) {
+                    auto c = curr_entry->file_name[i];
+                    if (c == '\0') {
+                        break;
+                    }
+                    output.push_back(c);
+                }
+                output.append("\n");
 				current_index++;
 			}
 			if (read < char_buffer_size) {
