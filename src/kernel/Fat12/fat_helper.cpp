@@ -645,8 +645,6 @@ namespace Fat_Helper {
                 i++;
             }
 
-            //file_name_pos = j;
-
             dir_entry.file_name[file_name_pos++] = kCurDirChar;
 
             for (int j = 0; j < kFileExtensionSize; ++j) {
@@ -657,7 +655,6 @@ namespace Fat_Helper {
                 dir_entry.file_name[file_name_pos++] = static_cast<char>(content.at(i));
                 i++;
             }
-
 
             if (file_name_pos <= kFileNameAndExtensionMaxSize) {
                 dir_entry.file_name[file_name_pos] = kEndOfString;
