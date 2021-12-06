@@ -114,7 +114,14 @@ extern "C" size_t __stdcall dir(const kiv_hal::TRegisters & regs) {
 					dir_count++;
 					if (is_recursive) {
 						if (strlen(curr_entry->file_name) > 0) {
-							std::string tmp_dir_path = entry + "\\" + curr_entry->file_name;
+							std::string tmp_dir_path = entry + "\\";
+							for (int i = 0; i < 12; i++) {
+								auto c = curr_entry->file_name[i];
+								if (c == '\0') {
+									break;
+								}
+								tmp_dir_path.push_back(c);
+							}
 							actual_dirs.push_back(tmp_dir_path);
 						}
 					}
