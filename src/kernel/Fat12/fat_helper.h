@@ -8,10 +8,9 @@
 #include "path.h"
 namespace Fat_Helper {
 
-//TODO comment
     const int kFatTableSectorCount = 9; // pocet sektoru vyhrazenych pro FAT
     const int kSectorSize = 512; // velikost sektoru/clusteru
-    const int kDiskNum = 129;
+    const int kDiskNum = 129; // cislo disku
     const int kRootDirSectorStart = 19; // pozice sektoru rootu
     const int kUserDataStart = 33; // pozice sektoru s daty
     const int kRootDirSize = 14; // velikost rootu ípocet sektorué
@@ -61,9 +60,9 @@ namespace Fat_Helper {
 
     std::vector<unsigned char> Read_Data_From_Cluster(int cluster_count, int start_cluster, bool is_root);
 
-    int Get_Int_From_Char_Vector(std::vector<unsigned char> bytes);
+    int Get_Int_From_Char_Vector(const std::vector<unsigned char>& bytes);
 
-    uint16_t Get_Free_Index(std::vector<unsigned char> fat);
+    uint16_t Get_Free_Index(const std::vector<unsigned char>& fat);
 
     std::vector<int> Get_Sectors_Indexes(const std::vector<unsigned char> &fat, int start);
 
