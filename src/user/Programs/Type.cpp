@@ -12,40 +12,44 @@ size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 	constexpr size_t read_buffer_size = 1024;
 	std::vector<char> read_buffer(read_buffer_size);
 
-	kiv_os::THandle handler_in;
 	std::string output;
+	size_t written;
 
-	if (args.empty()) {
-		const std::string message("Missing argument.\n");
+	kiv_os::THandle handler_in = std_in;
+	bool is_file = false;
+	if (!args.empty()) {
+		
+		kiv_os::NFile_Attributes file_attributes;
+		kiv_os_rtl::Get_File_Attributes(args, file_attributes);
+		if (file_attributes == kiv_os::NFile_Attributes::Directory) {
+			// je to dir -> nebudu vypisovat
+			const std::string message("Access denied.\n");
 
-		size_t written;
-		kiv_os_rtl::Write_File(std_out, message.data(), message.size(), written);
-		kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument));
-		return 1;
+			
+			kiv_os_rtl::Write_File(std_out, message.data(), message.size(), written);
+			kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument));
+			return 1;
+		}
+
+		size_t actual_position = 0;
+		if (!kiv_os_rtl::Open_File(handler_in, args, kiv_os::NOpen_File::fmOpen_Always, kiv_os::NFile_Attributes::System_File)) {
+			auto err_message = std::string("Can not open file ");
+			err_message.append(args);
+			err_message.append(".\n");
+			kiv_os_rtl::Write_File(std_out, err_message.data(), err_message.size(), written);
+
+			kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found));
+			return 1;
+		}
+
+		is_file = true;
+		kiv_os_rtl::Seek(handler_in, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, actual_position);
+	} else {
+		// aby se oddelil vypis od vstupu
+		output.append("\n");
 	}
 
-	kiv_os::NFile_Attributes file_attributes;
-	kiv_os_rtl::Get_File_Attributes(args, file_attributes);
-	if (file_attributes == kiv_os::NFile_Attributes::Directory) {
-		// je to dir -> nebudu vypisovat
-		const std::string message("Access denied.\n");
-
-		size_t written;
-		kiv_os_rtl::Write_File(std_out, message.data(), message.size(), written);
-		kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Invalid_Argument));
-		return 1;
-	}
-
-	if (!kiv_os_rtl::Open_File(handler_in, args, kiv_os::NOpen_File::fmOpen_Always, kiv_os::NFile_Attributes::System_File)) {
-		// soubor se neotevrel
-		kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::File_Not_Found));
-		return 1;
-	}
-
-    // Nastavi pozici v souboru na zacatek
-	size_t position_start = 0;
-    kiv_os_rtl::Seek(handler_in, kiv_os::NFile_Seek::Set_Position, kiv_os::NFile_Seek::Beginning, position_start);
-
+    
 	while (read) {
 		if (!kiv_os_rtl::Read_File(handler_in, read_buffer.data(), read_buffer_size, read)) {
 			// je to dir -> nebudu vypisovat
@@ -57,14 +61,15 @@ size_t __stdcall type(const kiv_hal::TRegisters& regs) {
 			break;
 		}
 	}
-	if (output.empty()) {
+	if (output.empty() || output.back() != '\n') {
 		output.append("\n");
 	}
 
-	size_t written;
 	kiv_os_rtl::Write_File(std_out, output.data(), output.size(), written);
 
-	kiv_os_rtl::Close_File_Descriptor(handler_in);
+	if (is_file) {
+		kiv_os_rtl::Close_File_Descriptor(handler_in);
+	}
 
 	kiv_os_rtl::Exit(static_cast<uint16_t>(kiv_os::NOS_Error::Success));
 
